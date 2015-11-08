@@ -11,8 +11,7 @@ import (
 
 const masterServerHost = "hl2master.steampowered.com:27011"
 
-func getServers(region filters.ServerRegion,
-	filters ...filters.ServerFilter) ([]string, error) {
+func getServers(filter *filters.Filter) ([]string, error) {
 
 	var serverlist []string
 	var c net.Conn
@@ -32,7 +31,7 @@ func getServers(region filters.ServerRegion,
 	c.SetDeadline(time.Now().Add(time.Duration(QueryTimeout) * time.Second))
 
 	for !complete {
-		s, err := queryMasterServer(c, addr, region, filters...)
+		s, err := queryMasterServer(c, addr, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -110,24 +109,24 @@ func parseIP(k []byte) (string, error) {
 }
 
 func queryMasterServer(conn net.Conn, startaddress string,
-	region filters.ServerRegion, filters ...filters.ServerFilter) ([]byte, error) {
+	filter *filters.Filter) ([]byte, error) {
 	// Note: the connection is closed by the caller, do not close here, otherwise
 	// Steam will continue to send the first batch of IPs and won't progress to the next batch
 
 	startaddress = fmt.Sprintf("%s\x00", startaddress)
 	addr := []byte(startaddress)
 	request := []byte{0x31}
-	for _, b := range region {
+	for _, b := range filter.Region {
 		request = append(request, b)
 	}
 	for _, b := range addr {
 		request = append(request, b)
 	}
-	for i, f := range filters {
+	for i, f := range filter.Filters {
 		for _, b := range f {
 			request = append(request, b)
 		}
-		if i == len(filters)-1 {
+		if i == len(filter.Filters)-1 {
 			request = append(request, 0x00)
 		}
 	}
@@ -155,10 +154,9 @@ func queryMasterServer(conn net.Conn, startaddress string,
 	return masterResponse, nil
 }
 
-func GetServerListWithLiveData(region filters.ServerRegion,
-	filters ...filters.ServerFilter) ([]string, error) {
+func GetServerListWithLiveData(filter *filters.Filter) ([]string, error) {
 
-	sl, err := getServers(region, filters...)
+	sl, err := getServers(filter)
 	if err != nil {
 		return nil, err
 	}

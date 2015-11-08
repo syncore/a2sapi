@@ -111,7 +111,7 @@ func getRulesInfo(host string, timeout int) ([]byte, error) {
 		return nil, HostConnectionError(err.Error())
 	}
 
-	conn.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
+	conn.SetDeadline(time.Now().Add(time.Duration(timeout-1) * time.Second))
 	defer conn.Close()
 
 	_, err = conn.Write(challengeNumReq)

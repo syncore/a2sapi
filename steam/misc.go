@@ -3,10 +3,18 @@ package steam
 const (
 	headerStr       = "\xFF\xFF\xFF\xFF"
 	nullByteStr     = "\x00\x00\x00\x00\x00\x00\x00\x00"
-	maxHosts        = 2500 // max# hosts to retrieve; cannot be larger than 6930 per steam
+	maxHosts        = 2500 // max# hosts to retrieve; cannot be larger than 6930 as per steam
 	maxPacketSize   = 1400 // specified by steam protocol
 	QueryTimeout    = 3    // sec; connect, read & write timeout
 	QueryRetryCount = 3    // # of times to re-request rules, players, info on failure
+)
+
+type IgnoredRequest int
+
+const (
+	IgnoreRulesRequest IgnoredRequest = iota
+	IgnorePlayerRequest
+	IgnoreInfoRequest
 )
 
 var (

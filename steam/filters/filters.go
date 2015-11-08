@@ -3,98 +3,118 @@ package filters
 
 import "fmt"
 
-type ServerRegion []byte
-type ServerFilter []byte
+type SrvRegion []byte
+type SrvFilter []byte
+
+type Filter struct {
+	Region           SrvRegion
+	Filters          []SrvFilter
+	IgnoredRequests  []IgnoredRequest
+	HasIgnoreRules   bool
+	HasIgnorePlayers bool
+	HasIgnoreInfo    bool
+}
+
+// This is my user-defined type to account for the fact that some titles
+// (particularly newer/beta ones) do not have all of three AS2_INFO,PLAYER,RULES
+// requests of this IgnoredRequest type will be ignored when building server list
+type IgnoredRequest int
+
+const (
+	IgnoreRulesRequest IgnoredRequest = iota
+	IgnorePlayerRequest
+	IgnoreInfoRequest
+)
 
 var (
 	// Regions
-	SrUsEastCoast  ServerRegion = []byte{0x00}
-	SrUsWestCoast  ServerRegion = []byte{0x01}
-	SrSouthAmerica ServerRegion = []byte{0x02}
-	SrEurope       ServerRegion = []byte{0x03}
-	SrAsia         ServerRegion = []byte{0x04}
-	SrAustralia    ServerRegion = []byte{0x05}
-	SrMiddleEast   ServerRegion = []byte{0x06}
-	SrAfrica       ServerRegion = []byte{0x07}
-	SrAll          ServerRegion = []byte{0xFF}
+	SrUsEastCoast  SrvRegion = []byte{0x00}
+	SrUsWestCoast  SrvRegion = []byte{0x01}
+	SrSouthAmerica SrvRegion = []byte{0x02}
+	SrEurope       SrvRegion = []byte{0x03}
+	SrAsia         SrvRegion = []byte{0x04}
+	SrAustralia    SrvRegion = []byte{0x05}
+	SrMiddleEast   SrvRegion = []byte{0x06}
+	SrAfrica       SrvRegion = []byte{0x07}
+	SrAll          SrvRegion = []byte{0xFF}
 
 	// --------------------- "Constant" filters ---------------------
 	// Dedicated servers
-	SfDedicated ServerFilter = []byte("\\type\\d")
+	SfDedicated SrvFilter = []byte("\\type\\d")
 	// Servers using anti-cheat technology (VAC, but maybe others as well)
-	SfSecure ServerFilter = []byte("\\secure\\1")
+	SfSecure SrvFilter = []byte("\\secure\\1")
 	// Servers running on a Linux platform
-	SfLinux ServerFilter = []byte("\\linux\\1")
+	SfLinux SrvFilter = []byte("\\linux\\1")
 	// Servers that are not empty
-	SfNotEmpty ServerFilter = []byte("\\empty\\1")
+	SfNotEmpty SrvFilter = []byte("\\empty\\1")
 	// Servers that are not full
-	SfNotFull ServerFilter = []byte("\\full\\1")
+	SfNotFull SrvFilter = []byte("\\full\\1")
 	// Servers that spectator proxies
-	SfSpectatorProxy ServerFilter = []byte("\\proxy\\1")
+	SfSpectatorProxy SrvFilter = []byte("\\proxy\\1")
 	// Servers that are empty
-	SfEmpty ServerFilter = []byte("\\noplayers\\1")
+	SfEmpty SrvFilter = []byte("\\noplayers\\1")
 	// Servers that are whitelisted
-	SfWhitelisted ServerFilter = []byte("\\white\\1")
+	SfWhitelisted SrvFilter = []byte("\\white\\1")
 	// Return only one server for each unique IP address matched
-	SfOneUniquePerIP ServerFilter = []byte("\\collapse_addr_hash\\1")
+	SfOneUniquePerIP SrvFilter = []byte("\\collapse_addr_hash\\1")
 	// ALL servers
-	SfAll ServerFilter = []byte{0x00}
+	SfAll SrvFilter = []byte{0x00}
 
 	// ----------------Filters the take variable input ----------------
 	// \appid\[appid] - Servers that are running game [appid]
-	AppIdFilter = func(val string) ServerFilter {
+	AppIdFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\appid\\%s", val))
 	}
 	// \gameaddr\[ip]Return only servers on the specified IP address
 	// (port supported and optional)
-	GameAddrFilter = func(val string) ServerFilter {
+	GameAddrFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\gameaddr\\%s", val))
 	}
 	// \gamedata\[tag,...] - Servers with all of the given tag(s) in their
 	//'hidden' tags (L4D2)
-	GameDataFilter = func(val string) ServerFilter {
+	GameDataFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\gamedata\\%s", val))
 	}
 	// \gamedataor\[tag,...] - Servers with any of the given tag(s) in their
 	// 'hidden' tags (L4D2)
-	GameDataOrFilter = func(val string) ServerFilter {
+	GameDataOrFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\gamedataor\\%s", val))
 	}
 	// \gamedir\[mod] - Servers running the specified modification (ex. cstrike)
-	GameDirFilter = func(val string) ServerFilter {
+	GameDirFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\gamedir\\%s", val))
 	}
 	// \gametype\[tag,...] - Servers with all of the given tag(s) in sv_tags
-	GameTypeFilter = func(val string) ServerFilter {
+	GameTypeFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\gametype\\%s", val))
 	}
 	// \name_match\[hostname] - Servers with their hostname matching [hostname]
 	// (can use * as a wildcard)
-	NameMatchFilter = func(val string) ServerFilter {
+	NameMatchFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\name_match\\%s", val))
 	}
 	// \nand\[x] - A special filter, specifies that servers matching all of the
 	// following [x] conditions should not be returned
-	NAndFilter = func(val string) ServerFilter {
+	NAndFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\nand\\%s", val))
 	}
 	// \nor\[x] - A special filter, specifies that servers matching any of the
 	//following [x] conditions should not be returned
-	NOrFilter = func(val string) ServerFilter {
+	NOrFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\nor\\%s", val))
 	}
 	// \napp\[appid] - Servers that are NOT running game [appid]
 	// (This was introduced to block Left 4 Dead games from the Steam Server Browser
-	NAppIdFilter = func(val string) ServerFilter {
+	NAppIdFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\nappid\\%s", val))
 	}
 	// \map\[map] - Servers running the specified map (ex. cs_italy)
-	MapFilter = func(val string) ServerFilter {
+	MapFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\map\\%s", val))
 	}
 	// \version_match\[version] - Servers running version [version]
 	// (can use * as a wildcard)
-	VersionMatchFilter = func(val string) ServerFilter {
+	VersionMatchFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\version_match\\%s", val))
 	}
 
@@ -106,3 +126,31 @@ var (
 	GameReflex    = AppIdFilter("328070")
 	GameTF2       = AppIdFilter("440")
 )
+
+func NewFilter(region SrvRegion, filters []SrvFilter,
+	ignoredRequests []IgnoredRequest) *Filter {
+
+	var ignoreRules bool
+	var ignorePlayers bool
+	var ignoreInfo bool
+	for _, v := range ignoredRequests {
+		if v == IgnoreRulesRequest {
+			ignoreRules = true
+		}
+		if v == IgnorePlayerRequest {
+			ignorePlayers = true
+		}
+		if v == IgnoreInfoRequest {
+			ignoreInfo = true
+		}
+	}
+
+	return &Filter{
+		Region:           region,
+		Filters:          filters,
+		IgnoredRequests:  ignoredRequests,
+		HasIgnoreRules:   ignoreRules,
+		HasIgnorePlayers: ignorePlayers,
+		HasIgnoreInfo:    ignoreInfo,
+	}
+}

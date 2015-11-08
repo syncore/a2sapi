@@ -18,12 +18,16 @@ type retryType int
 func main() {
 	//singleTest("85.229.197.211:25797", steam.QueryTimeout)
 
-	err := make(chan error, 1)
-	go retrieve(err, filters.SrAll, filters.GameQuakeLive)
-	if <-err == nil {
+	errch := make(chan error, 1)
+	go retrieve(errch, filters.NewFilter(filters.SrAll,
+		[]filters.SrvFilter{filters.GameQuakeLive},
+		[]filters.IgnoredRequest{}))
+
+	err := <-errch
+	if err == nil {
 		fmt.Print("Got no errors from retrieve goroutine!")
 	} else {
-		fmt.Printf("Retrieve channel error: %s", <-err)
+		fmt.Printf("Retrieve channel error: %s", err)
 	}
 }
 
@@ -283,44 +287,87 @@ type serverList struct {
 }
 
 type server struct {
-	Host    string              `json:"address"`
-	IP      string              `json:"ip"`
-	Port    int                 `json:"port"`
-	Info    *steam.ServerInfo   `json:"info"`
+	Host string `json:"address"`
+	IP   string `json:"ip"`
+	Port int    `json:"port"`
+	// 'Info' by default was *steam.ServerInfo, but nil pointers are encoded as
+	// 'null' in JSON instead of an empty object, so use interface and handle appropriately
+	Info    interface{}         `json:"info"`
 	Players []*steam.PlayerInfo `json:"players"`
 	Rules   map[string]string   `json:"rules"`
 }
 
-func buildServerList(servers []string, infomap map[string]*steam.ServerInfo,
-	rulemap map[string]map[string]string,
+func buildServerList(filter *filters.Filter, servers []string,
+	infomap map[string]*steam.ServerInfo, rulemap map[string]map[string]string,
 	playermap map[string][]*steam.PlayerInfo) *serverList {
+
+	// No point in ignoring all three requests
+	if filter.HasIgnoreInfo && filter.HasIgnorePlayers && filter.HasIgnoreRules {
+		return nil
+	}
 
 	sl := &serverList{
 		Servers: make([]*server, 0),
 	}
+
+	var success bool
+	var useEmptyInfo bool
 	successcount := 0
 	for _, host := range servers {
+		var i interface{}
 		info, iok := infomap[host]
 		players, pok := playermap[host]
 		if players == nil {
-			// return empty arrays instead of nil pointers in json
+			// return empty array instead of nil pointers (null) in json
 			players = make([]*steam.PlayerInfo, 0)
 		}
 		rules, rok := rulemap[host]
 
-		if iok && rok && pok {
-			//fmt.Printf("Success: all data exists for host: %s\n", host)
+		// default, unless we should skip
+		success = iok && rok && pok
+
+		if filter.HasIgnoreInfo {
+			success = pok && rok
+			useEmptyInfo = true
+			i = make(map[string]int, 0)
+		}
+		if filter.HasIgnorePlayers {
+			success = iok && rok
+		}
+		if filter.HasIgnoreRules {
+			rules = make(map[string]string, 0)
+			success = iok && pok
+		}
+		if filter.HasIgnoreInfo && filter.HasIgnorePlayers {
+			success = rok
+		}
+		if filter.HasIgnoreInfo && filter.HasIgnoreRules {
+			success = pok
+		}
+		if filter.HasIgnorePlayers && filter.HasIgnoreRules {
+			success = iok
+		}
+
+		if success {
 			srv := &server{
 				Players: players,
 				Rules:   rules,
-				Info:    info,
 			}
-			srv.Rules = rules
-			srv.Info = info
-			srv.Host = host
+			// this is needed to return the omitted info as an empty object in JSON
+			if useEmptyInfo {
+				srv.Info = i
+			} else {
+				srv.Info = info
+			}
+
 			ip, port, err := net.SplitHostPort(host)
 			if err == nil {
 				srv.IP = ip
+				if info.ExtraData.Port != 0 {
+					srv.Host = fmt.Sprintf("%s:%d", ip, info.ExtraData.Port)
+				} else {
+					srv.Host = host
+				}
 				p, err := strconv.Atoi(port)
 				if err == nil {
 					srv.Port = p
@@ -339,24 +386,39 @@ func buildServerList(servers []string, infomap map[string]*steam.ServerInfo,
 	return sl
 }
 
-func retrieve(errors chan<- error, region filters.ServerRegion,
-	filters ...filters.ServerFilter) {
+func retrieve(errors chan<- error, filter *filters.Filter) {
 	defer close(errors)
-	servers, err := steam.GetServerListWithLiveData(region, filters...)
+	servers, err := steam.GetServerListWithLiveData(filter)
 	if err != nil {
 		errors <- fmt.Errorf("Master server error: %s\n", err)
 		return
 	}
 
-	// Retrieved by amount of work that must be done (1 = 2, 3)
+	if filter.HasIgnoreInfo && filter.HasIgnorePlayers && filter.HasIgnoreRules {
+		errors <- fmt.Errorf("Cannot ignore all three AS2 requests!")
+		return
+	}
+
+	var players map[string][]*steam.PlayerInfo
+	var rules map[string]map[string]string
+	var info map[string]*steam.ServerInfo
+	// Order of retrieval is by amount of work that must be done (1 = 2, 3)
 	// 1. players (request chal #, recv chal #, req players, recv players)
 	// 2. rules (request chal #, recv chal #, req rules, recv rules)
 	// 3. rules: just request rules & receive rules
-	players := getPlayersForServers(servers)
-	rules := getRulesForServers(servers)
-	info := getInfoForServers(servers)
-	serverlist := buildServerList(servers, info, rules, players)
 
+	// Some servers (i.e. new beta games) don't have all 3 of AS2_RULES/PLAYER/INFO
+	if !filter.HasIgnorePlayers {
+		players = getPlayersForServers(servers)
+	}
+	if !filter.HasIgnoreRules {
+		rules = getRulesForServers(servers)
+	}
+	if !filter.HasIgnoreInfo {
+		info = getInfoForServers(servers)
+	}
+
+	serverlist := buildServerList(filter, servers, info, rules, players)
 	j, err := json.Marshal(serverlist)
 	if err != nil {
 		errors <- fmt.Errorf("Error marshaling json: %s", err)

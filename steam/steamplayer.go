@@ -26,7 +26,7 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 	}
 
 	defer conn.Close()
-	conn.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
+	conn.SetDeadline(time.Now().Add(time.Duration(timeout-1) * time.Second))
 
 	_, err = conn.Write(challengeNumReq)
 	if err != nil {

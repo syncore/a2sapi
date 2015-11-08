@@ -53,7 +53,7 @@ func getServerInfo(host string, timeout int) ([]byte, error) {
 		return nil, HostConnectionError(err.Error())
 	}
 	defer conn.Close()
-	conn.SetReadDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
+	conn.SetDeadline(time.Now().Add(time.Duration(timeout-1) * time.Second))
 
 	_, err = conn.Write(request)
 	if err != nil {
@@ -79,63 +79,6 @@ func getServerInfo(host string, timeout int) ([]byte, error) {
 }
 
 func parseServerInfo(serverinfo []byte) (*ServerInfo, error) {
-	// Data			Type		Comment
-	//--------------------------------------------------------------------
-	// Header		byte		Always equal to 'I' (0x49)
-	// Protocol		byte		Protocol version used by the server.
-	// Name			string		Name of the server.
-	// Map			string		Map the server has currently loaded.
-	// Folder		string		Name of the folder containing the game files.
-	// Game			string		Full name of the game.
-	// ID			short		Steam Application ID of game.
-	// Players		byte		Number of players on the server.
-	// Max. Players	byte		Maximum number of players the server reports it can hold.
-	// Bots			byte		Number of bots on the server.
-	//
-	// Server type	byte		Indicates the type of server:
-	// 							'd' for a dedicated server
-	// 							'l' for a non-dedicated server
-	// 							'p' for a SourceTV relay (proxy)
-	//
-	// Environment	byte		Indicates the operating system of the server:
-	// 							'l' for Linux
-	// 							'w' for Windows
-	// 							'm' or 'o' for Mac (the code changed after L4D1)
-	//
-	// Visibility	byte		Indicates whether the server requires a password:
-	// 							0 for public
-	// 							1 for private
-	// VAC			byte		Specifies whether the server uses VAC:
-	// 							0 for unsecured
-	// 							1 for secured
-	//
-	// Game 'The Ship' has extra data (not implemented)
-	// Version		string		Version of the game installed on the server.
-	//
-	//--------------------------------------------------------------------
-	// Extra Data Flag 		byte	If present, this specifies which additional data fields will be included.
-
-	//	Extra Data Flag: Only if if ( EDF & 0x80 ) proves true:
-	//
-	//	Data		Type		Comment
-	//	Port		short		The server's game port number.
-
-	// 	Extra Data Flag: Only if if ( EDF & 0x10 ) proves true:
-	//	SteamID		long long	Server's SteamID.
-
-	// 	Extra Data Flag: Only if if ( EDF & 0x40 ) proves true:
-	//	Port 	short			Spectator port number for SourceTV.
-	//	Name	string			Name of the spectator server for SourceTV.
-
-	// 	Extra Data Flag: Only if if ( EDF & 0x20 ) proves true:
-	//	Keywords string			Tags that describe the game according to the server (for future use.)
-
-	// Extra Data Flag: Only if if ( EDF & 0x01 ) proves true:
-
-	// GameID	long long		The server's 64-bit GameID. If this is present, a more accurate AppID is
-	// present in the low 24 bits. The earlier AppID could have been truncated as it was forced into
-	// 16-bit storage.
-
 	if !bytes.HasPrefix(serverinfo, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0x49}) {
 		return nil, PacketHeaderError
 	}
