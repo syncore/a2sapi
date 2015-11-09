@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"steamtest/util"
+	"sync"
 	"time"
 )
 
@@ -39,15 +40,6 @@ type extraData struct {
 }
 
 func getServerInfo(host string, timeout int) ([]byte, error) {
-	request := []byte{
-		0xFF, 0xFF, 0xFF, 0xFF,
-		0x54, 0x53, 0x6F, 0x75, 0x72,
-		0x63, 0x65, 0x20, 0x45, 0x6E,
-		0x67, 0x69, 0x6E, 0x65, 0x20,
-		0x51, 0x75, 0x65, 0x72, 0x79,
-		0x00,
-	}
-
 	conn, err := net.DialTimeout("udp", host, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, HostConnectionError(err.Error())
@@ -55,7 +47,7 @@ func getServerInfo(host string, timeout int) ([]byte, error) {
 	defer conn.Close()
 	conn.SetDeadline(time.Now().Add(time.Duration(timeout-1) * time.Second))
 
-	_, err = conn.Write(request)
+	_, err = conn.Write(infoChallengeReq)
 	if err != nil {
 		return nil, DataTransmitError(err.Error())
 	}
@@ -68,18 +60,16 @@ func getServerInfo(host string, timeout int) ([]byte, error) {
 	serverInfo := make([]byte, numread)
 	copy(serverInfo, buf[:numread])
 
-	if !bytes.HasPrefix(serverInfo, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0x49}) {
+	if !bytes.HasPrefix(serverInfo, expectedInfoRespHeader) {
 		fmt.Printf("Server info response header is invalid\n")
 		return nil, PacketHeaderError
 	}
-
-	//fmt.Printf("Server info reply from server: %x\n", serverInfo)
 
 	return serverInfo, nil
 }
 
 func parseServerInfo(serverinfo []byte) (*ServerInfo, error) {
-	if !bytes.HasPrefix(serverinfo, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0x49}) {
+	if !bytes.HasPrefix(serverinfo, expectedInfoRespHeader) {
 		return nil, PacketHeaderError
 	}
 
@@ -199,47 +189,46 @@ func parseServerInfo(serverinfo []byte) (*ServerInfo, error) {
 	}, nil
 }
 
-func GetServerInfoWithLiveData(host string, timeout int) (*ServerInfo, error) {
+func RetryFailedInfoReq(failed []string, retrycount int) map[string]*ServerInfo {
+	m := make(map[string]*ServerInfo)
+	var f []string
+	var wg sync.WaitGroup
+	var mut sync.Mutex
+	for i := 0; i < retrycount; i++ {
+		if i == 0 {
+			f = failed
+		}
+		wg.Add(len(f))
+		for _, host := range f {
+			go func(h string) {
+				defer wg.Done()
+				r, err := GetInfoForServer(h, QueryTimeout)
+				if err != nil {
+					if err != NoPlayersError {
+						fmt.Printf("Host: %s failed on info-retry request.\n", h)
+						return
+					}
+				}
+				mut.Lock()
+				m[h] = r
+				f = removeFailedHost(f, h)
+				mut.Unlock()
+			}(host)
+		}
+		wg.Wait()
+	}
+	return m
+}
+
+func GetInfoForServer(host string, timeout int) (*ServerInfo, error) {
 	si, err := getServerInfo(host, timeout)
 	if err != nil {
 		return nil, err
 	}
-	//fmt.Printf("Server info is: %x\n", si)
+
 	serverinfo, err := parseServerInfo(si)
 	if err != nil {
 		return nil, err
 	}
-	// fmt.Printf(`protocol:%d, name:%s, mapname:%s, folder:%s, game:%s, id:%d,
-	//  players:%d, maxplayers:%d, bots:%d, servertype:%s, environment:%s,
-	//  visibility:%d, vac:%d, version:%s, port:%d, steamid:%d, sourcetvport:%d,
-	//  sourcetvname:%s, keywords:%s, gameid:%d`,
-	// 	serverinfo.Protocol, serverinfo.Name, serverinfo.Map, serverinfo.Folder,
-	// 	serverinfo.Game, serverinfo.ID, serverinfo.Players, serverinfo.MaxPlayers,
-	// 	serverinfo.Bots, serverinfo.ServerType, serverinfo.Environment,
-	// 	serverinfo.Visibility, serverinfo.VAC, serverinfo.Version,
-	// 	serverinfo.ExtraData.Port, serverinfo.ExtraData.SteamID,
-	// 	serverinfo.ExtraData.SourceTVPort, serverinfo.ExtraData.SourceTVName,
-	// 	serverinfo.ExtraData.Keywords, serverinfo.ExtraData.GameID)
-
 	return serverinfo, nil
-}
-
-func GetServerInfoWithTestData() error {
-	si := testServerInfoData
-	serverinfo, err := parseServerInfo(si)
-	if err != nil {
-		return err
-	}
-	fmt.Printf(`protocol:%d, name:%s, mapname:%s, folder:%s, game:%s, id:%d,
-	 players:%d, maxplayers:%d, bots:%d, servertype:%s, environment:%s,
-	 visibility:%d, vac:%d, version:%s, port:%d, steamid:%d, sourcetvport:%d,
-	 sourcetvname:%s, keywords:%s, gameid:%d`,
-		serverinfo.Protocol, serverinfo.Name, serverinfo.Map, serverinfo.Folder,
-		serverinfo.Game, serverinfo.ID, serverinfo.Players, serverinfo.MaxPlayers,
-		serverinfo.Bots, serverinfo.ServerType, serverinfo.Environment,
-		serverinfo.Visibility, serverinfo.VAC, serverinfo.Version,
-		serverinfo.ExtraData.Port, serverinfo.ExtraData.SteamID,
-		serverinfo.ExtraData.SourceTVPort, serverinfo.ExtraData.SourceTVName,
-		serverinfo.ExtraData.Keywords, serverinfo.ExtraData.GameID)
-	return nil
 }

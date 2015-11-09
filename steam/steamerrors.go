@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// Errors
 var (
 	HostConnectionError = func(msg string) error {
 		return fmt.Errorf("Steam: host connection error: %s\n", msg)

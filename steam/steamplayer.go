@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"math"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -17,9 +18,6 @@ type PlayerInfo struct {
 }
 
 func getPlayerInfo(host string, timeout int) ([]byte, error) {
-	challengeNumReq := []byte{0xFF, 0xFF, 0xFF, 0xFF, 0x55, 0xFF, 0xFF, 0xFF,
-		0xFF}
-
 	conn, err := net.DialTimeout("udp", host, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, HostConnectionError(err.Error())
@@ -28,32 +26,26 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 	defer conn.Close()
 	conn.SetDeadline(time.Now().Add(time.Duration(timeout-1) * time.Second))
 
-	_, err = conn.Write(challengeNumReq)
+	_, err = conn.Write(playerChallengeReq)
 	if err != nil {
 		return nil, DataTransmitError(err.Error())
 	}
 
 	challengeNumResp := make([]byte, maxPacketSize)
-
 	_, err = conn.Read(challengeNumResp)
 	if err != nil {
 		return nil, DataTransmitError(err.Error())
 	}
-	if !bytes.HasPrefix(challengeNumResp, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0x41}) {
+	if !bytes.HasPrefix(challengeNumResp, expectedPlayerRespHeader) {
 		return nil, ChallengeResponseError
 	}
 	challengeNum := bytes.TrimLeft(challengeNumResp, headerStr)
 	challengeNum = challengeNum[1:5]
-
-	//fmt.Printf("Reply from server: %x\n", challengeNumResp)
-	//fmt.Printf("Challenge number is: %x\n", challengeNum)
 	request := []byte{0xFF, 0xFF, 0xFF, 0xFF, 0x55}
 
 	for _, b := range challengeNum {
 		request = append(request, b)
 	}
-
-	//fmt.Printf("will send: %x\n", request)
 
 	_, err = conn.Write(request)
 	if err != nil {
@@ -67,39 +59,20 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 	pi := make([]byte, numread)
 	copy(pi, buf[:numread])
 
-	//fmt.Printf("Player info is: %x", playerInfo)
-	//return playerInfo, nil
-
 	return pi, nil
 }
 
 func parsePlayerInfo(unparsed []byte) ([]*PlayerInfo, error) {
-	//Data			Type			Comment
-	//--------------------------------------------------------------------
-	//Header  	byte  		Always equal to 'D' (0x44)
-	//Players  	byte  		Number of players whose information was gathered.
-
-	//For every player in "Players" there is this chunk in the response:
-	//--------------------------------------------------------------------
-
-	//	Data			Type		Comment
-	//	Index 		byte  	Index of player chunk starting from 0.
-	//	Name  		string 	Name of the player.
-	//	Score  		long  	Player's score (usually "frags" or "kills".)
-	//	Duration  float  	Time (in seconds) player has been connected to the server
-
-	if !bytes.HasPrefix(unparsed, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0x44}) {
+	if !bytes.HasPrefix(unparsed, expectedPlayerChunkHeader) {
 		return nil, PacketHeaderError
 	}
 	unparsed = bytes.TrimLeft(unparsed, headerStr)
-
 	numplayers := int(unparsed[1])
-	//fmt.Printf("Number of players: %d\n", numplayers)
+
 	if numplayers == 0 {
 		return nil, NoPlayersError
 	}
 
-	//fmt.Printf("New trimmed player info slice is: %x\n", unparsed)
 	players := []*PlayerInfo{}
 
 	// index 0 = '44' | 1 = 'numplayers' byte | 2 = player 1 separator byte '00'
@@ -137,34 +110,48 @@ func getDuration(bytes []byte) (float32, string) {
 	return f, s.String()
 }
 
-// func GetPlayersWithTestData() error {
-// 	pi := testPlayerInfoData
-// 	players, err := parsePlayerInfo(pi)
-// 	if err != nil {
-// 		return fmt.Errorf("Error parsing player info: %s\n", err)
-// 	}
-// 	for _, p := range players {
-// 		fmt.Printf("Name: %s, Score: %d, Connected for: %s\n",
-// 			p.Name, p.Score, p.TimeConnectedTot)
-// 	}
-// 	return nil
-// }
+func RetryFailedPlayersReq(failed []string,
+	retrycount int) map[string][]*PlayerInfo {
 
-func GetPlayersWithLiveData(host string, timeout int) ([]*PlayerInfo, error) {
-	//var open bool
+	m := make(map[string][]*PlayerInfo)
+	var f []string
+	var wg sync.WaitGroup
+	var mut sync.Mutex
+	for i := 0; i < retrycount; i++ {
+		if i == 0 {
+			f = failed
+		}
+		wg.Add(len(f))
+		for _, host := range f {
+			go func(h string) {
+				defer wg.Done()
+				r, err := GetPlayersForServer(h, QueryTimeout)
+				if err != nil {
+					if err != NoPlayersError {
+						//fmt.Printf("Host: %s failed on players-retry request.\n", h)
+						return
+					}
+				}
+				mut.Lock()
+				m[h] = r
+				f = removeFailedHost(f, h)
+				mut.Unlock()
+			}(host)
+		}
+		wg.Wait()
+	}
+	return m
+}
+
+func GetPlayersForServer(host string, timeout int) ([]*PlayerInfo, error) {
 	pi, err := getPlayerInfo(host, timeout)
 	if err != nil {
 		return nil, err
 	}
-	//fmt.Printf("Player info is: %x\n", pi)
+
 	players, err := parsePlayerInfo(pi)
 	if err != nil {
 		return nil, err
 	}
-	// }
-	// for _, p := range players {
-	// 	fmt.Printf("Name: %s, Score: %d, Connected for: %s\n",
-	// 		p.Name, p.Score, p.TimeConnectedTot)
-	// }
 	return players, nil
 }

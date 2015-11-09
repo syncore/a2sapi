@@ -36,7 +36,7 @@ func getServers(filter *filters.Filter) ([]string, error) {
 			return nil, err
 		}
 		// get hosts:ports beginning after header (0xFF, 0xFF, 0xFF, 0xFF, 0x66, 0x0A)
-		ips, total, err := getHosts(s[6:])
+		ips, total, err := extractHosts(s[6:])
 		if err != nil {
 			return nil, fmt.Errorf("Error when extracting addresses: %s", err)
 		}
@@ -70,11 +70,10 @@ func getServers(filter *filters.Filter) ([]string, error) {
 	return serverlist, nil
 }
 
-func getHosts(hbs []byte) ([]string, int, error) {
+func extractHosts(hbs []byte) ([]string, int, error) {
 	var sl []string
 	pos := 0
 	total := 0
-	//fmt.Printf("length of host byte slice: %d\n", len(hbs))
 	for i := 0; i < len(hbs); i++ {
 		if len(sl) > 0 && sl[len(sl)-1] == "0.0.0.0:0" {
 			fmt.Printf("0.0.0.0:0 detected. Got %d total hosts.\n", total-1)
@@ -145,24 +144,19 @@ func queryMasterServer(conn net.Conn, startaddress string,
 	masterResponse := make([]byte, numread)
 	copy(masterResponse, buf[:numread])
 
-	if !bytes.HasPrefix(masterResponse, []byte{0xFF, 0xFF, 0xFF, 0xFF,
-		0x66, 0x0A}) {
+	if !bytes.HasPrefix(masterResponse, expectedMasterRespHeader) {
 		return nil, PacketHeaderError
 	}
 
-	//fmt.Printf("Master server response is: %x", masterResponse)
 	return masterResponse, nil
 }
 
-func GetServerListWithLiveData(filter *filters.Filter) ([]string, error) {
-
+func GetServersFromMaster(filter *filters.Filter) ([]string, error) {
 	sl, err := getServers(filter)
 	if err != nil {
 		return nil, err
 	}
-	// for _, v := range sl {
-	// 	fmt.Printf("%s\n", v)
-	// }
+
 	fmt.Printf("*** Retrieved %d servers.\n", len(sl))
 
 	return sl, nil

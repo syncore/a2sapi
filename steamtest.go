@@ -7,13 +7,38 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"steamtest/db"
 	"steamtest/steam"
 	"steamtest/steam/filters"
 	"strconv"
 	"sync"
 )
 
-type retryType int
+type requestType int
+
+type serverList struct {
+	ServerCount   int       `json:"serverCount"`
+	Servers       []*server `json:"servers"`
+	FailedCount   int       `json:"failedCount"`
+	FailedServers []string  `json:"failedServers"`
+}
+type server struct {
+	Host        string      `json:"address"`
+	IP          string      `json:"ip"`
+	Port        int         `json:"port"`
+	CountryInfo *db.Country `json:"location"`
+	// 'Info' by default was *steam.ServerInfo, but nil pointers are encoded as
+	// 'null' in JSON instead of an empty object, so use interface and handle appropriately
+	Info    interface{}         `json:"info"`
+	Players []*steam.PlayerInfo `json:"players"`
+	Rules   map[string]string   `json:"rules"`
+}
+
+const (
+	ruleRequest requestType = iota
+	playerRequest
+	infoRequest
+)
 
 func main() {
 	//singleTest("85.229.197.211:25797", steam.QueryTimeout)
@@ -32,7 +57,7 @@ func main() {
 }
 
 func singleTest(host string, timeout int) {
-	ii, err := steam.GetServerInfoWithLiveData(host, timeout)
+	ii, err := steam.GetInfoForServer(host, timeout)
 	if err != nil && err != steam.NoInfoError {
 		fmt.Printf("%s", err)
 	} else if err == steam.NoInfoError {
@@ -52,7 +77,7 @@ func singleTest(host string, timeout int) {
 			ii.ExtraData.Keywords, ii.ExtraData.GameID)
 	}
 
-	pi, err := steam.GetPlayersWithLiveData(host, timeout)
+	pi, err := steam.GetPlayersForServer(host, timeout)
 	if err != nil && err != steam.NoPlayersError {
 		fmt.Printf("%s", err)
 	} else if err == steam.NoPlayersError {
@@ -64,7 +89,7 @@ func singleTest(host string, timeout int) {
 		}
 	}
 
-	ri, err := steam.GetRulesWithLiveData(host, timeout)
+	ri, err := steam.GetRulesForServer(host, timeout)
 	if err != nil && err != steam.NoRulesError {
 		fmt.Printf("%s", err)
 	} else if err == steam.NoRulesError {
@@ -85,7 +110,7 @@ func getInfoForServers(serverlist []string) map[string]*steam.ServerInfo {
 	for _, h := range serverlist {
 		wg.Add(1)
 		go func(host string) {
-			serverinfo, err := steam.GetServerInfoWithLiveData(host, steam.QueryTimeout)
+			serverinfo, err := steam.GetInfoForServer(host, steam.QueryTimeout)
 			if err != nil {
 				mut.Lock()
 				failed = append(failed, host)
@@ -100,7 +125,7 @@ func getInfoForServers(serverlist []string) map[string]*steam.ServerInfo {
 		}(h)
 	}
 	wg.Wait()
-	retried := retryFailedInfoReq(failed, 3)
+	retried := steam.RetryFailedInfoReq(failed, 3)
 	for k, v := range retried {
 		m[k] = v
 	}
@@ -116,7 +141,7 @@ func getPlayersForServers(serverlist []string) map[string][]*steam.PlayerInfo {
 	for _, h := range serverlist {
 		wg.Add(1)
 		go func(host string) {
-			players, err := steam.GetPlayersWithLiveData(host, steam.QueryTimeout)
+			players, err := steam.GetPlayersForServer(host, steam.QueryTimeout)
 			if err != nil {
 				// server could just be empty
 				if err != steam.NoPlayersError {
@@ -134,116 +159,11 @@ func getPlayersForServers(serverlist []string) map[string][]*steam.PlayerInfo {
 		}(h)
 	}
 	wg.Wait()
-	retried := retryFailedPlayersReq(failed, steam.QueryRetryCount)
+	retried := steam.RetryFailedPlayersReq(failed, steam.QueryRetryCount)
 	for k, v := range retried {
 		m[k] = v
 	}
 	return m
-}
-
-func retryFailedRulesReq(failed []string, rtcount int) map[string]map[string]string {
-	m := make(map[string]map[string]string)
-	var f []string
-	var wg sync.WaitGroup
-	var mut sync.Mutex
-	for i := 0; i < rtcount; i++ {
-		if i == 0 {
-			f = failed
-		}
-		wg.Add(len(f))
-		for _, host := range f {
-			go func(h string) {
-				defer wg.Done()
-				r, err := steam.GetRulesWithLiveData(h, steam.QueryTimeout)
-				if err != nil {
-					if err != steam.NoRulesError {
-						fmt.Printf("Host: %s failed on retry-rules request.\n", h)
-						return
-					}
-				}
-				mut.Lock()
-				m[h] = r
-				f = removeFailedHost(f, h)
-				mut.Unlock()
-			}(host)
-		}
-		wg.Wait()
-	}
-	return m
-}
-
-func retryFailedPlayersReq(failed []string, rtcount int) map[string][]*steam.PlayerInfo {
-	m := make(map[string][]*steam.PlayerInfo)
-	var f []string
-	var wg sync.WaitGroup
-	var mut sync.Mutex
-	for i := 0; i < rtcount; i++ {
-		if i == 0 {
-			f = failed
-		}
-		wg.Add(len(f))
-		for _, host := range f {
-			go func(h string) {
-				defer wg.Done()
-				r, err := steam.GetPlayersWithLiveData(h, steam.QueryTimeout)
-				if err != nil {
-					if err != steam.NoPlayersError {
-						fmt.Printf("Host: %s failed on players-retry request.\n", h)
-						return
-					}
-				}
-				mut.Lock()
-				m[h] = r
-				f = removeFailedHost(f, h)
-				mut.Unlock()
-			}(host)
-		}
-		wg.Wait()
-	}
-	return m
-}
-
-func retryFailedInfoReq(failed []string, rtcount int) map[string]*steam.ServerInfo {
-	m := make(map[string]*steam.ServerInfo)
-	var f []string
-	var wg sync.WaitGroup
-	var mut sync.Mutex
-	for i := 0; i < rtcount; i++ {
-		if i == 0 {
-			f = failed
-		}
-		wg.Add(len(f))
-		for _, host := range f {
-			go func(h string) {
-				defer wg.Done()
-				r, err := steam.GetServerInfoWithLiveData(h, steam.QueryTimeout)
-				if err != nil {
-					if err != steam.NoPlayersError {
-						fmt.Printf("Host: %s failed on info-retry request.\n", h)
-						return
-					}
-				}
-				mut.Lock()
-				m[h] = r
-				f = removeFailedHost(f, h)
-				mut.Unlock()
-			}(host)
-		}
-		wg.Wait()
-	}
-	return m
-}
-
-func removeFailedHost(failed []string, host string) []string {
-	for i, v := range failed {
-		if v == host {
-			failed = append(failed[:i], failed[i+1:]...)
-			fmt.Printf("removeFailedHost: removed: %s\n", host)
-			fmt.Printf("removeFailedHost: new failed length: %d\n", len(failed))
-			break
-		}
-	}
-	return failed
 }
 
 func getRulesForServers(serverlist []string) map[string]map[string]string {
@@ -254,7 +174,7 @@ func getRulesForServers(serverlist []string) map[string]map[string]string {
 	for _, h := range serverlist {
 		wg.Add(1)
 		go func(host string) {
-			rules, err := steam.GetRulesWithLiveData(host, steam.QueryTimeout)
+			rules, err := steam.GetRulesForServer(host, steam.QueryTimeout)
 			if err != nil {
 				// server might have no rules
 				if err != steam.NoRulesError {
@@ -272,38 +192,20 @@ func getRulesForServers(serverlist []string) map[string]map[string]string {
 		}(h)
 	}
 	wg.Wait()
-	retried := retryFailedRulesReq(failed, steam.QueryRetryCount)
+	retried := steam.RetryFailedRulesReq(failed, steam.QueryRetryCount)
 	for k, v := range retried {
 		m[k] = v
 	}
 	return m
 }
 
-type serverList struct {
-	ServerCount   int       `json:"serverCount"`
-	Servers       []*server `json:"servers"`
-	FailedCount   int       `json:"failedCount"`
-	FailedServers []string  `json:"failedServers"`
-}
-
-type server struct {
-	Host string `json:"address"`
-	IP   string `json:"ip"`
-	Port int    `json:"port"`
-	// 'Info' by default was *steam.ServerInfo, but nil pointers are encoded as
-	// 'null' in JSON instead of an empty object, so use interface and handle appropriately
-	Info    interface{}         `json:"info"`
-	Players []*steam.PlayerInfo `json:"players"`
-	Rules   map[string]string   `json:"rules"`
-}
-
 func buildServerList(filter *filters.Filter, servers []string,
 	infomap map[string]*steam.ServerInfo, rulemap map[string]map[string]string,
-	playermap map[string][]*steam.PlayerInfo) *serverList {
+	playermap map[string][]*steam.PlayerInfo) (*serverList, error) {
 
 	// No point in ignoring all three requests
 	if filter.HasIgnoreInfo && filter.HasIgnorePlayers && filter.HasIgnoreRules {
-		return nil
+		return nil, fmt.Errorf("Cannot ignore all three A2S_ requests!")
 	}
 
 	sl := &serverList{
@@ -313,6 +215,10 @@ func buildServerList(filter *filters.Filter, servers []string,
 	var success bool
 	var useEmptyInfo bool
 	successcount := 0
+	cdb, err := db.OpenCountryDB()
+	if err != nil {
+		return nil, err
+	}
 	for _, host := range servers {
 		var i interface{}
 		info, iok := infomap[host]
@@ -372,6 +278,8 @@ func buildServerList(filter *filters.Filter, servers []string,
 				if err == nil {
 					srv.Port = p
 				}
+				loc, _ := db.GetCountryInfo(cdb, ip)
+				srv.CountryInfo = loc
 			}
 			sl.Servers = append(sl.Servers, srv)
 			successcount++
@@ -383,12 +291,12 @@ func buildServerList(filter *filters.Filter, servers []string,
 	sl.FailedCount = len(sl.FailedServers)
 
 	fmt.Printf("%d servers were successfully queried!\n", successcount)
-	return sl
+	return sl, nil
 }
 
 func retrieve(errors chan<- error, filter *filters.Filter) {
 	defer close(errors)
-	servers, err := steam.GetServerListWithLiveData(filter)
+	servers, err := steam.GetServersFromMaster(filter)
 	if err != nil {
 		errors <- fmt.Errorf("Master server error: %s\n", err)
 		return
@@ -418,7 +326,12 @@ func retrieve(errors chan<- error, filter *filters.Filter) {
 		info = getInfoForServers(servers)
 	}
 
-	serverlist := buildServerList(filter, servers, info, rules, players)
+	serverlist, err := buildServerList(filter, servers, info, rules, players)
+	if err != nil {
+		errors <- err
+		return
+	}
+
 	j, err := json.Marshal(serverlist)
 	if err != nil {
 		errors <- fmt.Errorf("Error marshaling json: %s", err)
