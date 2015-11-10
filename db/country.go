@@ -15,7 +15,7 @@ type Country struct {
 }
 
 func OpenCountryDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "countries.sqlite")
+	db, err := sql.Open("sqlite3", "ip2nation.sqlite")
 	if err != nil {
 		return nil, err
 	}
@@ -27,13 +27,11 @@ func GetCountryInfo(db *sql.DB, ip string) (*Country, error) {
 
 	i := net.ParseIP(ip).To4()
 	ipint := uint32(i[0])<<24 | uint32(i[1])<<16 | uint32(i[2])<<8 | uint32(i[3])
-	query := `SELECT country_location_data.continent_name,
-	country_location_data.country_iso_code,country_location_data.country_name FROM
-	ip_range_data INNER JOIN country_location_data ON ip_range_data.geoname_id =
-	country_location_data.geoname_id WHERE ip_range_data.range_begin <=?
-	AND ip_range_data.range_end >=? LIMIT 1`
+	query := `SELECT c.continent,c.iso_code_2,c.country FROM country_data c,
+	ip_data i WHERE i.ip <= ? AND c.code = i.country ORDER BY i.ip
+	DESC LIMIT 0,1`
 
-	rows, err := db.Query(query, ipint, ipint)
+	rows, err := db.Query(query, ipint)
 	if err != nil {
 		fmt.Printf("DB error detected in GetCountryInfo: %s\n", err)
 		return ctry, err

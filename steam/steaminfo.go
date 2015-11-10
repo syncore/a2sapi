@@ -146,7 +146,6 @@ func parseServerInfo(serverinfo []byte) (*ServerInfo, error) {
 			gameid = binary.LittleEndian.Uint64(serverinfo[:8])
 			serverinfo = serverinfo[len(serverinfo):]
 		}
-
 	}
 
 	// format a few ambiguous values
@@ -205,7 +204,7 @@ func RetryFailedInfoReq(failed []string, retrycount int) map[string]*ServerInfo 
 				r, err := GetInfoForServer(h, QueryTimeout)
 				if err != nil {
 					if err != NoPlayersError {
-						fmt.Printf("Host: %s failed on info-retry request.\n", h)
+						//fmt.Printf("Host: %s failed on info-retry request.\n", h)
 						return
 					}
 				}

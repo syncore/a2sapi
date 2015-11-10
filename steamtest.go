@@ -334,12 +334,12 @@ func retrieve(errors chan<- error, filter *filters.Filter) {
 
 	j, err := json.Marshal(serverlist)
 	if err != nil {
-		errors <- fmt.Errorf("Error marshaling json: %s", err)
+		errors <- fmt.Errorf("Error marshaling json: %s\n", err)
 		return
 	}
 	file, err := os.Create("servers.json")
 	if err != nil {
-		errors <- fmt.Errorf("Error creating json file: %s", err)
+		errors <- fmt.Errorf("Error creating json file: %s\n", err)
 		return
 	}
 	defer file.Close()
@@ -347,7 +347,7 @@ func retrieve(errors chan<- error, filter *filters.Filter) {
 	writer := bufio.NewWriter(file)
 	_, err = writer.Write(j)
 	if err != nil {
-		errors <- fmt.Errorf("Error writing json file: %s", err)
+		errors <- fmt.Errorf("Error writing json file: %s\n", err)
 		return
 	}
 	writer.Flush()

@@ -1,7 +1,5 @@
 package steam
 
-import "fmt"
-
 const (
 	headerStr       = "\xFF\xFF\xFF\xFF"
 	maxHosts        = 2500 // max# hosts to retrieve; cannot be larger than 6930 as per steam
@@ -55,8 +53,8 @@ func removeFailedHost(failed []string, host string) []string {
 	for i, v := range failed {
 		if v == host {
 			failed = append(failed[:i], failed[i+1:]...)
-			fmt.Printf("removeFailedHost: removed: %s\n", host)
-			fmt.Printf("removeFailedHost: new failed length: %d\n", len(failed))
+			//fmt.Printf("removeFailedHost: removed: %s\n", host)
+			//fmt.Printf("removeFailedHost: new failed length: %d\n", len(failed))
 			break
 		}
 	}
