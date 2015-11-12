@@ -41,7 +41,7 @@ const (
 )
 
 func main() {
-	//singleTest("85.229.197.211:25797", steam.QueryTimeout)
+	//singleServerTest("85.229.197.211:25797", steam.QueryTimeout)
 
 	errch := make(chan error, 1)
 	go retrieve(errch, filters.NewFilter(filters.SrAll,
@@ -50,13 +50,13 @@ func main() {
 
 	err := <-errch
 	if err == nil {
-		fmt.Print("Got no errors from retrieve goroutine!")
+		fmt.Print("All good! Got no errors from retrieve goroutine!\n")
 	} else {
-		fmt.Printf("Retrieve channel error: %s", err)
+		fmt.Printf("Retrieve channel error: %s\n", err)
 	}
 }
 
-func singleTest(host string, timeout int) {
+func singleServerTest(host string, timeout int) {
 	ii, err := steam.GetInfoForServer(host, timeout)
 	if err != nil && err != steam.NoInfoError {
 		fmt.Printf("%s", err)
@@ -219,6 +219,8 @@ func buildServerList(filter *filters.Filter, servers []string,
 	if err != nil {
 		return nil, err
 	}
+	defer cdb.Close()
+
 	for _, host := range servers {
 		var i interface{}
 		info, iok := infomap[host]
@@ -278,8 +280,9 @@ func buildServerList(filter *filters.Filter, servers []string,
 				if err == nil {
 					srv.Port = p
 				}
-				loc, _ := db.GetCountryInfo(cdb, ip)
-				srv.CountryInfo = loc
+				loc := make(chan *db.Country, 1)
+				go db.GetCountryInfo(loc, cdb, ip)
+				srv.CountryInfo = <-loc
 			}
 			sl.Servers = append(sl.Servers, srv)
 			successcount++
