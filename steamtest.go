@@ -12,15 +12,18 @@ import (
 	"steamtest/steam/filters"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type requestType int
 
 type serverList struct {
-	ServerCount   int       `json:"serverCount"`
-	Servers       []*server `json:"servers"`
-	FailedCount   int       `json:"failedCount"`
-	FailedServers []string  `json:"failedServers"`
+	RetrievedAt        string    `json:"retrievalDate"`
+	RetrievedTimeStamp int64     `json:"timestamp"`
+	ServerCount        int       `json:"serverCount"`
+	Servers            []*server `json:"servers"`
+	FailedCount        int       `json:"failedCount"`
+	FailedServers      []string  `json:"failedServers"`
 }
 type server struct {
 	Host        string      `json:"address"`
@@ -42,17 +45,44 @@ const (
 
 func main() {
 	//singleServerTest("85.229.197.211:25797", steam.QueryTimeout)
-
-	errch := make(chan error, 1)
-	go retrieve(errch, filters.NewFilter(filters.SrAll,
+	// filter := filters.NewFilter(filters.SrAll,
+	// 	[]filters.SrvFilter{filters.GameReflex},
+	// 	[]filters.IgnoredRequest{filters.IgnoreRulesRequest})
+	filter := filters.NewFilter(filters.SrAll,
 		[]filters.SrvFilter{filters.GameQuakeLive},
-		[]filters.IgnoredRequest{}))
+		[]filters.IgnoredRequest{})
+	delayBeforeFirstQuery := 7
+	stop := make(chan bool, 1)
+	go run(stop, filter, delayBeforeFirstQuery)
+	<-stop
+}
 
-	err := <-errch
-	if err == nil {
-		fmt.Print("All good! Got no errors from retrieve goroutine!\n")
-	} else {
-		fmt.Printf("Retrieve channel error: %s\n", err)
+func run(stop chan bool, filter *filters.Filter, initialDelay int) {
+	retrticker := time.NewTicker(time.Second * 50)
+	fmt.Printf("waiting %d seconds before attempting first retrieval...\n",
+		initialDelay)
+	firstretrieval := time.NewTimer(time.Duration(initialDelay) * time.Second)
+	<-firstretrieval.C
+
+	err := retrieve(filter)
+	if err != nil {
+		fmt.Printf("Server list retrieval error: %s\n", err)
+	}
+	for {
+		select {
+		case <-retrticker.C:
+			go func(*filters.Filter) {
+				fmt.Printf("%s: Starting server query\n",
+					time.Now().Format("Mon Jan _2 15:04:05 2006 EST"))
+				err := retrieve(filter)
+				if err != nil {
+					fmt.Printf("Server list retrieval error: %s\n", err)
+				}
+			}(filter)
+		case <-stop:
+			retrticker.Stop()
+			return
+		}
 	}
 }
 
@@ -211,15 +241,21 @@ func buildServerList(filter *filters.Filter, servers []string,
 	sl := &serverList{
 		Servers: make([]*server, 0),
 	}
-
+	var dbhosts []string
 	var success bool
 	var useEmptyInfo bool
 	successcount := 0
+
 	cdb, err := db.OpenCountryDB()
 	if err != nil {
 		return nil, err
 	}
 	defer cdb.Close()
+	sdb, err := db.OpenServerDB()
+	if err != nil {
+		return nil, err
+	}
+	//defer sdb.Close()
 
 	for _, host := range servers {
 		var i interface{}
@@ -272,7 +308,10 @@ func buildServerList(filter *filters.Filter, servers []string,
 			if err == nil {
 				srv.IP = ip
 				if info.ExtraData.Port != 0 {
-					srv.Host = fmt.Sprintf("%s:%d", ip, info.ExtraData.Port)
+					// use game port, not steam port
+					h := fmt.Sprintf("%s:%d", ip, info.ExtraData.Port)
+					dbhosts = append(dbhosts, h)
+					srv.Host = h
 				} else {
 					srv.Host = host
 				}
@@ -286,10 +325,15 @@ func buildServerList(filter *filters.Filter, servers []string,
 			}
 			sl.Servers = append(sl.Servers, srv)
 			successcount++
+
 		} else {
 			sl.FailedServers = append(sl.FailedServers, host)
 		}
 	}
+	// add IDs to server DB as a complete host list to avoid sqlite locking issues
+	go db.AddServersToDB(sdb, dbhosts)
+	sl.RetrievedAt = time.Now().Format("Mon Jan _2 15:04:05 2006 EST")
+	sl.RetrievedTimeStamp = time.Now().Unix()
 	sl.ServerCount = len(sl.Servers)
 	sl.FailedCount = len(sl.FailedServers)
 
@@ -297,17 +341,14 @@ func buildServerList(filter *filters.Filter, servers []string,
 	return sl, nil
 }
 
-func retrieve(errors chan<- error, filter *filters.Filter) {
-	defer close(errors)
+func retrieve(filter *filters.Filter) error {
 	servers, err := steam.GetServersFromMaster(filter)
 	if err != nil {
-		errors <- fmt.Errorf("Master server error: %s\n", err)
-		return
+		return fmt.Errorf("Master server error: %s\n", err)
 	}
 
 	if filter.HasIgnoreInfo && filter.HasIgnorePlayers && filter.HasIgnoreRules {
-		errors <- fmt.Errorf("Cannot ignore all three AS2 requests!")
-		return
+		return fmt.Errorf("Cannot ignore all three AS2 requests!")
 	}
 
 	var players map[string][]*steam.PlayerInfo
@@ -331,27 +372,24 @@ func retrieve(errors chan<- error, filter *filters.Filter) {
 
 	serverlist, err := buildServerList(filter, servers, info, rules, players)
 	if err != nil {
-		errors <- err
-		return
+		return err
 	}
 
 	j, err := json.Marshal(serverlist)
 	if err != nil {
-		errors <- fmt.Errorf("Error marshaling json: %s\n", err)
-		return
+		return fmt.Errorf("Error marshaling json: %s\n", err)
 	}
 	file, err := os.Create("servers.json")
 	if err != nil {
-		errors <- fmt.Errorf("Error creating json file: %s\n", err)
-		return
+		return fmt.Errorf("Error creating json file: %s\n", err)
 	}
 	defer file.Close()
 	file.Sync()
 	writer := bufio.NewWriter(file)
 	_, err = writer.Write(j)
 	if err != nil {
-		errors <- fmt.Errorf("Error writing json file: %s\n", err)
-		return
+		return fmt.Errorf("Error writing json file: %s\n", err)
 	}
 	writer.Flush()
+	return nil
 }
