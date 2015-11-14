@@ -84,6 +84,7 @@ func OpenServerDB() (*sql.DB, error) {
 }
 
 func AddServersToDB(db *sql.DB, hosts []string) {
+	var toInsert []string
 	for _, h := range hosts {
 		exists, err := serverExists(db, h)
 		if err != nil {
@@ -94,11 +95,61 @@ func AddServersToDB(db *sql.DB, hosts []string) {
 		if exists {
 			continue
 		}
-		_, err = db.Exec("INSERT INTO servers (host) VALUES ($1)", h)
-		if err != nil {
+		toInsert = append(toInsert, h)
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		// TODO: log the error to disk
+		fmt.Printf("AddServersToDB error creating tx: %s\n", err)
+		return
+	}
+	var txexecerr error
+	for _, i := range toInsert {
+		_, txexecerr = tx.Exec("INSERT INTO servers (host) VALUES ($1)", i)
+		if txexecerr != nil {
 			// TODO: log the error to disk
-			fmt.Printf("AddServersToDB exec error for host %s: %s\n", h, err)
-			continue
+			fmt.Printf("AddServersToDB exec error for host %s: %s\n", i, err)
+			break
 		}
 	}
+	if txexecerr != nil {
+		err = tx.Rollback()
+		if err != nil {
+			fmt.Printf("AddServersToDB error rolling back tx: %s\n", err)
+			return
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		// TODO: log the error to disk
+		fmt.Printf("AddServersToDB error committing tx: %s\n", err)
+		return
+	}
+}
+
+func GetServerIds(result chan map[string]int64, db *sql.DB, hosts []string) {
+	m := make(map[string]int64, len(hosts))
+	for _, host := range hosts {
+		rows, err := db.Query("SELECT server_id FROM servers WHERE host =? LIMIT 1",
+			host)
+		if err != nil {
+			// TODO: log this to disk
+			fmt.Printf("Error querying database to retrieve ID for host %s: %s\n",
+				host, err)
+			return
+		}
+
+		defer rows.Close()
+		var id int64
+		for rows.Next() {
+			if err := rows.Scan(&id); err != nil {
+				// TODO: log this to disk
+				fmt.Printf("Error querying database to retrieve ID for host %s: %s\n",
+					host, err)
+				return
+			}
+		}
+		m[host] = id
+	}
+	result <- m
 }

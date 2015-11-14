@@ -3,6 +3,7 @@ package main
 
 import (
 	"bufio"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -26,6 +27,7 @@ type serverList struct {
 	FailedServers      []string  `json:"failedServers"`
 }
 type server struct {
+	ID          int64       `json:"serverId"`
 	Host        string      `json:"address"`
 	IP          string      `json:"ip"`
 	Port        int         `json:"port"`
@@ -330,7 +332,7 @@ func buildServerList(filter *filters.Filter, servers []string,
 			sl.FailedServers = append(sl.FailedServers, host)
 		}
 	}
-	// add IDs to server DB as a complete host list to avoid sqlite locking issues
+
 	go db.AddServersToDB(sdb, dbhosts)
 	sl.RetrievedAt = time.Now().Format("Mon Jan _2 15:04:05 2006 EST")
 	sl.RetrievedTimeStamp = time.Now().Unix()
@@ -338,7 +340,25 @@ func buildServerList(filter *filters.Filter, servers []string,
 	sl.FailedCount = len(sl.FailedServers)
 
 	fmt.Printf("%d servers were successfully queried!\n", successcount)
+	sl = setServerIdForList(sdb, sl)
 	return sl, nil
+}
+
+func setServerIdForList(sdb *sql.DB, sl *serverList) *serverList {
+	var toSet []string
+	for _, s := range sl.Servers {
+		toSet = append(toSet, s.Host)
+	}
+	result := make(chan map[string]int64, 1)
+	go db.GetServerIds(result, sdb, toSet)
+	m := <-result
+
+	for _, s := range sl.Servers {
+		if m[s.Host] != 0 {
+			s.ID = m[s.Host]
+		}
+	}
+	return sl
 }
 
 func retrieve(filter *filters.Filter) error {
