@@ -1,5 +1,21 @@
 package util
 
+import "os"
+
+func FileExists(name string) bool {
+	if _, err := os.Stat(name); err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func DirExists(dir string) bool {
+	f, err := os.Stat(dir)
+	return err == nil && f.IsDir()
+}
+
 func ReadTillNul(b []byte) string {
 	var s []byte
 	for i, _ := range b {

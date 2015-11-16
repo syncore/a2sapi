@@ -27,6 +27,9 @@ _testmain.go
 #sublime text stuff
 *.sublime-workspace
 
-# webqlrcon specific
+# steamtest specific
 conf
 *.user
+servers.sqlite
+servers.json
+*.mmdb

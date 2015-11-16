@@ -5,30 +5,23 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"steamtest/util"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 const serverDbFile = "servers.sqlite"
 
-func fileExists(name string) bool {
-	if _, err := os.Stat(name); err != nil {
-		if os.IsNotExist(err) {
-			return false
-		}
-	}
-	return true
-}
-
 func createDb(dbfile string) error {
-	if fileExists(dbfile) {
+	if util.FileExists(dbfile) {
 		return nil
 	}
 
-	_, err := os.Create(dbfile)
+	f, err := os.Create(dbfile)
 	if err != nil {
 		return fmt.Errorf("Unable to create server DB: %s\n", err)
 	}
+	defer f.Close()
 	db, err := sql.Open("sqlite3", dbfile)
 	if err != nil {
 		return fmt.Errorf("Unable to open server DB file for table creation: %s\n", err)
@@ -72,8 +65,7 @@ func serverExists(db *sql.DB, host string) (bool, error) {
 }
 
 func OpenServerDB() (*sql.DB, error) {
-	err := createDb(serverDbFile)
-	if err != nil {
+	if err := createDb(serverDbFile); err != nil {
 		return nil, err
 	}
 	db, err := sql.Open("sqlite3", serverDbFile)
@@ -113,14 +105,12 @@ func AddServersToDB(db *sql.DB, hosts []string) {
 		}
 	}
 	if txexecerr != nil {
-		err = tx.Rollback()
-		if err != nil {
+		if err = tx.Rollback(); err != nil {
 			fmt.Printf("AddServersToDB error rolling back tx: %s\n", err)
 			return
 		}
 	}
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		// TODO: log the error to disk
 		fmt.Printf("AddServersToDB error committing tx: %s\n", err)
 		return
