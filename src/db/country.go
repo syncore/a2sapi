@@ -1,8 +1,10 @@
-// country.go - Country geolocation database lookup.
 package db
+
+// country.go - Country geolocation database lookup.
 
 import (
 	"net"
+	"steamtest/src/util"
 
 	"github.com/oschwald/maxminddb-golang"
 )
@@ -41,10 +43,10 @@ func getDefaultCountryData() *Country {
 }
 
 func OpenCountryDB() (*maxminddb.Reader, error) {
-	// Note: the caller of this function needs to handle the db.Close()
+	// Note: the caller of this function needs to handle db.Close()
 	db, err := maxminddb.Open(mmDbFile)
 	if err != nil {
-		return nil, err
+		return nil, util.LogAppError(err.Error())
 	}
 	return db, nil
 }

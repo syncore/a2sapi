@@ -1,11 +1,13 @@
-// steamplayer.go - testing steam server query for players (A2S_PLAYER)
 package steam
+
+// steamplayer.go - testing steam server query for players (A2S_PLAYER)
 
 import (
 	"bytes"
 	"encoding/binary"
 	"math"
 	"net"
+	"steamtest/src/util"
 	"sync"
 	"time"
 )
@@ -20,7 +22,9 @@ type PlayerInfo struct {
 func getPlayerInfo(host string, timeout int) ([]byte, error) {
 	conn, err := net.DialTimeout("udp", host, time.Duration(timeout)*time.Second)
 	if err != nil {
-		return nil, HostConnectionError(err.Error())
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrHostConnection(err.Error()))
+		return nil, ErrHostConnection(err.Error())
 	}
 
 	defer conn.Close()
@@ -28,16 +32,22 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 
 	_, err = conn.Write(playerChallengeReq)
 	if err != nil {
-		return nil, DataTransmitError(err.Error())
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrDataTransmit(err.Error()))
+		return nil, ErrDataTransmit(err.Error())
 	}
 
 	challengeNumResp := make([]byte, maxPacketSize)
 	_, err = conn.Read(challengeNumResp)
 	if err != nil {
-		return nil, DataTransmitError(err.Error())
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrDataTransmit(err.Error()))
+		return nil, ErrDataTransmit(err.Error())
 	}
 	if !bytes.HasPrefix(challengeNumResp, expectedPlayerRespHeader) {
-		return nil, ChallengeResponseError
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrChallengeResponse)
+		return nil, ErrChallengeResponse
 	}
 	challengeNum := bytes.TrimLeft(challengeNumResp, headerStr)
 	challengeNum = challengeNum[1:5]
@@ -49,12 +59,16 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 
 	_, err = conn.Write(request)
 	if err != nil {
-		return nil, DataTransmitError(err.Error())
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrDataTransmit(err.Error()))
+		return nil, ErrDataTransmit(err.Error())
 	}
 	var buf [maxPacketSize]byte
 	numread, err := conn.Read(buf[:maxPacketSize])
 	if err != nil {
-		return nil, DataTransmitError(err.Error())
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrDataTransmit(err.Error()))
+		return nil, ErrDataTransmit(err.Error())
 	}
 	pi := make([]byte, numread)
 	copy(pi, buf[:numread])
@@ -64,13 +78,15 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 
 func parsePlayerInfo(unparsed []byte) ([]*PlayerInfo, error) {
 	if !bytes.HasPrefix(unparsed, expectedPlayerChunkHeader) {
-		return nil, PacketHeaderError
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrPacketHeader)
+		return nil, ErrPacketHeader
 	}
 	unparsed = bytes.TrimLeft(unparsed, headerStr)
 	numplayers := int(unparsed[1])
 
 	if numplayers == 0 {
-		return nil, NoPlayersError
+		return nil, ErrNoPlayers
 	}
 
 	players := []*PlayerInfo{}
@@ -127,8 +143,7 @@ func RetryFailedPlayersReq(failed []string,
 				defer wg.Done()
 				r, err := GetPlayersForServer(h, QueryTimeout)
 				if err != nil {
-					if err != NoPlayersError {
-						//fmt.Printf("Host: %s failed on players-retry request.\n", h)
+					if err != ErrNoPlayers {
 						return
 					}
 				}
@@ -144,6 +159,9 @@ func RetryFailedPlayersReq(failed []string,
 }
 
 func GetPlayersForServer(host string, timeout int) ([]*PlayerInfo, error) {
+	// Caller will log. Return err instead of wrapped util.LogAppError so as not
+	// to interfere with custom error types that need to be analyzed when
+	// determining if retry needs to be done.
 	pi, err := getPlayerInfo(host, timeout)
 	if err != nil {
 		return nil, err

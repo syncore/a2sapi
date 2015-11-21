@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"steamtest/db"
-	"steamtest/steam/filters"
+	"steamtest/src/db"
+	"steamtest/src/steam/filters"
+	"steamtest/src/util"
 	"strconv"
 	"sync"
 	"time"
@@ -45,25 +46,20 @@ const (
 
 func Run(stop chan bool, filter *filters.Filter, initialDelay int) {
 	retrticker := time.NewTicker(time.Second * 50)
-	fmt.Printf("waiting %d seconds before attempting first retrieval...\n",
-		initialDelay)
+	util.LogAppInfo(util.Spf(
+		"waiting %d seconds before attempting first retrieval...", initialDelay))
+
 	firstretrieval := time.NewTimer(time.Duration(initialDelay) * time.Second)
 	<-firstretrieval.C
+	_ = retrieve(filter)
 
-	err := retrieve(filter)
-	if err != nil {
-		fmt.Printf("Server list retrieval error: %s\n", err)
-	}
 	for {
 		select {
 		case <-retrticker.C:
 			go func(*filters.Filter) {
-				fmt.Printf("%s: Starting server query\n",
-					time.Now().Format("Mon Jan _2 15:04:05 2006 EST"))
-				err := retrieve(filter)
-				if err != nil {
-					fmt.Printf("Server list retrieval error: %s\n", err)
-				}
+				util.LogAppInfo(util.Spf("%s: Starting server query", time.Now().Format(
+					"Mon Jan _2 15:04:05 2006 EST")))
+				_ = retrieve(filter)
 			}(filter)
 		case <-stop:
 			retrticker.Stop()
@@ -74,10 +70,11 @@ func Run(stop chan bool, filter *filters.Filter, initialDelay int) {
 
 func singleServerTest(host string, timeout int) {
 	ii, err := GetInfoForServer(host, timeout)
-	if err != nil && err != NoInfoError {
-		fmt.Printf("%s", err)
-	} else if err == NoInfoError {
-		fmt.Print("no info found error detected\n")
+	if err != nil && err != ErrNoInfo {
+		util.LogAppError(util.Spf("Server list retrieval error for host %s: %s", host,
+			err))
+	} else if err == ErrNoInfo {
+		util.LogAppError(util.Spf("Host %s has no A2S_INFO available.", host))
 	} else {
 		fmt.Printf(`protocol:%d, name:%s, mapname:%s, folder:%s, game:%s, id:%d,
 	 players:%d, maxplayers:%d, bots:%d, servertype:%s, environment:%s,
@@ -94,10 +91,9 @@ func singleServerTest(host string, timeout int) {
 	}
 
 	pi, err := GetPlayersForServer(host, timeout)
-	if err != nil && err != NoPlayersError {
-		fmt.Printf("%s", err)
-	} else if err == NoPlayersError {
-		fmt.Print("no players found error detected\n")
+	if err != nil && err != ErrNoPlayers {
+		util.LogAppError(util.Spf("Server list retrieval error for host %s: %s", host,
+			err))
 	} else {
 		for _, p := range pi {
 			fmt.Printf("Name: %s, Score: %d, Connected for: %s\n",
@@ -106,10 +102,11 @@ func singleServerTest(host string, timeout int) {
 	}
 
 	ri, err := GetRulesForServer(host, timeout)
-	if err != nil && err != NoRulesError {
-		fmt.Printf("%s", err)
-	} else if err == NoRulesError {
-		fmt.Print("no rules found error detected\n")
+	if err != nil && err != ErrNoRules {
+		util.LogAppError(util.Spf("Server list retrieval error for host %s: %s", host,
+			err))
+	} else if err == ErrNoRules {
+		util.LogAppError(util.Spf("Host %s has no A2S_RULES available.", host))
 	} else {
 		for _, r := range ri {
 			fmt.Printf("%s\n", r)
@@ -160,7 +157,7 @@ func getPlayersForServers(serverlist []string) map[string][]*PlayerInfo {
 			players, err := GetPlayersForServer(host, QueryTimeout)
 			if err != nil {
 				// server could just be empty
-				if err != NoPlayersError {
+				if err != ErrNoPlayers {
 					mut.Lock()
 					failed = append(failed, host)
 					mut.Unlock()
@@ -193,7 +190,7 @@ func getRulesForServers(serverlist []string) map[string]map[string]string {
 			rules, err := GetRulesForServer(host, QueryTimeout)
 			if err != nil {
 				// server might have no rules
-				if err != NoRulesError {
+				if err != ErrNoRules {
 					mut.Lock()
 					failed = append(failed, host)
 					mut.Unlock()
@@ -218,10 +215,9 @@ func getRulesForServers(serverlist []string) map[string]map[string]string {
 func buildServerList(filter *filters.Filter, servers []string,
 	infomap map[string]*ServerInfo, rulemap map[string]map[string]string,
 	playermap map[string][]*PlayerInfo) (*serverList, error) {
-
 	// No point in ignoring all three requests
 	if filter.HasIgnoreInfo && filter.HasIgnorePlayers && filter.HasIgnoreRules {
-		return nil, fmt.Errorf("Cannot ignore all three A2S_ requests!")
+		return nil, util.LogAppError("Cannot ignore all three A2S_ requests!")
 	}
 
 	sl := &serverList{
@@ -234,12 +230,12 @@ func buildServerList(filter *filters.Filter, servers []string,
 
 	cdb, err := db.OpenCountryDB()
 	if err != nil {
-		return nil, err
+		return nil, util.LogAppError(err.Error())
 	}
 	defer cdb.Close()
 	sdb, err := db.OpenServerDB()
 	if err != nil {
-		return nil, err
+		return nil, util.LogAppError(err.Error())
 	}
 	//defer sdb.Close()
 
@@ -323,12 +319,12 @@ func buildServerList(filter *filters.Filter, servers []string,
 	sl.ServerCount = len(sl.Servers)
 	sl.FailedCount = len(sl.FailedServers)
 
-	fmt.Printf("%d servers were successfully queried!\n", successcount)
-	sl = setServerIdForList(sdb, sl)
+	util.LogAppInfo(util.Spf("%d servers were successfully queried!", successcount))
+	sl = setServerIDForList(sdb, sl)
 	return sl, nil
 }
 
-func setServerIdForList(sdb *sql.DB, sl *serverList) *serverList {
+func setServerIDForList(sdb *sql.DB, sl *serverList) *serverList {
 	var toSet []string
 	for _, s := range sl.Servers {
 		toSet = append(toSet, s.Host)
@@ -346,13 +342,13 @@ func setServerIdForList(sdb *sql.DB, sl *serverList) *serverList {
 }
 
 func retrieve(filter *filters.Filter) error {
-	servers, err := GetServersFromMaster(filter)
+	mq, err := NewMasterQuery(filter)
 	if err != nil {
-		return fmt.Errorf("Master server error: %s\n", err)
+		return util.LogAppError(util.Spf("Master server error: %s", err))
 	}
 
 	if filter.HasIgnoreInfo && filter.HasIgnorePlayers && filter.HasIgnoreRules {
-		return fmt.Errorf("Cannot ignore all three AS2 requests!")
+		return util.LogAppError("Cannot ignore all three AS2 requests!")
 	}
 
 	var players map[string][]*PlayerInfo
@@ -365,34 +361,34 @@ func retrieve(filter *filters.Filter) error {
 
 	// Some servers (i.e. new beta games) don't have all 3 of AS2_RULES/PLAYER/INFO
 	if !filter.HasIgnorePlayers {
-		players = getPlayersForServers(servers)
+		players = getPlayersForServers(mq.Servers)
 	}
 	if !filter.HasIgnoreRules {
-		rules = getRulesForServers(servers)
+		rules = getRulesForServers(mq.Servers)
 	}
 	if !filter.HasIgnoreInfo {
-		info = getInfoForServers(servers)
+		info = getInfoForServers(mq.Servers)
 	}
 
-	serverlist, err := buildServerList(filter, servers, info, rules, players)
+	serverlist, err := buildServerList(filter, mq.Servers, info, rules, players)
 	if err != nil {
-		return err
+		return util.LogAppError(err.Error())
 	}
 
 	j, err := json.Marshal(serverlist)
 	if err != nil {
-		return fmt.Errorf("Error marshaling json: %s\n", err)
+		return util.LogAppError(util.Spf("Error marshaling json: %s", err))
 	}
 	file, err := os.Create("servers.json")
 	if err != nil {
-		return fmt.Errorf("Error creating json file: %s\n", err)
+		return util.LogAppError(util.Spf("Error creating json file: %s", err))
 	}
 	defer file.Close()
 	file.Sync()
 	writer := bufio.NewWriter(file)
 	_, err = writer.Write(j)
 	if err != nil {
-		return fmt.Errorf("Error writing json file: %s\n", err)
+		return util.LogAppError(util.Spf("Error writing json file: %s", err))
 	}
 	writer.Flush()
 	return nil

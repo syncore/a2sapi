@@ -1,11 +1,12 @@
-// steamrules.go - testing steam server query for server information (A2S_RULES)
-
 package steam
+
+// steamrules.go - testing steam server query for server information (A2S_RULES)
 
 import (
 	"bytes"
 	"encoding/binary"
 	"net"
+	"steamtest/src/util"
 	"strings"
 	"sync"
 	"time"
@@ -14,7 +15,9 @@ import (
 func getRulesInfo(host string, timeout int) ([]byte, error) {
 	conn, err := net.DialTimeout("udp", host, time.Duration(timeout)*time.Second)
 	if err != nil {
-		return nil, HostConnectionError(err.Error())
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrHostConnection(err.Error()))
+		return nil, ErrHostConnection(err.Error())
 	}
 
 	conn.SetDeadline(time.Now().Add(time.Duration(timeout-1) * time.Second))
@@ -22,16 +25,22 @@ func getRulesInfo(host string, timeout int) ([]byte, error) {
 
 	_, err = conn.Write(rulesChallengeReq)
 	if err != nil {
-		return nil, DataTransmitError(err.Error())
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrDataTransmit(err.Error()))
+		return nil, ErrDataTransmit(err.Error())
 	}
 
 	challengeNumResp := make([]byte, maxPacketSize)
 	_, err = conn.Read(challengeNumResp)
 	if err != nil {
-		return nil, DataTransmitError(err.Error())
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrDataTransmit(err.Error()))
+		return nil, ErrDataTransmit(err.Error())
 	}
 	if !bytes.HasPrefix(challengeNumResp, expectedRulesRespHeader) {
-		return nil, ChallengeResponseError
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrChallengeResponse)
+		return nil, ErrChallengeResponse
 	}
 
 	challengeNum := bytes.TrimLeft(challengeNumResp, headerStr)
@@ -44,13 +53,17 @@ func getRulesInfo(host string, timeout int) ([]byte, error) {
 
 	_, err = conn.Write(request)
 	if err != nil {
-		return nil, DataTransmitError(err.Error())
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrDataTransmit(err.Error()))
+		return nil, ErrDataTransmit(err.Error())
 	}
 
 	var buf [maxPacketSize]byte
 	numread, err := conn.Read(buf[:maxPacketSize])
 	if err != nil {
-		return nil, DataTransmitError(err.Error())
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrDataTransmit(err.Error()))
+		return nil, ErrDataTransmit(err.Error())
 	}
 	rulesInfo := make([]byte, numread)
 	copy(rulesInfo, buf[:numread])
@@ -61,14 +74,16 @@ func getRulesInfo(host string, timeout int) ([]byte, error) {
 func parseRuleInfo(ruleinfo []byte) (map[string]string, error) {
 	// TODO: handle multi-packetted responses for games that use them
 	if !bytes.HasPrefix(ruleinfo, expectedRuleChunkHeader) {
-		return nil, PacketHeaderError
+		// TODO: simplify this log + return into just a return
+		util.LogAppError(ErrPacketHeader)
+		return nil, ErrPacketHeader
 	}
 
 	ruleinfo = bytes.TrimLeft(ruleinfo, headerStr)
 	numrules := int(binary.LittleEndian.Uint16(ruleinfo[1:3]))
 
 	if numrules == 0 {
-		return nil, NoRulesError
+		return nil, ErrNoRules
 	}
 
 	b := bytes.Split(ruleinfo[3:], []byte{0x00})
@@ -103,8 +118,7 @@ func RetryFailedRulesReq(failed []string,
 				defer wg.Done()
 				r, err := GetRulesForServer(h, QueryTimeout)
 				if err != nil {
-					if err != NoRulesError {
-						//fmt.Printf("Host: %s failed on retry-rules request.\n", h)
+					if err != ErrNoRules {
 						return
 					}
 				}
@@ -120,6 +134,9 @@ func RetryFailedRulesReq(failed []string,
 }
 
 func GetRulesForServer(host string, timeout int) (map[string]string, error) {
+	// Caller will log. Return err instead of wrapped util.LogAppError so as not
+	// to interfere with custom error types that need to be analyzed when
+	// determining if retry needs to be done.
 	ri, err := getRulesInfo(host, timeout)
 	if err != nil {
 		return nil, err

@@ -1,12 +1,15 @@
 package steam
 
+import "steamtest/src/util"
+
 const (
 	headerStr       = "\xFF\xFF\xFF\xFF"
-	maxHosts        = 2500 // max# hosts to retrieve; cannot be larger than 6930 as per steam
 	maxPacketSize   = 1400 // specified by steam protocol
 	QueryTimeout    = 3    // sec; connect, read & write timeout. Should be > 1
 	QueryRetryCount = 3    // # of times to re-request rules, players, info on failure
 )
+
+var cfg *util.Config
 
 type IgnoredRequest int
 

@@ -1,5 +1,6 @@
-// filters.go - steam master server filters
 package filters
+
+// filters.go - steam master server filters
 
 import "fmt"
 
@@ -26,8 +27,8 @@ const (
 	IgnoreInfoRequest
 )
 
+// Regions and filters
 var (
-	// Regions
 	SrUsEastCoast  SrvRegion = []byte{0x00}
 	SrUsWestCoast  SrvRegion = []byte{0x01}
 	SrSouthAmerica SrvRegion = []byte{0x02}
@@ -62,7 +63,7 @@ var (
 
 	// ----------------Filters the take variable input ----------------
 	// \appid\[appid] - Servers that are running game [appid]
-	AppIdFilter = func(val string) SrvFilter {
+	AppIDFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\appid\\%s", val))
 	}
 	// \gameaddr\[ip]Return only servers on the specified IP address
@@ -105,7 +106,7 @@ var (
 	}
 	// \napp\[appid] - Servers that are NOT running game [appid]
 	// (This was introduced to block Left 4 Dead games from the Steam Server Browser
-	NAppIdFilter = func(val string) SrvFilter {
+	NAppIDFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\nappid\\%s", val))
 	}
 	// \map\[map] - Servers running the specified map (ex. cs_italy)
@@ -121,10 +122,10 @@ var (
 	// --------------------- A few games ---------------------
 	// Additional "Source Engine Games" can be added from:
 	// https://developer.valvesoftware.com/wiki/Steam_Application_IDs
-	GameCsGo      = AppIdFilter("730")
-	GameQuakeLive = AppIdFilter("282440")
-	GameReflex    = AppIdFilter("328070")
-	GameTF2       = AppIdFilter("440")
+	GameCsGo      = AppIDFilter("730")
+	GameQuakeLive = AppIDFilter("282440")
+	GameReflex    = AppIDFilter("328070")
+	GameTF2       = AppIDFilter("440")
 )
 
 func NewFilter(region SrvRegion, filters []SrvFilter,

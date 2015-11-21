@@ -1,13 +1,19 @@
-// steammaster.go - testing steam master server query
 package steam
+
+// steammaster.go - testing steam master server query
 
 import (
 	"bytes"
 	"fmt"
 	"net"
-	"steamtest/steam/filters"
+	"steamtest/src/steam/filters"
+	"steamtest/src/util"
 	"time"
 )
+
+type MasterQuery struct {
+	Servers []string
+}
 
 const masterServerHost = "hl2master.steampowered.com:27011"
 
@@ -24,7 +30,10 @@ func getServers(filter *filters.Filter) ([]string, error) {
 	c, err = net.DialTimeout("udp", masterServerHost,
 		time.Duration(QueryTimeout)*time.Second)
 	if err != nil {
-		return nil, HostConnectionError(err.Error())
+		// TODO: can this be simplified as:
+		// return nil, util.LogAppError(ErrHostConnection(err.Error()))
+		util.LogAppError(ErrHostConnection(err.Error()))
+		return nil, ErrHostConnection(err.Error())
 	}
 
 	defer c.Close()
@@ -38,13 +47,15 @@ func getServers(filter *filters.Filter) ([]string, error) {
 		// get hosts:ports beginning after header (0xFF, 0xFF, 0xFF, 0xFF, 0x66, 0x0A)
 		ips, total, err := extractHosts(s[6:])
 		if err != nil {
-			return nil, fmt.Errorf("Error when extracting addresses: %s", err)
+			return nil, util.LogAppError(util.Spf("Error when extracting addresses: %s",
+				err))
 		}
 		retrieved = retrieved + total
-		fmt.Printf("%d hosts retrieved so far from master.\n", retrieved)
+		util.LogAppInfo(util.Spf("%d hosts retrieved so far from master.", retrieved))
 		for _, ip := range ips {
-			if count >= maxHosts {
-				fmt.Printf("Max host limit of %d reached!\n", maxHosts)
+			if count >= cfg.MaximumHostsToReceive {
+				util.LogAppInfo(util.Spf("Max host limit of %d reached!",
+					cfg.MaximumHostsToReceive))
 				complete = true
 				break
 			}
@@ -53,12 +64,11 @@ func getServers(filter *filters.Filter) ([]string, error) {
 		}
 
 		if (serverlist[len(serverlist)-1]) != "0.0.0.0:0" {
-			fmt.Printf("More ips need to be retrieved. Last ip was: %s\n",
-				serverlist[len(serverlist)-1])
+			util.LogAppInfo(util.Spf("More hosts need to be retrieved. Last IP was: %s",
+				serverlist[len(serverlist)-1]))
 			addr = serverlist[len(serverlist)-1]
-			fmt.Printf("Seeding next scan with host: %s\n", addr)
 		} else {
-			fmt.Println("Ip retrieval complete!")
+			util.LogAppInfo("IP retrieval complete!")
 			complete = true
 			break
 		}
@@ -76,19 +86,18 @@ func extractHosts(hbs []byte) ([]string, int, error) {
 	total := 0
 	for i := 0; i < len(hbs); i++ {
 		if len(sl) > 0 && sl[len(sl)-1] == "0.0.0.0:0" {
-			fmt.Printf("0.0.0.0:0 detected. Got %d total hosts.\n", total-1)
+			util.LogAppInfo(util.Spf("0.0.0.0:0 detected. Got %d total hosts.", total-1))
 			break
 		}
 		if pos+6 > len(hbs) {
-			fmt.Printf("Got %d total hosts.\n", total)
+			util.LogAppInfo(util.Spf("Got %d total hosts.", total))
 			break
 		}
 
 		host, err := parseIP(hbs[pos : pos+6])
 		if err != nil {
-			fmt.Printf("Error parsing host: %s\n", err)
+			util.LogAppError(util.Spf("Error parsing host: %s", err))
 		} else {
-			//fmt.Printf("%s\n", host)
 			sl = append(sl, host)
 			total++
 		}
@@ -100,7 +109,8 @@ func extractHosts(hbs []byte) ([]string, int, error) {
 
 func parseIP(k []byte) (string, error) {
 	if len(k) != 6 {
-		return "", fmt.Errorf("Invalid ip byte size. Got: %d, expected 6\n", len(k))
+		return "", util.LogAppError(
+			util.Spf("Invalid IP byte size. Got: %d, expected 6", len(k)))
 	}
 	port := int16(k[5]) | int16(k[4])<<8
 	return fmt.Sprintf("%d.%d.%d.%d:%d", int(k[0]), int(k[1]), int(k[2]),
@@ -111,7 +121,6 @@ func queryMasterServer(conn net.Conn, startaddress string,
 	filter *filters.Filter) ([]byte, error) {
 	// Note: the connection is closed by the caller, do not close here, otherwise
 	// Steam will continue to send the first batch of IPs and won't progress to the next batch
-
 	startaddress = fmt.Sprintf("%s\x00", startaddress)
 	addr := []byte(startaddress)
 	request := []byte{0x31}
@@ -132,32 +141,46 @@ func queryMasterServer(conn net.Conn, startaddress string,
 
 	_, err := conn.Write(request)
 	if err != nil {
-		return nil, DataTransmitError(err.Error())
+		// TODO: can this be simplified as:
+		//return nil, util.LogAppError(ErrDataTransmit(err.Error()))
+		util.LogAppError(ErrDataTransmit(err.Error()))
+		return nil, ErrDataTransmit(err.Error())
 	}
 
 	var buf [maxPacketSize]byte
 	numread, err := conn.Read(buf[:maxPacketSize])
 	if err != nil {
-		return nil, DataTransmitError(err.Error())
+		// TODO: can this be simplified as:
+		//return nil, util.LogAppError(ErrDataTransmit(err.Error()))
+		util.LogAppError(ErrDataTransmit(err.Error()))
+		return nil, ErrDataTransmit(err.Error())
 	}
 
 	masterResponse := make([]byte, numread)
 	copy(masterResponse, buf[:numread])
 
 	if !bytes.HasPrefix(masterResponse, expectedMasterRespHeader) {
-		return nil, PacketHeaderError
+		// TODO: can this be simplified as:
+		//return nil, util.LogAppError(ErrPacketHeader)
+		util.LogAppError(ErrPacketHeader)
+		return nil, ErrPacketHeader
 	}
 
 	return masterResponse, nil
 }
 
-func GetServersFromMaster(filter *filters.Filter) ([]string, error) {
-	sl, err := getServers(filter)
+func NewMasterQuery(filter *filters.Filter) (*MasterQuery, error) {
+	var err error
+	cfg, err = util.ReadConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Printf("*** Retrieved %d servers.\n", len(sl))
+	sl, err := getServers(filter)
+	if err != nil {
+		return nil, err
+	}
+	util.LogAppInfo(util.Spf("*** Retrieved %d servers.", len(sl)))
 
-	return sl, nil
+	return &MasterQuery{Servers: sl}, nil
 }

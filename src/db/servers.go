@@ -1,12 +1,12 @@
-// servers.go - server identification database
 package db
+
+// servers.go - server identification database
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
-	"steamtest/util"
-
+	"steamtest/src/util"
+	// blank import for sqlite3 driver
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -19,12 +19,13 @@ func createDb(dbfile string) error {
 
 	f, err := os.Create(dbfile)
 	if err != nil {
-		return fmt.Errorf("Unable to create server DB: %s\n", err)
+		return util.LogAppError(util.Spf("Unable to create server DB: %s", err))
 	}
 	defer f.Close()
 	db, err := sql.Open("sqlite3", dbfile)
 	if err != nil {
-		return fmt.Errorf("Unable to open server DB file for table creation: %s\n", err)
+		return util.LogAppError(
+			util.Spf("Unable to open server DB file for table creation: %s", err))
 	}
 	defer db.Close()
 	q := `CREATE TABLE servers (
@@ -34,7 +35,8 @@ func createDb(dbfile string) error {
 	)`
 	_, err = db.Exec(q)
 	if err != nil {
-		return fmt.Errorf("Unable to create servers table in servers DB: %s", err)
+		return util.LogAppError(
+			util.Spf("Unable to create servers table in servers DB: %s", err))
 	}
 	return nil
 }
@@ -43,34 +45,31 @@ func serverExists(db *sql.DB, host string) (bool, error) {
 	rows, err := db.Query("SELECT host FROM servers WHERE host =? LIMIT 1",
 		host)
 	if err != nil {
-		// TODO: log this to disk
-		fmt.Printf("Error querying database for host %s: %s\n", host, err)
-		return false, err
+		return false, util.LogAppError(
+			util.Spf("Error querying database for host %s: %s", host, err))
 	}
 
 	defer rows.Close()
 	var h string
 	for rows.Next() {
 		if err := rows.Scan(&h); err != nil {
-			// TODO: log this to disk
-			fmt.Printf("Error querying database for host %s: %s\n", host, err)
-			return false, err
+			return false, util.LogAppError(
+				util.Spf("Error querying database for host %s: %s", host, err))
 		}
 	}
 	if h != "" {
 		return true, nil
-	} else {
-		return false, nil
 	}
+	return false, nil
 }
 
 func OpenServerDB() (*sql.DB, error) {
 	if err := createDb(serverDbFile); err != nil {
-		return nil, err
+		return nil, util.LogAppError(err.Error())
 	}
 	db, err := sql.Open("sqlite3", serverDbFile)
 	if err != nil {
-		return nil, err
+		return nil, util.LogAppError(err.Error())
 	}
 	return db, nil
 }
@@ -80,8 +79,6 @@ func AddServersToDB(db *sql.DB, hosts []string) {
 	for _, h := range hosts {
 		exists, err := serverExists(db, h)
 		if err != nil {
-			// TODO: log the error to disk
-			fmt.Printf("AddServersToDB exists error: %s\n", err)
 			continue
 		}
 		if exists {
@@ -91,28 +88,26 @@ func AddServersToDB(db *sql.DB, hosts []string) {
 	}
 	tx, err := db.Begin()
 	if err != nil {
-		// TODO: log the error to disk
-		fmt.Printf("AddServersToDB error creating tx: %s\n", err)
+		util.LogAppError(util.Spf("AddServersToDB error creating tx: %s", err))
 		return
 	}
 	var txexecerr error
 	for _, i := range toInsert {
 		_, txexecerr = tx.Exec("INSERT INTO servers (host) VALUES ($1)", i)
 		if txexecerr != nil {
-			// TODO: log the error to disk
-			fmt.Printf("AddServersToDB exec error for host %s: %s\n", i, err)
+			util.LogAppError(util.Spf("AddServersToDB exec error for host %s: %s",
+				i, err))
 			break
 		}
 	}
 	if txexecerr != nil {
 		if err = tx.Rollback(); err != nil {
-			fmt.Printf("AddServersToDB error rolling back tx: %s\n", err)
+			util.LogAppError(util.Spf("AddServersToDB error rolling back tx: %s", err))
 			return
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		// TODO: log the error to disk
-		fmt.Printf("AddServersToDB error committing tx: %s\n", err)
+		util.LogAppError(util.Spf("AddServersToDB error committing tx: %s", err))
 		return
 	}
 }
@@ -123,9 +118,8 @@ func GetServerIds(result chan map[string]int64, db *sql.DB, hosts []string) {
 		rows, err := db.Query("SELECT server_id FROM servers WHERE host =? LIMIT 1",
 			host)
 		if err != nil {
-			// TODO: log this to disk
-			fmt.Printf("Error querying database to retrieve ID for host %s: %s\n",
-				host, err)
+			util.LogAppError(util.Spf(
+				"Error querying database to retrieve ID for host %s: %s", host, err))
 			return
 		}
 
@@ -133,9 +127,8 @@ func GetServerIds(result chan map[string]int64, db *sql.DB, hosts []string) {
 		var id int64
 		for rows.Next() {
 			if err := rows.Scan(&id); err != nil {
-				// TODO: log this to disk
-				fmt.Printf("Error querying database to retrieve ID for host %s: %s\n",
-					host, err)
+				util.LogAppError(util.Spf(
+					"Error querying database to retrieve ID for host %s: %s", host, err))
 				return
 			}
 		}

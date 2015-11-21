@@ -32,4 +32,7 @@ conf
 *.user
 servers.sqlite
 servers.json
+steamtest.exe
+steamtest
+logs
 *.mmdb

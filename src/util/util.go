@@ -1,5 +1,7 @@
 package util
 
+// util.go - Various convenience and utility functions
+
 import "os"
 
 func FileExists(name string) bool {
@@ -18,7 +20,7 @@ func DirExists(dir string) bool {
 
 func ReadTillNul(b []byte) string {
 	var s []byte
-	for i, _ := range b {
+	for i := range b {
 		if b[i] != '\x00' {
 			s = append(s, b[i])
 		} else {
