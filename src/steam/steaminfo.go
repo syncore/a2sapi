@@ -104,7 +104,7 @@ func parseServerInfo(serverinfo []byte) (*ServerInfo, error) {
 	id := int16(binary.LittleEndian.Uint16(serverinfo[:2]))
 	serverinfo = serverinfo[2:]
 	if id >= 2400 && id <= 2412 {
-		return nil, util.LogAppError("The Ship servers are not supported")
+		return nil, util.LogAppErrorf("The Ship servers are not supported")
 	}
 	players := int16(serverinfo[0])
 	serverinfo = serverinfo[1:]

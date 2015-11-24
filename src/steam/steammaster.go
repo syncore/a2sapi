@@ -47,15 +47,14 @@ func getServers(filter *filters.Filter) ([]string, error) {
 		// get hosts:ports beginning after header (0xFF, 0xFF, 0xFF, 0xFF, 0x66, 0x0A)
 		ips, total, err := extractHosts(s[6:])
 		if err != nil {
-			return nil, util.LogAppError(util.Spf("Error when extracting addresses: %s",
-				err))
+			return nil, util.LogAppErrorf("Error when extracting addresses: %s",
+				err)
 		}
 		retrieved = retrieved + total
-		util.LogAppInfo(util.Spf("%d hosts retrieved so far from master.", retrieved))
+		util.LogAppInfo("%d hosts retrieved so far from master.", retrieved)
 		for _, ip := range ips {
 			if count >= cfg.MaximumHostsToReceive {
-				util.LogAppInfo(util.Spf("Max host limit of %d reached!",
-					cfg.MaximumHostsToReceive))
+				util.LogAppInfo("Max host limit of %d reached!", cfg.MaximumHostsToReceive)
 				complete = true
 				break
 			}
@@ -64,8 +63,8 @@ func getServers(filter *filters.Filter) ([]string, error) {
 		}
 
 		if (serverlist[len(serverlist)-1]) != "0.0.0.0:0" {
-			util.LogAppInfo(util.Spf("More hosts need to be retrieved. Last IP was: %s",
-				serverlist[len(serverlist)-1]))
+			util.LogAppInfo("More hosts need to be retrieved. Last IP was: %s",
+				serverlist[len(serverlist)-1])
 			addr = serverlist[len(serverlist)-1]
 		} else {
 			util.LogAppInfo("IP retrieval complete!")
@@ -86,17 +85,17 @@ func extractHosts(hbs []byte) ([]string, int, error) {
 	total := 0
 	for i := 0; i < len(hbs); i++ {
 		if len(sl) > 0 && sl[len(sl)-1] == "0.0.0.0:0" {
-			util.LogAppInfo(util.Spf("0.0.0.0:0 detected. Got %d total hosts.", total-1))
+			util.LogAppInfo("0.0.0.0:0 detected. Got %d total hosts.", total-1)
 			break
 		}
 		if pos+6 > len(hbs) {
-			util.LogAppInfo(util.Spf("Got %d total hosts.", total))
+			util.LogAppInfo("Got %d total hosts.", total)
 			break
 		}
 
 		host, err := parseIP(hbs[pos : pos+6])
 		if err != nil {
-			util.LogAppError(util.Spf("Error parsing host: %s", err))
+			util.LogAppErrorf("Error parsing host: %s", err)
 		} else {
 			sl = append(sl, host)
 			total++
@@ -109,8 +108,8 @@ func extractHosts(hbs []byte) ([]string, int, error) {
 
 func parseIP(k []byte) (string, error) {
 	if len(k) != 6 {
-		return "", util.LogAppError(
-			util.Spf("Invalid IP byte size. Got: %d, expected 6", len(k)))
+		return "", util.LogAppErrorf("Invalid IP byte size. Got: %d, expected 6",
+			len(k))
 	}
 	port := int16(k[5]) | int16(k[4])<<8
 	return fmt.Sprintf("%d.%d.%d.%d:%d", int(k[0]), int(k[1]), int(k[2]),
@@ -180,7 +179,7 @@ func NewMasterQuery(filter *filters.Filter) (*MasterQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-	util.LogAppInfo(util.Spf("*** Retrieved %d servers.", len(sl)))
+	util.LogAppInfo("*** Retrieved %d servers.", len(sl))
 
 	return &MasterQuery{Servers: sl}, nil
 }

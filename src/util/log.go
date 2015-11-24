@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"regexp"
@@ -23,10 +24,6 @@ const (
 	App logType = iota
 	Web
 )
-
-// Spf (fmt.Sprintf alias) - Some packages importing util for logging wouldn't
-// otherwise need fmt
-var Spf = fmt.Sprintf
 
 const (
 	appLogFilename = "app.log"
@@ -258,7 +255,8 @@ func verifyLogSettings(lt logType, cfg *Config) error {
 	return nil
 }
 
-func writeLogEntry(lt logType, loglevel logLevel, text ...interface{}) error {
+func writeLogEntry(lt logType, loglevel logLevel, msg string,
+	text ...interface{}) error {
 	cfg, err := ReadConfig()
 	if err != nil {
 		return err
@@ -281,8 +279,8 @@ func writeLogEntry(lt logType, loglevel logLevel, text ...interface{}) error {
 	}
 	defer f.Close()
 	_, err = f.WriteString(fmt.Sprintf("[%s] %s - %s\n",
-		loglevel, time.Now().Format("Mon Jan _2 15:04:05 2006 EST"), fmt.Sprintf(
-			"%v", text...)))
+		loglevel, time.Now().Format("Mon Jan _2 15:04:05 2006 EST"),
+		fmt.Sprintf(msg, text...)))
 	if err != nil {
 		return fmt.Errorf("Unable to write log entry '%s': %s\n", text, err)
 	}
@@ -301,28 +299,46 @@ func (l logLevel) String() string {
 	}
 }
 
-func LogAppError(input ...interface{}) error {
-	if err := writeLogEntry(App, lError, input...); err != nil {
+func LogAppError(e error, input ...interface{}) error {
+	if err := writeLogEntry(App, lError, e.Error(), input...); err != nil {
 		fmt.Print(err)
 	}
-	return fmt.Errorf("%s\n", input...)
+	return fmt.Errorf(e.Error(), input...)
 }
 
-func LogAppInfo(input ...interface{}) {
-	if err := writeLogEntry(App, lInfo, input...); err != nil {
+func LogAppErrorf(msg string, input ...interface{}) error {
+	if err := writeLogEntry(App, lError, msg, input...); err != nil {
+		fmt.Print(err)
+	}
+	return fmt.Errorf(msg, input...)
+}
+func LogAppInfo(msg string, input ...interface{}) {
+	if err := writeLogEntry(App, lInfo, msg, input...); err != nil {
 		fmt.Print(err)
 	}
 }
 
-func LogWebError(input ...interface{}) error {
-	if err := writeLogEntry(Web, lError, input...); err != nil {
+func LogWebError(e error, input ...interface{}) error {
+	if err := writeLogEntry(Web, lError, e.Error(), input...); err != nil {
 		fmt.Print(err)
 	}
-	return fmt.Errorf("%s\n", input...)
+	return fmt.Errorf(e.Error(), input...)
 }
 
-func LogWebInfo(input ...interface{}) {
-	if err := writeLogEntry(Web, lInfo, input...); err != nil {
+func LogWebErrorf(msg string, input ...interface{}) error {
+	if err := writeLogEntry(Web, lError, msg, input...); err != nil {
 		fmt.Print(err)
 	}
+	return fmt.Errorf(msg, input...)
+}
+
+func LogWebRequest(inner http.Handler, name string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		inner.ServeHTTP(w, r)
+
+		if err := writeLogEntry(Web, lInfo, fmt.Sprintf("%s\t%s\t%s\t%s",
+			r.Method, r.RequestURI, r.RemoteAddr, name)); err != nil {
+			fmt.Print(err)
+		}
+	})
 }

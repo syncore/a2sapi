@@ -46,7 +46,7 @@ func OpenCountryDB() (*maxminddb.Reader, error) {
 	// Note: the caller of this function needs to handle db.Close()
 	db, err := maxminddb.Open(mmDbFile)
 	if err != nil {
-		return nil, util.LogAppError(err.Error())
+		return nil, util.LogAppError(err)
 	}
 	return db, nil
 }
