@@ -32,7 +32,7 @@ func getServers(filter *filters.Filter) ([]string, error) {
 	if err != nil {
 		// TODO: can this be simplified as:
 		// return nil, util.LogAppError(ErrHostConnection(err.Error()))
-		util.LogAppError(ErrHostConnection(err.Error()))
+		util.LogSteamError(ErrHostConnection(err.Error()))
 		return nil, ErrHostConnection(err.Error())
 	}
 
@@ -51,10 +51,10 @@ func getServers(filter *filters.Filter) ([]string, error) {
 				err)
 		}
 		retrieved = retrieved + total
-		util.LogAppInfo("%d hosts retrieved so far from master.", retrieved)
+		util.LogSteamInfo("%d hosts retrieved so far from master.", retrieved)
 		for _, ip := range ips {
 			if count >= cfg.MaximumHostsToReceive {
-				util.LogAppInfo("Max host limit of %d reached!", cfg.MaximumHostsToReceive)
+				util.LogSteamInfo("Max host limit of %d reached!", cfg.MaximumHostsToReceive)
 				complete = true
 				break
 			}
@@ -63,11 +63,11 @@ func getServers(filter *filters.Filter) ([]string, error) {
 		}
 
 		if (serverlist[len(serverlist)-1]) != "0.0.0.0:0" {
-			util.LogAppInfo("More hosts need to be retrieved. Last IP was: %s",
+			util.LogSteamInfo("More hosts need to be retrieved. Last IP was: %s",
 				serverlist[len(serverlist)-1])
 			addr = serverlist[len(serverlist)-1]
 		} else {
-			util.LogAppInfo("IP retrieval complete!")
+			util.LogSteamInfo("IP retrieval complete!")
 			complete = true
 			break
 		}
@@ -85,11 +85,11 @@ func extractHosts(hbs []byte) ([]string, int, error) {
 	total := 0
 	for i := 0; i < len(hbs); i++ {
 		if len(sl) > 0 && sl[len(sl)-1] == "0.0.0.0:0" {
-			util.LogAppInfo("0.0.0.0:0 detected. Got %d total hosts.", total-1)
+			util.LogSteamInfo("0.0.0.0:0 detected. Got %d total hosts.", total-1)
 			break
 		}
 		if pos+6 > len(hbs) {
-			util.LogAppInfo("Got %d total hosts.", total)
+			util.LogSteamInfo("Got %d total hosts.", total)
 			break
 		}
 
@@ -108,7 +108,7 @@ func extractHosts(hbs []byte) ([]string, int, error) {
 
 func parseIP(k []byte) (string, error) {
 	if len(k) != 6 {
-		return "", util.LogAppErrorf("Invalid IP byte size. Got: %d, expected 6",
+		return "", util.LogSteamErrorf("Invalid IP byte size. Got: %d, expected 6",
 			len(k))
 	}
 	port := int16(k[5]) | int16(k[4])<<8
@@ -141,8 +141,8 @@ func queryMasterServer(conn net.Conn, startaddress string,
 	_, err := conn.Write(request)
 	if err != nil {
 		// TODO: can this be simplified as:
-		//return nil, util.LogAppError(ErrDataTransmit(err.Error()))
-		util.LogAppError(ErrDataTransmit(err.Error()))
+		//return nil, util.LogSteamError(ErrDataTransmit(err.Error()))
+		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 
@@ -150,8 +150,8 @@ func queryMasterServer(conn net.Conn, startaddress string,
 	numread, err := conn.Read(buf[:maxPacketSize])
 	if err != nil {
 		// TODO: can this be simplified as:
-		//return nil, util.LogAppError(ErrDataTransmit(err.Error()))
-		util.LogAppError(ErrDataTransmit(err.Error()))
+		//return nil, util.LogSteamError(ErrDataTransmit(err.Error()))
+		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 
@@ -160,8 +160,8 @@ func queryMasterServer(conn net.Conn, startaddress string,
 
 	if !bytes.HasPrefix(masterResponse, expectedMasterRespHeader) {
 		// TODO: can this be simplified as:
-		//return nil, util.LogAppError(ErrPacketHeader)
-		util.LogAppError(ErrPacketHeader)
+		//return nil, util.LogSteamError(ErrPacketHeader)
+		util.LogSteamError(ErrPacketHeader)
 		return nil, ErrPacketHeader
 	}
 
@@ -179,7 +179,7 @@ func NewMasterQuery(filter *filters.Filter) (*MasterQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-	util.LogAppInfo("*** Retrieved %d servers.", len(sl))
+	util.LogSteamInfo("*** Retrieved %d %s servers.", len(sl), filter.Game.Name)
 
 	return &MasterQuery{Servers: sl}, nil
 }

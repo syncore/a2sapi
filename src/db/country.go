@@ -4,6 +4,7 @@ package db
 
 import (
 	"net"
+	"steamtest/src/models"
 	"steamtest/src/util"
 
 	"github.com/oschwald/maxminddb-golang"
@@ -25,16 +26,8 @@ type mmdbformat struct {
 	} `maxminddb:"subdivisions"`
 }
 
-// The Country struct is for the JSON representation.
-type Country struct {
-	CountryName string `json:"countryName"`
-	CountryCode string `json:"countryCode"`
-	Continent   string `json:"region"`
-	State       string `json:"state"`
-}
-
-func getDefaultCountryData() *Country {
-	return &Country{
+func getDefaultCountryData() *models.DbCountry {
+	return &models.DbCountry{
 		CountryName: "Unknown",
 		CountryCode: "Unknown",
 		Continent:   "Unknown",
@@ -51,7 +44,7 @@ func OpenCountryDB() (*maxminddb.Reader, error) {
 	return db, nil
 }
 
-func GetCountryInfo(ch chan<- *Country, db *maxminddb.Reader, ipstr string) {
+func GetCountryInfo(ch chan<- *models.DbCountry, db *maxminddb.Reader, ipstr string) {
 	ip := net.ParseIP(ipstr)
 	c := &mmdbformat{}
 	err := db.Lookup(ip, c)
@@ -60,7 +53,7 @@ func GetCountryInfo(ch chan<- *Country, db *maxminddb.Reader, ipstr string) {
 		return
 	}
 
-	countrydata := &Country{
+	countrydata := &models.DbCountry{
 		CountryName: c.Country.Names["en"],
 		CountryCode: c.Country.IsoCode,
 		Continent:   c.Continent.Names["en"],

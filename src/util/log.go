@@ -16,37 +16,47 @@ type logLevel int
 type logType int
 
 const (
-	lError logLevel = iota
+	lDebug logLevel = iota
+	lError
 	lInfo
 )
 
 const (
 	App logType = iota
+	Debug
+	Steam
 	Web
 )
 
 const (
-	appLogFilename = "app.log"
-	webLogFilename = "web.log"
-	logDirectory   = "logs"
+	appLogFilename   = "app.log"
+	steamLogFilename = "steam.log"
+	webLogFilename   = "web.log"
+	logDirectory     = "logs"
 )
 
 func getLogPath(lt logType) string {
-	if lt == App {
+	switch lt {
+	case App:
 		return path.Join(logDirectory, appLogFilename)
-	} else if lt == Web {
+	case Steam:
+		return path.Join(logDirectory, steamLogFilename)
+	case Web:
 		return path.Join(logDirectory, webLogFilename)
-	} else {
+	default:
 		return path.Join(logDirectory, appLogFilename)
 	}
 }
 
 func getLogFilenameFromType(lt logType) string {
-	if lt == App {
+	switch lt {
+	case App:
 		return appLogFilename
-	} else if lt == Web {
+	case Steam:
+		return steamLogFilename
+	case Web:
 		return webLogFilename
-	} else {
+	default:
 		return appLogFilename
 	}
 }
@@ -88,22 +98,13 @@ func isMaxLogSizeExceeded(lt logType, cfg *Config) bool {
 	if err != nil {
 		return false
 	}
-	if lt == App {
-		return f.Size() > cfg.MaximumAppLogSize*1024
-	}
-	return f.Size() > cfg.MaximumWebLogSize*1024
+	return f.Size() > cfg.MaximumLogSize
 }
 
 func logDirNeedsCleaning(lt logType, cfg *Config) bool {
 	files, err := ioutil.ReadDir(logDirectory)
 	if err != nil {
 		return false
-	}
-	var maxNumLogs int
-	if lt == App {
-		maxNumLogs = cfg.MaximumAppLogCount
-	} else {
-		maxNumLogs = cfg.MaximumWebLogCount
 	}
 
 	re := regexp.MustCompile(fmt.Sprintf("(?i)%s*.*", getLogFilenameFromType(lt)))
@@ -118,7 +119,7 @@ func logDirNeedsCleaning(lt logType, cfg *Config) bool {
 		}
 		logCount++
 	}
-	return logCount > maxNumLogs
+	return logCount > cfg.MaximumLogCount
 }
 
 func getLogFiles(lt logType) ([]string, error) {
@@ -229,7 +230,7 @@ func verifyLogSettings(lt logType, cfg *Config) error {
 		if strings.EqualFold(latestlog, getLogFilenameFromType(lt)) {
 			if err := os.Rename(getLogPath(lt), path.Join(logDirectory,
 				fmt.Sprintf("%s.1", getLogFilenameFromType(lt)))); err != nil {
-				return fmt.Errorf("verfyLogSettings error: %s\n", err)
+				return fmt.Errorf("verifyLogSettings error: %s\n", err)
 			}
 			// re-create default app|web.log
 			if err := createLogFile(lt); err != nil {
@@ -239,12 +240,12 @@ func verifyLogSettings(lt logType, cfg *Config) error {
 			// other logs exist, rename current as app|web.log.largestnum+1 & re-create
 			latestlognum, _, err := getLatestAndEarliestLogNum(lt)
 			if err != nil {
-				return fmt.Errorf("verfyLogSettings error: %s\n", err)
+				return fmt.Errorf("verifyLogSettings error: %s\n", err)
 			}
 			if err := os.Rename(getLogPath(lt), path.Join(logDirectory,
 				fmt.Sprintf("%s.%d", getLogFilenameFromType(lt),
 					latestlognum+1))); err != nil {
-				return fmt.Errorf("verfyLogSettings error: %s\n", err)
+				return fmt.Errorf("verifyLogSettings error: %s\n", err)
 			}
 			// re-create
 			if err := createLogFile(lt); err != nil {
@@ -263,9 +264,21 @@ func writeLogEntry(lt logType, loglevel logLevel, msg string,
 	}
 	if lt == App && !cfg.EnableAppLogging {
 		return nil
+	} else if lt == Debug && !cfg.EnableDebugMessages {
+		return nil
+	} else if lt == Steam && !cfg.EnableSteamLogging {
+		return nil
 	} else if lt == Web && !cfg.EnableWebLogging {
 		return nil
 	}
+
+	if lt == Debug {
+		fmt.Printf(fmt.Sprintf("[%s] %s - %s\n",
+			loglevel, time.Now().Format("Mon Jan _2 15:04:05 2006 EST"),
+			fmt.Sprintf(msg, text...)))
+		return nil
+	}
+
 	if err := verifyLogPaths(lt); err != nil {
 		return err
 	}
@@ -290,6 +303,8 @@ func writeLogEntry(lt logType, loglevel logLevel, msg string,
 
 func (l logLevel) String() string {
 	switch l {
+	case lDebug:
+		return "Debug"
 	case lError:
 		return "Error"
 	case lInfo:
@@ -299,29 +314,41 @@ func (l logLevel) String() string {
 	}
 }
 
-func LogAppError(e error, input ...interface{}) error {
-	if err := writeLogEntry(App, lError, e.Error(), input...); err != nil {
+func WriteDebug(msg string, input ...interface{}) {
+	if err := writeLogEntry(Debug, lDebug, msg, input...); err != nil {
 		fmt.Print(err)
 	}
+}
+
+func LogAppError(e error, input ...interface{}) error {
+	_ = writeLogEntry(App, lError, e.Error(), input...)
 	return fmt.Errorf(e.Error(), input...)
 }
 
 func LogAppErrorf(msg string, input ...interface{}) error {
-	if err := writeLogEntry(App, lError, msg, input...); err != nil {
-		fmt.Print(err)
-	}
+	_ = writeLogEntry(App, lError, msg, input...)
 	return fmt.Errorf(msg, input...)
 }
 func LogAppInfo(msg string, input ...interface{}) {
-	if err := writeLogEntry(App, lInfo, msg, input...); err != nil {
-		fmt.Print(err)
-	}
+	_ = writeLogEntry(App, lInfo, msg, input...)
+}
+
+func LogSteamInfo(msg string, input ...interface{}) {
+	_ = writeLogEntry(Steam, lInfo, msg, input...)
+}
+
+func LogSteamError(e error, input ...interface{}) error {
+	_ = writeLogEntry(Steam, lError, e.Error(), input...)
+	return fmt.Errorf(e.Error(), input...)
+}
+
+func LogSteamErrorf(msg string, input ...interface{}) error {
+	_ = writeLogEntry(Steam, lError, msg, input...)
+	return fmt.Errorf(msg, input...)
 }
 
 func LogWebError(e error, input ...interface{}) error {
-	if err := writeLogEntry(Web, lError, e.Error(), input...); err != nil {
-		fmt.Print(err)
-	}
+	_ = writeLogEntry(Web, lError, e.Error(), input...)
 	return fmt.Errorf(e.Error(), input...)
 }
 

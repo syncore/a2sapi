@@ -1,29 +1,23 @@
 package steam
 
-// steamplayer.go - testing steam server query for players (A2S_PLAYER)
+// steamplayer.go - steam server query for players (A2S_PLAYER)
 
 import (
 	"bytes"
 	"encoding/binary"
 	"math"
 	"net"
+	"steamtest/src/models"
 	"steamtest/src/util"
 	"sync"
 	"time"
 )
 
-type PlayerInfo struct {
-	Name              string  `json:"name"`
-	Score             int32   `json:"score"`
-	TimeConnectedSecs float32 `json:"secsConnected"`
-	TimeConnectedTot  string  `json:"totalConnected"`
-}
-
 func getPlayerInfo(host string, timeout int) ([]byte, error) {
 	conn, err := net.DialTimeout("udp", host, time.Duration(timeout)*time.Second)
 	if err != nil {
 		// TODO: simplify this log + return into just a return
-		util.LogAppError(ErrHostConnection(err.Error()))
+		util.LogSteamError(ErrHostConnection(err.Error()))
 		return nil, ErrHostConnection(err.Error())
 	}
 
@@ -33,7 +27,7 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 	_, err = conn.Write(playerChallengeReq)
 	if err != nil {
 		// TODO: simplify this log + return into just a return
-		util.LogAppError(ErrDataTransmit(err.Error()))
+		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 
@@ -41,12 +35,12 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 	_, err = conn.Read(challengeNumResp)
 	if err != nil {
 		// TODO: simplify this log + return into just a return
-		util.LogAppError(ErrDataTransmit(err.Error()))
+		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 	if !bytes.HasPrefix(challengeNumResp, expectedPlayerRespHeader) {
 		// TODO: simplify this log + return into just a return
-		util.LogAppError(ErrChallengeResponse)
+		util.LogSteamError(ErrChallengeResponse)
 		return nil, ErrChallengeResponse
 	}
 	challengeNum := bytes.TrimLeft(challengeNumResp, headerStr)
@@ -60,14 +54,14 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 	_, err = conn.Write(request)
 	if err != nil {
 		// TODO: simplify this log + return into just a return
-		util.LogAppError(ErrDataTransmit(err.Error()))
+		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 	var buf [maxPacketSize]byte
 	numread, err := conn.Read(buf[:maxPacketSize])
 	if err != nil {
 		// TODO: simplify this log + return into just a return
-		util.LogAppError(ErrDataTransmit(err.Error()))
+		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 	pi := make([]byte, numread)
@@ -76,10 +70,10 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 	return pi, nil
 }
 
-func parsePlayerInfo(unparsed []byte) ([]*PlayerInfo, error) {
+func parsePlayerInfo(unparsed []byte) ([]*models.SteamPlayerInfo, error) {
 	if !bytes.HasPrefix(unparsed, expectedPlayerChunkHeader) {
 		// TODO: simplify this log + return into just a return
-		util.LogAppError(ErrPacketHeader)
+		util.LogSteamError(ErrPacketHeader)
 		return nil, ErrPacketHeader
 	}
 	unparsed = bytes.TrimLeft(unparsed, headerStr)
@@ -89,7 +83,7 @@ func parsePlayerInfo(unparsed []byte) ([]*PlayerInfo, error) {
 		return nil, ErrNoPlayers
 	}
 
-	players := []*PlayerInfo{}
+	players := []*models.SteamPlayerInfo{}
 
 	// index 0 = '44' | 1 = 'numplayers' byte | 2 = player 1 separator byte '00'
 	// | 3 = start of player 1 name; additional player start indexes are player separator + 1
@@ -108,7 +102,7 @@ func parsePlayerInfo(unparsed []byte) ([]*PlayerInfo, error) {
 		startidx = nul + 9
 
 		seconds, timeformatted := getDuration(duration)
-		players = append(players, &PlayerInfo{
+		players = append(players, &models.SteamPlayerInfo{
 			Name:              string(name),
 			Score:             int32(binary.LittleEndian.Uint32(score)),
 			TimeConnectedSecs: seconds,
@@ -127,9 +121,9 @@ func getDuration(bytes []byte) (float32, string) {
 }
 
 func RetryFailedPlayersReq(failed []string,
-	retrycount int) map[string][]*PlayerInfo {
+	retrycount int) map[string][]*models.SteamPlayerInfo {
 
-	m := make(map[string][]*PlayerInfo)
+	m := make(map[string][]*models.SteamPlayerInfo)
 	var f []string
 	var wg sync.WaitGroup
 	var mut sync.Mutex
@@ -158,8 +152,8 @@ func RetryFailedPlayersReq(failed []string,
 	return m
 }
 
-func GetPlayersForServer(host string, timeout int) ([]*PlayerInfo, error) {
-	// Caller will log. Return err instead of wrapped util.LogAppError so as not
+func GetPlayersForServer(host string, timeout int) ([]*models.SteamPlayerInfo, error) {
+	// Caller will log. Return err instead of wrapped util.LogSteamError so as not
 	// to interfere with custom error types that need to be analyzed when
 	// determining if retry needs to be done.
 	pi, err := getPlayerInfo(host, timeout)

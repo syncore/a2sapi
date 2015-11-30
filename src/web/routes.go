@@ -13,8 +13,10 @@ type route struct {
 }
 
 const (
-	getServerIDsPath     = "/getServerIDs"
-	getServerIDsQueryStr = "address"
+	getServerIDPath     = "/getServerIDs"
+	getServerIDQueryStr = "address"
+	queryServerPath     = "/queryServer"
+	queryServerQueryStr = "ids"
 )
 
 type routes []route
@@ -23,8 +25,15 @@ var apiRoutes = routes{
 	route{
 		name:        "GetServerIDs",
 		method:      "GET",
-		path:        getServerIDsPath,
-		queryString: getServerIDsQueryStr,
-		handlerFunc: getServerIDs,
+		path:        getServerIDPath,
+		queryString: getServerIDQueryStr,
+		handlerFunc: getServerID,
+	},
+	route{
+		name:        "QueryServer",
+		method:      "GET",
+		path:        queryServerPath,
+		queryString: queryServerQueryStr,
+		handlerFunc: queryServer,
 	},
 }

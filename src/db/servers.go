@@ -6,6 +6,8 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"steamtest/src/models"
+	"steamtest/src/steam/filters"
 	"steamtest/src/util"
 	// blank import for sqlite3 driver
 	_ "github.com/mattn/go-sqlite3"
@@ -32,6 +34,7 @@ func createDb(dbfile string) error {
 	q := `CREATE TABLE servers (
 	server_id INTEGER NOT NULL,
 	host TEXT NOT NULL,
+	game TEXT NOT NULL,
 	PRIMARY KEY(server_id)
 	)`
 	_, err = db.Exec(q)
@@ -42,28 +45,50 @@ func createDb(dbfile string) error {
 	return nil
 }
 
-func serverExists(db *sql.DB, host string) (bool, error) {
-	rows, err := db.Query("SELECT host FROM servers WHERE host =? LIMIT 1",
-		host)
+func serverExists(db *sql.DB, host string, game string) (bool, error) {
+	rows, err := db.Query(
+		"SELECT host, game FROM servers WHERE host =? AND GAME =? LIMIT 1",
+		host, game)
 	if err != nil {
-		return false, util.LogAppErrorf("Error querying database for host %s: %s",
-			host, err)
+		return false, util.LogAppErrorf(
+			"Error querying database for host %s and game %s: %s", host, game, err)
 	}
 
 	defer rows.Close()
 	var h string
+	var g string
 	for rows.Next() {
-		if err := rows.Scan(&h); err != nil {
-			return false, util.LogAppErrorf("Error querying database for host %s: %s",
-				host, err)
+		if err := rows.Scan(&h, &g); err != nil {
+			return false, util.LogAppErrorf(
+				"Error querying database for host %s and game %s: %s",
+				host, game, err)
 		}
 	}
-	if h != "" {
+	if h != "" && g != "" {
 		return true, nil
 	}
 	return false, nil
 }
 
+func getHostAndGame(db *sql.DB, id string) (host, game string, err error) {
+	rows, err := db.Query("SELECT host, game FROM servers WHERE server_id =? LIMIT 1",
+		id)
+	if err != nil {
+		return host, game, util.LogAppErrorf("Error querying database for id %s: %s",
+			id, err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		if err := rows.Scan(&host, &game); err != nil {
+			return host, game, util.LogAppErrorf("Error querying database for id %s: %s",
+				id, err)
+		}
+	}
+	return host, game, nil
+}
+
+// OpenServerDB Opens a database connection to the server database file or if
+// that file does not exists, creates it and then opens a database connection to it.
 func OpenServerDB() (*sql.DB, error) {
 	if err := createDb(serverDbFile); err != nil {
 		return nil, util.LogAppError(err)
@@ -75,17 +100,23 @@ func OpenServerDB() (*sql.DB, error) {
 	return db, nil
 }
 
-func AddServersToDB(db *sql.DB, hosts []string) {
-	var toInsert []string
-	for _, h := range hosts {
-		exists, err := serverExists(db, h)
+// AddServersToDB Inserts a specified host and port with its game name to the server
+// database file.
+func AddServersToDB(db *sql.DB, hostsgames map[string]string) {
+	toInsert := make(map[string]string, len(hostsgames))
+	for host, game := range hostsgames {
+		// If direct queries are enabled, don't add 'Unspecified' game to server DB
+		if game == filters.GameUnspecified.String() {
+			continue
+		}
+		exists, err := serverExists(db, host, game)
 		if err != nil {
 			continue
 		}
 		if exists {
 			continue
 		}
-		toInsert = append(toInsert, h)
+		toInsert[host] = game
 	}
 	tx, err := db.Begin()
 	if err != nil {
@@ -93,10 +124,12 @@ func AddServersToDB(db *sql.DB, hosts []string) {
 		return
 	}
 	var txexecerr error
-	for _, i := range toInsert {
-		_, txexecerr = tx.Exec("INSERT INTO servers (host) VALUES ($1)", i)
+	for host, game := range toInsert {
+		_, txexecerr = tx.Exec("INSERT INTO servers (host, game) VALUES ($1, $2)",
+			host, game)
 		if txexecerr != nil {
-			util.LogAppErrorf("AddServersToDB exec error for host %s: %s", i, err)
+			util.LogAppErrorf(
+				"AddServersToDB exec error for host %s and game %s: %s", host, game, err)
 			break
 		}
 	}
@@ -112,18 +145,24 @@ func AddServersToDB(db *sql.DB, hosts []string) {
 	}
 }
 
+// GetIDsForServerList Retrieves the server ID numbers for a given set of hosts,
+// from the server database file, in response to a request to build the master
+// server detail list or the list of server details in response to a request
+// coming in over the API. It sends its results over a map channel consisting of
+// a host to id mapping.
 func GetIDsForServerList(result chan map[string]int64, db *sql.DB,
-	hosts []string) {
+	hosts map[string]string) {
 	m := make(map[string]int64, len(hosts))
-	for _, host := range hosts {
-		rows, err := db.Query("SELECT server_id FROM servers WHERE host =? LIMIT 1",
-			host)
+	for host, game := range hosts {
+		rows, err := db.Query(
+			"SELECT server_id FROM servers WHERE host =? AND game =? LIMIT 1",
+			host, game)
 		if err != nil {
-			util.LogAppErrorf("Error querying database to retrieve ID for host %s: %s",
-				host, err)
+			util.LogAppErrorf(
+				"Error querying database to retrieve ID for host %s and game %s: %s",
+				host, game, err)
 			return
 		}
-
 		defer rows.Close()
 		var id int64
 		for rows.Next() {
@@ -138,29 +177,61 @@ func GetIDsForServerList(result chan map[string]int64, db *sql.DB,
 	result <- m
 }
 
-func GetIDsForAPIQuery(result chan map[int64]string, db *sql.DB, hosts []string) {
-	m := make(map[int64]string, len(hosts))
+// GetIDsAPIQuery Retrieves the server ID numbers, hosts, and game name for a given
+// set of hosts (represented by query string values) from the server database
+// file in response to a query from the API. Sends the results over a DbServerID
+// channel for consumption.
+func GetIDsAPIQuery(result chan *models.DbServerID, db *sql.DB, hosts []string) {
+	m := &models.DbServerID{}
 	for _, h := range hosts {
-		fmt.Printf("GetIDsForAPIQuery DB function, host: %s\n", h)
-		rows, err := db.Query("SELECT server_id, host FROM servers WHERE host LIKE ?",
+		util.WriteDebug("DB: GetIDsAPIQuery, host: %s", h)
+		rows, err := db.Query(
+			"SELECT server_id, host, game FROM servers WHERE host LIKE ?",
 			fmt.Sprintf("%%%s%%", h))
 		if err != nil {
 			util.LogAppErrorf("Error querying database to retrieve ID for host %s: %s",
 				h, err)
 			return
 		}
-
 		defer rows.Close()
 		var id int64
 		var host string
+		var game string
+
 		for rows.Next() {
-			if err := rows.Scan(&id, &host); err != nil {
+			sid := &models.DbServer{}
+			if err := rows.Scan(&id, &host, &game); err != nil {
 				util.LogAppErrorf("Error querying database to retrieve ID for host %s: %s",
 					h, err)
 				return
 			}
-			m[id] = host
+			sid.ID = id
+			sid.Host = host
+			sid.Game = game
+			m.Servers = append(m.Servers, sid)
 		}
 	}
+	m.ServerCount = len(m.Servers)
 	result <- m
+}
+
+// GetHostsAndGameFromIDAPIQuery Retrieves the hosts and game names from the
+// server database file in response to a user-specified API query for a given
+// set of server ID numbers. Sends the results over a channel consisting of a
+// host to game name string mapping.
+func GetHostsAndGameFromIDAPIQuery(result chan map[string]string, db *sql.DB,
+	ids []string) {
+	hosts := make(map[string]string, len(ids))
+	for _, id := range ids {
+		host, game, err := getHostAndGame(db, id)
+		if err != nil {
+			util.LogAppErrorf("Error getting host from ID for API query: %s", err)
+			return
+		}
+		if host == "" && game == "" {
+			continue
+		}
+		hosts[host] = game
+	}
+	result <- hosts
 }

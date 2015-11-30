@@ -3,7 +3,6 @@ package web
 // router.go - request router
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -36,7 +35,7 @@ func pathQStrToLowerMatcherFunc(router *mux.Router,
 		var qstrok bool
 		// case-insensitive paths
 		if strings.HasPrefix(strings.ToLower(req.URL.Path), strings.ToLower(routepath)) {
-			fmt.Printf("PATH: %s matches route path: %s\n", req.URL.Path, routepath)
+			util.WriteDebug("PATH: %s matches route path: %s", req.URL.Path, routepath)
 			pathok = true
 		}
 		//case-insensitive query strings
@@ -46,9 +45,9 @@ func pathQStrToLowerMatcherFunc(router *mux.Router,
 		} else {
 			qry := req.URL.Query()
 			for key := range qry {
-				fmt.Printf("key is: %s\n", key)
+				util.WriteDebug("URL query string key is: %s", key)
 				if strings.EqualFold(key, querystring) {
-					fmt.Printf("%s matches %s\n", key, querystring)
+					util.WriteDebug("KEY: %s matches query string: %s", key, querystring)
 					qstrok = true
 					break
 				}

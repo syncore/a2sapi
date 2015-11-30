@@ -4,10 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"steamtest/src/web"
 	//"steamtest/src/steam"
 	//"steamtest/src/steam/filters"
 	"steamtest/src/util"
+	"steamtest/src/web"
 )
 
 var doConfig bool
@@ -27,6 +27,7 @@ func main() {
 		}
 		os.Exit(0)
 	}
+	//cfg, err := util.ReadConfig()
 	_, err := util.ReadConfig()
 	if err != nil {
 		fmt.Printf("Could not read configuration file '%s' in the '%s' directory.\n",
@@ -36,18 +37,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	//singleServerTest("85.229.197.211:25797", steam.QueryTimeout)
-	// filter := filters.NewFilter(filters.SrAll,
-	// 	[]filters.SrvFilter{filters.GameReflex},
-	// 	[]filters.IgnoredRequest{filters.IgnoreRulesRequest})
-
-	// filter := filters.NewFilter(filters.SrAll,
-	// 	[]filters.SrvFilter{filters.GameQuakeLive},
-	// 	[]filters.IgnoredRequest{})
-
-	// delayBeforeFirstQuery := 7
+	// filter := filters.NewFilter(filters.GameQuakeLive, filters.SrAll, nil)
 	// stop := make(chan bool, 1)
-	// go steam.Run(stop, filter, delayBeforeFirstQuery)
+	// go steam.StartMasterRetrieval(stop, filter, 7, cfg.TimeBetweenMasterQueries)
 	// <-stop
 
 	web.Start()

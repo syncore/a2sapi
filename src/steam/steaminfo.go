@@ -1,48 +1,22 @@
 package steam
 
-// steaminfo.go - testing steam server query for info (A2S_INFO)
+// steaminfo.go - steam server query for info (A2S_INFO)
 
 import (
 	"bytes"
 	"encoding/binary"
 	"net"
+	"steamtest/src/models"
 	"steamtest/src/util"
 	"sync"
 	"time"
 )
 
-type ServerInfo struct {
-	Protocol    int        `json:"protocol"`
-	Name        string     `json:"serverName"`
-	Map         string     `json:"map"`
-	Folder      string     `json:"gameDir"`
-	Game        string     `json:"game"`
-	ID          int16      `json:"steamApp"`
-	Players     int16      `json:"players"`
-	MaxPlayers  int16      `json:"maxPlayers"`
-	Bots        int16      `json:"bots"`
-	ServerType  string     `json:"serverType"`
-	Environment string     `json:"serverOs"`
-	Visibility  int16      `json:"private"`
-	VAC         int16      `json:"antiCheat"`
-	Version     string     `json:"serverVersion"`
-	ExtraData   *extraData `json:"extra"`
-}
-
-type extraData struct {
-	Port         int16  `json:"gamePort"`
-	SteamID      uint64 `json:"serverSteamId"`
-	SourceTVPort int16  `json:"sourceTvProxyPort"`
-	SourceTVName string `json:"sourceTvProxyName"`
-	Keywords     string `json:"keywords"`
-	GameID       uint64 `json:"steamAppId"`
-}
-
 func getServerInfo(host string, timeout int) ([]byte, error) {
 	conn, err := net.DialTimeout("udp", host, time.Duration(timeout)*time.Second)
 	if err != nil {
 		// TODO: simplify this log + return into just a return
-		util.LogAppError(ErrHostConnection(err.Error()))
+		util.LogSteamError(ErrHostConnection(err.Error()))
 		return nil, ErrHostConnection(err.Error())
 	}
 	defer conn.Close()
@@ -51,7 +25,7 @@ func getServerInfo(host string, timeout int) ([]byte, error) {
 	_, err = conn.Write(infoChallengeReq)
 	if err != nil {
 		// TODO: simplify this log + return into just a return
-		util.LogAppError(ErrDataTransmit(err.Error()))
+		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 
@@ -59,7 +33,7 @@ func getServerInfo(host string, timeout int) ([]byte, error) {
 	numread, err := conn.Read(buf[:maxPacketSize])
 	if err != nil {
 		// TODO: simplify this log + return into just a return
-		util.LogAppError(ErrDataTransmit(err.Error()))
+		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 	serverInfo := make([]byte, numread)
@@ -67,17 +41,17 @@ func getServerInfo(host string, timeout int) ([]byte, error) {
 
 	if !bytes.HasPrefix(serverInfo, expectedInfoRespHeader) {
 		// TODO: simplify this log + return into just a return
-		util.LogAppError(ErrPacketHeader)
+		util.LogSteamError(ErrPacketHeader)
 		return nil, ErrPacketHeader
 	}
 
 	return serverInfo, nil
 }
 
-func parseServerInfo(serverinfo []byte) (*ServerInfo, error) {
+func parseServerInfo(serverinfo []byte) (*models.SteamServerInfo, error) {
 	if !bytes.HasPrefix(serverinfo, expectedInfoRespHeader) {
 		// TODO: simplify this log + return into just a return
-		util.LogAppError(ErrPacketHeader)
+		util.LogSteamError(ErrPacketHeader)
 		return nil, ErrPacketHeader
 	}
 
@@ -85,7 +59,7 @@ func parseServerInfo(serverinfo []byte) (*ServerInfo, error) {
 
 	// no info (should usually not happen)
 	if len(serverinfo) <= 1 {
-		util.LogAppError(ErrNoInfo)
+		util.LogSteamError(ErrNoInfo)
 		return nil, ErrNoInfo
 	}
 
@@ -104,7 +78,7 @@ func parseServerInfo(serverinfo []byte) (*ServerInfo, error) {
 	id := int16(binary.LittleEndian.Uint16(serverinfo[:2]))
 	serverinfo = serverinfo[2:]
 	if id >= 2400 && id <= 2412 {
-		return nil, util.LogAppErrorf("The Ship servers are not supported")
+		return nil, util.LogSteamErrorf("The Ship servers are not supported")
 	}
 	players := int16(serverinfo[0])
 	serverinfo = serverinfo[1:]
@@ -171,7 +145,7 @@ func parseServerInfo(serverinfo []byte) (*ServerInfo, error) {
 		servertype = "listen"
 	}
 
-	return &ServerInfo{
+	return &models.SteamServerInfo{
 		Protocol:    protocol,
 		Name:        name,
 		Map:         mapname,
@@ -186,7 +160,7 @@ func parseServerInfo(serverinfo []byte) (*ServerInfo, error) {
 		Visibility:  visibility,
 		VAC:         vac,
 		Version:     version,
-		ExtraData: &extraData{
+		ExtraData: &models.SteamExtraData{
 			Port:         port,
 			SteamID:      steamid,
 			SourceTVPort: sourcetvport,
@@ -197,8 +171,9 @@ func parseServerInfo(serverinfo []byte) (*ServerInfo, error) {
 	}, nil
 }
 
-func RetryFailedInfoReq(failed []string, retrycount int) map[string]*ServerInfo {
-	m := make(map[string]*ServerInfo)
+func RetryFailedInfoReq(failed []string,
+	retrycount int) map[string]*models.SteamServerInfo {
+	m := make(map[string]*models.SteamServerInfo)
 	var f []string
 	var wg sync.WaitGroup
 	var mut sync.Mutex
@@ -227,8 +202,8 @@ func RetryFailedInfoReq(failed []string, retrycount int) map[string]*ServerInfo 
 	return m
 }
 
-func GetInfoForServer(host string, timeout int) (*ServerInfo, error) {
-	// Caller will log. Return err instead of wrapped util.LogAppError so as not
+func GetInfoForServer(host string, timeout int) (*models.SteamServerInfo, error) {
+	// Caller will log. Return err instead of wrapped util.LogSteamError so as not
 	// to interfere with custom error types that need to be analyzed when
 	// determining if retry needs to be done.
 	si, err := getServerInfo(host, timeout)

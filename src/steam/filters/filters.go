@@ -2,30 +2,19 @@ package filters
 
 // filters.go - steam master server filters
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 type SrvRegion []byte
 type SrvFilter []byte
 
 type Filter struct {
-	Region           SrvRegion
-	Filters          []SrvFilter
-	IgnoredRequests  []IgnoredRequest
-	HasIgnoreRules   bool
-	HasIgnorePlayers bool
-	HasIgnoreInfo    bool
+	Game    *Game
+	Region  SrvRegion
+	Filters []SrvFilter
 }
-
-// This is my user-defined type to account for the fact that some titles
-// (particularly newer/beta ones) do not have all of three AS2_INFO,PLAYER,RULES
-// requests of this IgnoredRequest type will be ignored when building server list
-type IgnoredRequest int
-
-const (
-	IgnoreRulesRequest IgnoredRequest = iota
-	IgnorePlayerRequest
-	IgnoreInfoRequest
-)
 
 // Regions and filters
 var (
@@ -118,40 +107,25 @@ var (
 	VersionMatchFilter = func(val string) SrvFilter {
 		return []byte(fmt.Sprintf("\\version_match\\%s", val))
 	}
-
-	// --------------------- A few games ---------------------
-	// Additional "Source Engine Games" can be added from:
-	// https://developer.valvesoftware.com/wiki/Steam_Application_IDs
-	GameCsGo      = AppIDFilter("730")
-	GameQuakeLive = AppIDFilter("282440")
-	GameReflex    = AppIDFilter("328070")
-	GameTF2       = AppIDFilter("440")
 )
 
-func NewFilter(region SrvRegion, filters []SrvFilter,
-	ignoredRequests []IgnoredRequest) *Filter {
-
-	var ignoreRules bool
-	var ignorePlayers bool
-	var ignoreInfo bool
-	for _, v := range ignoredRequests {
-		if v == IgnoreRulesRequest {
-			ignoreRules = true
+func NewFilter(game *Game, region SrvRegion, filters []SrvFilter) *Filter {
+	if filters != nil {
+		for i, f := range filters {
+			if bytes.HasPrefix(f, []byte("\\appid\\")) {
+				filters[i] = AppIDFilter(game.AppID)
+				break
+			} else {
+				filters = append(filters, AppIDFilter(game.AppID))
+				break
+			}
 		}
-		if v == IgnorePlayerRequest {
-			ignorePlayers = true
-		}
-		if v == IgnoreInfoRequest {
-			ignoreInfo = true
-		}
+	} else {
+		filters = append(filters, AppIDFilter(game.AppID))
 	}
-
 	return &Filter{
-		Region:           region,
-		Filters:          filters,
-		IgnoredRequests:  ignoredRequests,
-		HasIgnoreRules:   ignoreRules,
-		HasIgnorePlayers: ignorePlayers,
-		HasIgnoreInfo:    ignoreInfo,
+		Game:    game,
+		Region:  region,
+		Filters: filters,
 	}
 }
