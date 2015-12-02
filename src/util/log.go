@@ -65,7 +65,7 @@ func createLogDir() error {
 	if DirExists(logDirectory) {
 		return nil
 	}
-	if err := os.Mkdir(logDirectory, os.ModeDir); err != nil {
+	if err := os.Mkdir(logDirectory, os.ModePerm); err != nil {
 		return err
 	}
 	return nil

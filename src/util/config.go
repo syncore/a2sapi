@@ -209,7 +209,7 @@ func createConfigDir() error {
 	if DirExists(ConfigDirectory) {
 		return nil
 	}
-	if err := os.Mkdir(ConfigDirectory, os.ModeDir); err != nil {
+	if err := os.Mkdir(ConfigDirectory, os.ModePerm); err != nil {
 		return err
 	}
 	return nil
