@@ -5,35 +5,62 @@ import "net/http"
 // routes.go - http routes for API
 
 type route struct {
-	name        string
-	method      string
-	path        string
-	queryString string
-	handlerFunc http.HandlerFunc
+	name         string
+	method       string
+	path         string
+	queryStrings []querystring
+	handlerFunc  http.HandlerFunc
+}
+
+type querystring struct {
+	name     string
+	required bool
 }
 
 const (
-	getServerIDPath     = "/getServerIDs"
+	// /getServerID?address=
 	getServerIDQueryStr = "address"
-	queryServerPath     = "/queryServer"
-	queryServerQueryStr = "ids"
+	// /queryServerID?id=
+	queryServerIDQueryStr = "id"
+	// /queryServerAddr?address=
+	queryServerAddrQueryStr = "address"
 )
 
-type routes []route
-
-var apiRoutes = routes{
+var apiRoutes = []route{
 	route{
-		name:        "GetServerIDs",
-		method:      "GET",
-		path:        getServerIDPath,
-		queryString: getServerIDQueryStr,
+		name:   "GetServerID",
+		method: "GET",
+		path:   "/getServerID",
+		queryStrings: []querystring{
+			querystring{
+				name:     getServerIDQueryStr,
+				required: true,
+			},
+		},
 		handlerFunc: getServerID,
 	},
 	route{
-		name:        "QueryServer",
-		method:      "GET",
-		path:        queryServerPath,
-		queryString: queryServerQueryStr,
-		handlerFunc: queryServer,
+		name:   "QueryServerID",
+		method: "GET",
+		path:   "/queryServerID",
+		queryStrings: []querystring{
+			querystring{
+				name:     queryServerIDQueryStr,
+				required: true,
+			},
+		},
+		handlerFunc: queryServerID,
+	},
+	route{
+		name:   "QueryServerAddr",
+		method: "GET",
+		path:   "/queryServerAddr",
+		queryStrings: []querystring{
+			querystring{
+				name:     queryServerAddrQueryStr,
+				required: true,
+			},
+		},
+		handlerFunc: queryServerAddr,
 	},
 }

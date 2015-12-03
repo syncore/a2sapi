@@ -19,6 +19,7 @@ var (
 )
 
 const (
+	defaultAllowDirectUserQueries   = false
 	defaultEnableDebugMessages      = false
 	defaultEnableAppLogging         = true
 	defaultEnableSteamLogging       = false
@@ -35,6 +36,7 @@ const (
 )
 
 type Config struct {
+	AllowDirectUserQueries   bool  `json:"allowDirectUserQueries"`
 	EnableDebugMessages      bool  `json:"debugMessages"`
 	EnableAppLogging         bool  `json:"enableAppLogging"`
 	EnableSteamLogging       bool  `json:"enableSteamLogging"`
@@ -52,6 +54,28 @@ func getNewLineForOS() string {
 		return "\r\n"
 	}
 	return "\n"
+}
+
+func getDirectQueryValue(r *bufio.Reader) (bool, error) {
+	enable, err := r.ReadString('\n')
+
+	if err != nil {
+		return defaultAllowDirectUserQueries,
+			fmt.Errorf("Unable to read respone: %s", err)
+	}
+	if enable == newline {
+		return defaultAllowDirectUserQueries, nil
+	}
+	response := strings.Trim(enable, newline)
+	if strings.EqualFold(response, "y") || strings.EqualFold(response, "yes") {
+		return true, nil
+	} else if strings.EqualFold(response, "n") || strings.EqualFold(response,
+		"no") {
+		return false, nil
+	} else {
+		return defaultAllowDirectUserQueries,
+			fmt.Errorf("Invalid response. Valid responses: y, yes, n, no")
+	}
 }
 
 func getLoggingValue(r *bufio.Reader, lt logType) (bool, error) {
@@ -154,11 +178,11 @@ func getMaxHostsPerAPIQueryValue(r *bufio.Reader) (int, error) {
 	response, err := strconv.Atoi(strings.Trim(hostsval, newline))
 	if err != nil {
 		return defaultMaxHostsPerAPIQuery,
-			fmt.Errorf("[ERROR] Maximum hosts to allow per API query must be a positive number.")
+			fmt.Errorf("[ERROR] Maximum hosts to allow per API query must be a positive number")
 	}
 	if response <= 0 {
 		return defaultMaxHostsPerAPIQuery,
-			fmt.Errorf("[ERROR] Maximum hosts to allow per API query must be a positive number.")
+			fmt.Errorf("[ERROR] Maximum hosts to allow per API query must be a positive number")
 	}
 	return response, nil
 }
@@ -260,26 +284,11 @@ func ReadConfig() (*Config, error) {
 	return cfg, nil
 }
 
-func getBoolLogString(lt logType) string {
-	var val string
-	switch lt {
-	case App:
-		if defaultEnableAppLogging {
-			val = "yes"
-		}
-		val = "no"
-	case Steam:
-		if defaultEnableSteamLogging {
-			val = "yes"
-		}
-		val = "no"
-	case Web:
-		if defaultEnableWebLogging {
-			val = "yes"
-		}
-		val = "no"
+func getBoolString(b bool) string {
+	if b {
+		return "yes"
 	}
-	return val
+	return "no"
 }
 
 func CreateConfig() error {
@@ -296,7 +305,7 @@ func CreateConfig() error {
 		var err error
 		fmt.Printf(
 			"\nLog application-related info and error messages to disk?\n>> 'yes' or 'no' [default: %s]: ",
-			getBoolLogString(App))
+			getBoolString(defaultEnableAppLogging))
 		logAppEnableVal, err = getLoggingValue(reader, App)
 		if err != nil {
 			fmt.Println(err)
@@ -312,7 +321,7 @@ func CreateConfig() error {
 		var err error
 		fmt.Printf(
 			"\nLog Steam connection info and error messages to disk?\nNOTE: this can dramatically increase resource usage and should only be used for debugging.\n>> 'yes' or 'no' [default: %s]: ",
-			getBoolLogString(Steam))
+			getBoolString(defaultEnableSteamLogging))
 		logSteamEnableVal, err = getLoggingValue(reader, Steam)
 		if err != nil {
 			fmt.Println(err)
@@ -328,7 +337,7 @@ func CreateConfig() error {
 		var err error
 		fmt.Printf(
 			"\nShould API web-related info and error messages should be logged to disk?\n>> 'yes' or 'no' [default: %s]: ",
-			getBoolLogString(Web))
+			getBoolString(defaultEnableWebLogging))
 		logWebEnableVal, err = getLoggingValue(reader, Web)
 		if err != nil {
 			fmt.Println(err)
@@ -377,6 +386,22 @@ func CreateConfig() error {
 		} else {
 			cfg.MaximumHostsToReceive = maxHostVal
 			validMaxMasterHostsVal = true
+		}
+	}
+	// Configure direct queries: if users can query any host (not just those with IDs)
+	validDirectQueryEnableVal := false
+	var directQueryEnableVal bool
+	for !validDirectQueryEnableVal {
+		var err error
+		fmt.Printf(
+			"\nAllow users to directly query *any* IP address, not just those in the serverID database?\nThis may have security implications so enable with caution.\n>> 'yes' or 'no' [default: %s]: ",
+			getBoolString(defaultAllowDirectUserQueries))
+		directQueryEnableVal, err = getDirectQueryValue(reader)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			cfg.AllowDirectUserQueries = directQueryEnableVal
+			validDirectQueryEnableVal = true
 		}
 	}
 	// Configure maximum number of servers to allow users to query via API

@@ -1,6 +1,6 @@
 package web
 
-// retrievers.go - Bridge between http requests and database layer
+// retrievers.go - Bridge between http requests and database (and potentially other) layers
 
 import (
 	"encoding/json"
@@ -43,7 +43,7 @@ func getServerIDRetriever(w http.ResponseWriter, hosts []string) {
 	}
 }
 
-func queryServerRetriever(w http.ResponseWriter, ids []string) {
+func queryServerIDRetriever(w http.ResponseWriter, ids []string) {
 	s := make(chan map[string]string, len(ids))
 	sdb, err := db.OpenServerDB()
 	if err != nil {
@@ -66,6 +66,24 @@ func queryServerRetriever(w http.ResponseWriter, ids []string) {
 		return
 	}
 	serverlist, err := steam.Query(hostsgames)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		util.LogWebError(err)
+		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			util.LogWebError(err)
+			return
+		}
+		return
+	}
+	if err := json.NewEncoder(w).Encode(serverlist); err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		util.LogWebError(err)
+	}
+}
+
+func queryServerAddrRetriever(w http.ResponseWriter, addresses []string) {
+	serverlist, err := steam.DirectQuery(addresses)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		util.LogWebError(err)

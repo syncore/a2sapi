@@ -108,17 +108,22 @@ func batchRuleQuery(servers []string) map[string]map[string]string {
 	return m
 }
 
-// func DirectQuery(hosts []string) (*models.APIServerList, error) {
-// 	players := getPlayersForServers(hosts)
-// 	rules := getRulesForServers(hosts)
-// 	info := getInfoForServers(hosts)
-// 	f := filters.NewFilter(filters.GameUnspecified, filters.SrAll, nil)
-// 	sl, err := buildServerList(f, hosts, info, rules, players)
-// 	if err != nil {
-// 		return models.GetDefaultServerList(), util.LogAppError(err)
-// 	}
-// 	return sl, nil
-// }
+func DirectQuery(hosts []string) (*models.APIServerList, error) {
+	hg := make(map[string]*filters.Game, len(hosts))
+	players := batchPlayerQuery(hosts)
+	rules := batchRuleQuery(hosts)
+	info := batchInfoQuery(hosts)
+
+	for _, h := range hosts {
+		hg[h] = filters.GameUnspecified
+	}
+
+	sl, err := buildQueryServerList(hg, info, rules, players)
+	if err != nil {
+		return models.GetDefaultServerList(), util.LogAppError(err)
+	}
+	return sl, nil
+}
 
 func Query(hostsgames map[string]string) (*models.APIServerList, error) {
 	hg := make(map[string]*filters.Game, len(hostsgames))

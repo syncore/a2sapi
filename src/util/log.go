@@ -363,6 +363,12 @@ func LogWebRequest(inner http.Handler, name string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		inner.ServeHTTP(w, r)
 
+		if err := writeLogEntry(Debug, lDebug, fmt.Sprintf(
+			"URL: %s\tPATH: %s\tQUERY:%v", r.URL, r.URL.Path,
+			r.URL.Query())); err != nil {
+			fmt.Print(err)
+		}
+
 		if err := writeLogEntry(Web, lInfo, fmt.Sprintf("%s\t%s\t%s\t%s",
 			r.Method, r.RequestURI, r.RemoteAddr, name)); err != nil {
 			fmt.Print(err)

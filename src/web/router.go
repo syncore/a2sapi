@@ -5,6 +5,7 @@ package web
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"steamtest/src/util"
 
@@ -19,16 +20,19 @@ func newRouter() *mux.Router {
 		handler = util.LogWebRequest(handler, ar.name)
 
 		r.Methods(ar.method).
-			MatcherFunc(pathQStrToLowerMatcherFunc(r, ar.path, ar.queryString)).
+			MatcherFunc(pathQStrToLowerMatcherFunc(r, ar.path, ar.queryStrings,
+			getRequiredQryStringCount(ar.queryStrings))).
 			Name(ar.name).
-			Handler(handler)
+			Handler(http.TimeoutHandler(handler, time.Duration(6*time.Second),
+			`{"error":"Timeout"}`))
 	}
 	return r
 }
 
 // Provide case-insensitive matching for URL paths and query strings
 func pathQStrToLowerMatcherFunc(router *mux.Router,
-	routepath string, querystring string) func(req *http.Request,
+	routepath string, querystrings []querystring,
+	requiredQsCount int) func(req *http.Request,
 	rt *mux.RouteMatch) bool {
 	return func(req *http.Request, rt *mux.RouteMatch) bool {
 		var pathok bool
@@ -40,19 +44,35 @@ func pathQStrToLowerMatcherFunc(router *mux.Router,
 		}
 		//case-insensitive query strings
 		// not all API routes will make use of query strings
-		if querystring == "" {
+		if len(querystrings) == 0 {
 			qstrok = true
 		} else {
 			qry := req.URL.Query()
+			truecount := 0
 			for key := range qry {
 				util.WriteDebug("URL query string key is: %s", key)
-				if strings.EqualFold(key, querystring) {
-					util.WriteDebug("KEY: %s matches query string: %s", key, querystring)
-					qstrok = true
-					break
+				for _, qs := range querystrings {
+					if strings.EqualFold(key, qs.name) && qs.required {
+						util.WriteDebug("KEY: %s matches query string: %s", key, qs.name)
+						truecount++
+						break
+					}
 				}
+			}
+			if truecount == requiredQsCount {
+				qstrok = true
 			}
 		}
 		return pathok && qstrok
 	}
+}
+
+func getRequiredQryStringCount(querystrings []querystring) int {
+	reqcount := 0
+	for _, q := range querystrings {
+		if q.required {
+			reqcount++
+		}
+	}
+	return reqcount
 }
