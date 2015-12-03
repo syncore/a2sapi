@@ -66,9 +66,9 @@ func queryServerID(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if len(ids) > cfg.MaximumHostsPerAPIQuery {
+	if len(ids) > cfg.WebConfig.MaximumHostsPerAPIQuery {
 		util.WriteDebug("Maximum number of allowed API query hosts exceeded, truncating")
-		ids = ids[:cfg.MaximumHostsPerAPIQuery]
+		ids = ids[:cfg.WebConfig.MaximumHostsPerAPIQuery]
 	}
 
 	queryServerIDRetriever(w, ids)
@@ -87,13 +87,9 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if !cfg.AllowDirectUserQueries {
+	if !cfg.WebConfig.AllowDirectUserQueries {
 		w.WriteHeader(http.StatusNotFound)
-		// TODO: error json
-		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			util.LogWebError(err)
-			return
-		}
+		fmt.Fprintf(w, `{"error":"Not allowed"}`)
 		return
 	}
 
@@ -130,9 +126,9 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(parsedaddresses) > cfg.MaximumHostsPerAPIQuery {
+	if len(parsedaddresses) > cfg.WebConfig.MaximumHostsPerAPIQuery {
 		util.WriteDebug("Maximum number of allowed API query hosts exceeded, truncating")
-		parsedaddresses = parsedaddresses[:cfg.MaximumHostsPerAPIQuery]
+		parsedaddresses = parsedaddresses[:cfg.WebConfig.MaximumHostsPerAPIQuery]
 	}
 	queryServerAddrRetriever(w, parsedaddresses)
 }

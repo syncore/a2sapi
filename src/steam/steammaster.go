@@ -53,8 +53,9 @@ func getServers(filter *filters.Filter) ([]string, error) {
 		retrieved = retrieved + total
 		util.LogSteamInfo("%d hosts retrieved so far from master.", retrieved)
 		for _, ip := range ips {
-			if count >= cfg.MaximumHostsToReceive {
-				util.LogSteamInfo("Max host limit of %d reached!", cfg.MaximumHostsToReceive)
+			if count >= cfg.SteamConfig.MaximumHostsToReceive {
+				util.LogSteamInfo("Max host limit of %d reached!",
+					cfg.SteamConfig.MaximumHostsToReceive)
 				complete = true
 				break
 			}
@@ -168,6 +169,9 @@ func queryMasterServer(conn net.Conn, startaddress string,
 	return masterResponse, nil
 }
 
+// NewMasterQuery initiates a new Steam Master server query for a given filter,
+// returning a pointer to a MasterQuery struct containing the hosts retrieved in
+// the event of success or an error in the event of failure.
 func NewMasterQuery(filter *filters.Filter) (*MasterQuery, error) {
 	var err error
 	cfg, err = util.ReadConfig()

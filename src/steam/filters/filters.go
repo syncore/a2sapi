@@ -1,15 +1,21 @@
 package filters
 
 // filters.go - steam master server filters
+// See: https://developer.valvesoftware.com/wiki/Master_Server_Query_Protocol
 
 import (
 	"bytes"
 	"fmt"
 )
 
+// SrvRegion represents a Master server region code filter
 type SrvRegion []byte
+
+// SrvFilter represents a Master server filter
 type SrvFilter []byte
 
+// Filter is our internal wrapper for a specified game, and its Master server
+// region code and Master server filters
 type Filter struct {
 	Game    *Game
 	Region  SrvRegion
@@ -109,6 +115,9 @@ var (
 	}
 )
 
+// NewFilter creates a new filter for use with a master server query based on
+// a game to query, its region code, and any other additional master server filters
+// that should be sent with the request to the master server.
 func NewFilter(game *Game, region SrvRegion, filters []SrvFilter) *Filter {
 	if filters != nil {
 		for i, f := range filters {

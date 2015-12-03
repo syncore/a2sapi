@@ -171,6 +171,9 @@ func parseServerInfo(serverinfo []byte) (*models.SteamServerInfo, error) {
 	}, nil
 }
 
+// RetryFailedInfoReq retries a failed A2S_INFO request for a specified group of
+// failed hosts for a total of retrycount times, returning a host to A2S_INFO
+// mapping for any hosts that were successfully retried.
 func RetryFailedInfoReq(failed []string,
 	retrycount int) map[string]*models.SteamServerInfo {
 	m := make(map[string]*models.SteamServerInfo)
@@ -202,6 +205,7 @@ func RetryFailedInfoReq(failed []string,
 	return m
 }
 
+// GetInfoForServer requests A2S_INFO for a given host within timeout seconds.
 func GetInfoForServer(host string, timeout int) (*models.SteamServerInfo, error) {
 	// Caller will log. Return err instead of wrapped util.LogSteamError so as not
 	// to interfere with custom error types that need to be analyzed when

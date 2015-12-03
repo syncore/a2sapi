@@ -5,11 +5,11 @@ import "strings"
 // game.go - Steam game-to-appid and A2S rule ignore mappings
 
 // Game This struct represents a queryable Steam game, including its application ID
-// and whether particular AS2 requests need to be ignored when querying.
+// and whether particular A2S requests need to be ignored when querying.
 type Game struct {
 	Name  string
 	AppID string
-	// Some games (i.e. newer/beta ones) do not have all 3 of AS2_INFO,PLAYER,RULES
+	// Some games (i.e. newer/beta ones) do not have all 3 of A2S_INFO,PLAYER,RULES
 	// any of these ignore values set to true will skip that request when querying
 	IgnoreRules   bool
 	IgnorePlayers bool
@@ -52,7 +52,8 @@ var (
 		IgnorePlayers: false,
 		IgnoreInfo:    false,
 	}
-	// GameUnspecified Unspecified game for direct server queries, if enabled
+	// GameUnspecified Unspecified game for direct server queries, if enabled;
+	// if unspecified games actually ignore some A2S requests there will be issues.
 	GameUnspecified = &Game{
 		Name:          "Unspecified",
 		AppID:         "0",

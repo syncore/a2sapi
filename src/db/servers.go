@@ -100,8 +100,8 @@ func OpenServerDB() (*sql.DB, error) {
 	return db, nil
 }
 
-// AddServersToDB Inserts a specified host and port with its game name to the server
-// database file.
+// AddServersToDB inserts a specified host and port with its game name into the
+// server database.
 func AddServersToDB(db *sql.DB, hostsgames map[string]string) {
 	toInsert := make(map[string]string, len(hostsgames))
 	for host, game := range hostsgames {

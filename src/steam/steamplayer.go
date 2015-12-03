@@ -120,6 +120,9 @@ func getDuration(bytes []byte) (float32, string) {
 	return f, s.String()
 }
 
+// RetryFailedPlayersReq retries a failed A2S_PLAYER request for a specified group of
+// failed hosts for a total of retrycount times, returning a host to A2S_PLAYER
+// mapping for any hosts that were successfully retried.
 func RetryFailedPlayersReq(failed []string,
 	retrycount int) map[string][]*models.SteamPlayerInfo {
 
@@ -152,6 +155,7 @@ func RetryFailedPlayersReq(failed []string,
 	return m
 }
 
+// GetPlayersForServer requests A2S_PLAYER info for a given host within timeout seconds.
 func GetPlayersForServer(host string, timeout int) ([]*models.SteamPlayerInfo, error) {
 	// Caller will log. Return err instead of wrapped util.LogSteamError so as not
 	// to interfere with custom error types that need to be analyzed when

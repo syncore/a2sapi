@@ -9,6 +9,7 @@ import (
 	"steamtest/src/util"
 )
 
+// Start listening for and responding to HTTP requests via the web server
 func Start() {
 	cfg, err := util.ReadConfig()
 	if err != nil {
@@ -18,5 +19,5 @@ func Start() {
 
 	r := newRouter()
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.APIWebPort), r))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.WebConfig.APIWebPort), r))
 }

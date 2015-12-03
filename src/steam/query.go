@@ -108,6 +108,13 @@ func batchRuleQuery(servers []string) map[string]map[string]string {
 	return m
 }
 
+// DirectQuery allows a user to query any host even if it is not in the internal
+// server ID database. It is primarily intended for testing as it has two big
+// issues: 1) obvious security implications, 2) there is no way to determine which
+// game any user-supplied host represents, so it is not possible to know which A2S_
+// queries should be skipped, causing games with incomplete support for all three
+// A2S queries (e.g. Reflex) to always fail. A production environment should use
+// Query() instead.
 func DirectQuery(hosts []string) (*models.APIServerList, error) {
 	hg := make(map[string]*filters.Game, len(hosts))
 	players := batchPlayerQuery(hosts)
@@ -125,6 +132,9 @@ func DirectQuery(hosts []string) (*models.APIServerList, error) {
 	return sl, nil
 }
 
+// Query retrieves the server information for a given set of host to game pairs
+// and returns it in a format that is presented to the API. It takes a map consisting
+// of host(s) and their corresponding game names (i.e: k:127.0.0.1:27960, v:"QuakeLive")
 func Query(hostsgames map[string]string) (*models.APIServerList, error) {
 	hg := make(map[string]*filters.Game, len(hostsgames))
 	needsPlayers := make([]string, len(hostsgames))

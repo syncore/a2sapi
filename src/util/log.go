@@ -98,7 +98,7 @@ func isMaxLogSizeExceeded(lt logType, cfg *Config) bool {
 	if err != nil {
 		return false
 	}
-	return f.Size() > cfg.MaximumLogSize
+	return f.Size() > cfg.LogConfig.MaximumLogSize
 }
 
 func logDirNeedsCleaning(lt logType, cfg *Config) bool {
@@ -119,7 +119,7 @@ func logDirNeedsCleaning(lt logType, cfg *Config) bool {
 		}
 		logCount++
 	}
-	return logCount > cfg.MaximumLogCount
+	return logCount > cfg.LogConfig.MaximumLogCount
 }
 
 func getLogFiles(lt logType) ([]string, error) {
@@ -262,13 +262,13 @@ func writeLogEntry(lt logType, loglevel logLevel, msg string,
 	if err != nil {
 		return err
 	}
-	if lt == App && !cfg.EnableAppLogging {
+	if lt == App && !cfg.LogConfig.EnableAppLogging {
 		return nil
-	} else if lt == Debug && !cfg.EnableDebugMessages {
+	} else if lt == Debug && !cfg.LogConfig.EnableDebugMessages {
 		return nil
-	} else if lt == Steam && !cfg.EnableSteamLogging {
+	} else if lt == Steam && !cfg.LogConfig.EnableSteamLogging {
 		return nil
-	} else if lt == Web && !cfg.EnableWebLogging {
+	} else if lt == Web && !cfg.LogConfig.EnableWebLogging {
 		return nil
 	}
 

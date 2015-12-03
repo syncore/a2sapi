@@ -101,6 +101,9 @@ func parseRuleInfo(ruleinfo []byte) (map[string]string, error) {
 	return m, nil
 }
 
+// RetryFailedRulesReq retries a failed A2S_RULES request for a specified group of
+// failed hosts for a total of retrycount times, returning a host to A2S_RULES
+// mapping for any hosts that were successfully retried.
 func RetryFailedRulesReq(failed []string,
 	retrycount int) map[string]map[string]string {
 
@@ -133,6 +136,7 @@ func RetryFailedRulesReq(failed []string,
 	return m
 }
 
+// GetRulesForServer requests A2S_RULES info for a given host within timeout seconds.
 func GetRulesForServer(host string, timeout int) (map[string]string, error) {
 	// Caller will log. Return err instead of wrapped util.LogSteamError so as not
 	// to interfere with custom error types that need to be analyzed when

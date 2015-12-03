@@ -35,6 +35,9 @@ func getDefaultCountryData() *models.DbCountry {
 	}
 }
 
+// OpenCountryDB opens the country lookup database for reading. The caller of
+// this function will be responsinble for calling a .Close() on the Reader pointer
+// returned by this function.
 func OpenCountryDB() (*maxminddb.Reader, error) {
 	// Note: the caller of this function needs to handle db.Close()
 	db, err := maxminddb.Open(mmDbFile)
@@ -44,6 +47,8 @@ func OpenCountryDB() (*maxminddb.Reader, error) {
 	return db, nil
 }
 
+// GetCountryInfo attempts to retrieve the country information for a given IP,
+// returning the result as a country model object over the corresponding result channel.
 func GetCountryInfo(ch chan<- *models.DbCountry, db *maxminddb.Reader, ipstr string) {
 	ip := net.ParseIP(ipstr)
 	c := &mmdbformat{}
