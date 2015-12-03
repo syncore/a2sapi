@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func newRouter() *mux.Router {
+func newRouter(cfg *util.Config) *mux.Router {
 	r := mux.NewRouter().StrictSlash(true)
 	for _, ar := range apiRoutes {
 		var handler http.Handler
@@ -23,7 +23,8 @@ func newRouter() *mux.Router {
 			MatcherFunc(pathQStrToLowerMatcherFunc(r, ar.path, ar.queryStrings,
 			getRequiredQryStringCount(ar.queryStrings))).
 			Name(ar.name).
-			Handler(http.TimeoutHandler(handler, time.Duration(6*time.Second),
+			Handler(http.TimeoutHandler(handler,
+			time.Duration(cfg.WebConfig.APIWebTimeout)*time.Second,
 			`{"error":"Timeout"}`))
 	}
 	return r

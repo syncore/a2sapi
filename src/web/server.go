@@ -17,7 +17,7 @@ func Start() {
 			err)
 	}
 
-	r := newRouter()
+	r := newRouter(cfg)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.WebConfig.APIWebPort), r))
 }
