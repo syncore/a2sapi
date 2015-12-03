@@ -8,7 +8,7 @@ import "strings"
 // and whether particular A2S requests need to be ignored when querying.
 type Game struct {
 	Name  string
-	AppID string
+	AppID uint64
 	// Some games (i.e. newer/beta ones) do not have all 3 of A2S_INFO,PLAYER,RULES
 	// any of these ignore values set to true will skip that request when querying
 	IgnoreRules   bool
@@ -23,7 +23,7 @@ var (
 	// GameCsGo Counter-Strike: GO
 	GameCsGo = &Game{
 		Name:          "CSGO",
-		AppID:         "730",
+		AppID:         730,
 		IgnoreRules:   false,
 		IgnorePlayers: false,
 		IgnoreInfo:    false,
@@ -31,7 +31,7 @@ var (
 	// GameQuakeLive Quake Live
 	GameQuakeLive = &Game{
 		Name:          "QuakeLive",
-		AppID:         "282440",
+		AppID:         282440,
 		IgnoreRules:   false,
 		IgnorePlayers: false,
 		IgnoreInfo:    false,
@@ -39,7 +39,7 @@ var (
 	// GameReflex Reflex
 	GameReflex = &Game{
 		Name:          "Reflex",
-		AppID:         "328070",
+		AppID:         328070,
 		IgnoreRules:   true, // Reflex does not implement A2S_RULES
 		IgnorePlayers: false,
 		IgnoreInfo:    false,
@@ -47,7 +47,7 @@ var (
 	// GameTF2 Team Fortress 2
 	GameTF2 = &Game{
 		Name:          "TF2",
-		AppID:         "440",
+		AppID:         440,
 		IgnoreRules:   false,
 		IgnorePlayers: false,
 		IgnoreInfo:    false,
@@ -56,7 +56,7 @@ var (
 	// if unspecified games actually ignore some A2S requests there will be issues.
 	GameUnspecified = &Game{
 		Name:          "Unspecified",
-		AppID:         "0",
+		AppID:         0,
 		IgnoreRules:   false,
 		IgnorePlayers: false,
 		IgnoreInfo:    false,
@@ -75,9 +75,9 @@ func (g *Game) String() string {
 	return g.Name
 }
 
-// GetGame Searches the list of pre-defined games and return a pointer to a Game
-// struct based on the name of the game.
-func GetGame(name string) *Game {
+// GetGameByName searches the list of pre-defined games and returns a pointer to
+// a Game struct based on the name of the game.
+func GetGameByName(name string) *Game {
 	for _, g := range gamelist {
 		if strings.EqualFold(name, g.Name) {
 			return g
@@ -86,10 +86,21 @@ func GetGame(name string) *Game {
 	return GameUnspecified
 }
 
-// NewGame Specifies a new game, including its name, Steam application-ID, and
+// GetGameByAppID searches the list of pre-defined games and returns a pointer to
+// a Game struct based on the AppID of the game.
+func GetGameByAppID(appid uint64) *Game {
+	for _, g := range gamelist {
+		if appid == g.AppID {
+			return g
+		}
+	}
+	return GameUnspecified
+}
+
+// NewGame specifies a new game, including its name, Steam application-ID, and
 // whether A2S_RULES, A2S_PLAYERS, and/or AS2_INFO requests should be ignored
 // when performing a query.
-func NewGame(name, appid string, ignoreRules, ignorePlayers,
+func NewGame(name string, appid uint64, ignoreRules, ignorePlayers,
 	ignoreInfo bool) *Game {
 	return &Game{
 		Name:          name,

@@ -122,15 +122,15 @@ func NewFilter(game *Game, region SrvRegion, filters []SrvFilter) *Filter {
 	if filters != nil {
 		for i, f := range filters {
 			if bytes.HasPrefix(f, []byte("\\appid\\")) {
-				filters[i] = AppIDFilter(game.AppID)
+				filters[i] = AppIDFilter(fmt.Sprintf("%d", game.AppID))
 				break
 			} else {
-				filters = append(filters, AppIDFilter(game.AppID))
+				filters = append(filters, AppIDFilter(fmt.Sprintf("%d", game.AppID)))
 				break
 			}
 		}
 	} else {
-		filters = append(filters, AppIDFilter(game.AppID))
+		filters = append(filters, AppIDFilter(fmt.Sprintf("%d", game.AppID)))
 	}
 	return &Filter{
 		Game:    game,

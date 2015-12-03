@@ -109,22 +109,46 @@ func batchRuleQuery(servers []string) map[string]map[string]string {
 }
 
 // DirectQuery allows a user to query any host even if it is not in the internal
-// server ID database. It is primarily intended for testing as it has two big
-// issues: 1) obvious security implications, 2) there is no way to determine which
-// game any user-supplied host represents, so it is not possible to know which A2S_
-// queries should be skipped, causing games with incomplete support for all three
-// A2S queries (e.g. Reflex) to always fail. A production environment should use
-// Query() instead.
+// server ID database. It is primarily intended for testing as it has two main
+// issues: 1) obvious security implications, 2) determining which game a user-
+// supplied host represents rests on potentially unreliable assumptions, which if
+// not true would cause games with incomplete support for all three A2S queries
+// (e.g. Reflex) to always fail. A production environment should use Query() instead.
 func DirectQuery(hosts []string) (*models.APIServerList, error) {
 	hg := make(map[string]*filters.Game, len(hosts))
-	players := batchPlayerQuery(hosts)
-	rules := batchRuleQuery(hosts)
+
+	// Try to account for the fact that we can't determine the game ahead of time
+	// for user-specified direct host queries -- a number of assumptions:
+	// (1) A2S_INFO for game/host, (2) extra data A2S_INFO flag & field w/ appid,
+	//(3) game has been defined in game.go with the correct AppID and A2S ignore flags
 	info := batchInfoQuery(hosts)
+	needsPlayers := make([]string, len(hosts))
+	needsRules := make([]string, len(hosts))
 
 	for _, h := range hosts {
-		hg[h] = filters.GameUnspecified
+		util.WriteDebug("direct query for %s. will try to figure out needed queries", h)
+		if info != nil {
+			util.WriteDebug("A2S_INFO not nil. got gameid: %d", info[h].ExtraData.GameID)
+			fg := filters.GetGameByAppID(info[h].ExtraData.GameID)
+			hg[h] = fg
+			if !fg.IgnorePlayers {
+				util.WriteDebug("based on game %s for %s, will need to get A2S_PLAYERS",
+					fg.Name, h)
+				needsPlayers = append(needsPlayers, h)
+			}
+			if !fg.IgnoreRules {
+				util.WriteDebug("based on game %s for %s, will need to get A2S_RULES",
+					fg.Name, h)
+				needsRules = append(needsRules, h)
+			}
+		} else {
+			util.WriteDebug("A2S_INFO is nil. game will be unspecified; results may vary")
+			hg[h] = filters.GameUnspecified
+		}
 	}
 
+	players := batchPlayerQuery(needsPlayers)
+	rules := batchRuleQuery(needsRules)
 	sl, err := buildQueryServerList(hg, info, rules, players)
 	if err != nil {
 		return models.GetDefaultServerList(), util.LogAppError(err)
@@ -142,7 +166,7 @@ func Query(hostsgames map[string]string) (*models.APIServerList, error) {
 	needsInfo := make([]string, len(hostsgames))
 
 	for host, game := range hostsgames {
-		fg := filters.GetGame(game)
+		fg := filters.GetGameByName(game)
 		hg[host] = fg
 		if !fg.IgnorePlayers {
 			needsPlayers = append(needsPlayers, host)
