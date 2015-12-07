@@ -121,9 +121,9 @@ func CreateConfig() error {
 
 	// Logging configuration
 	// Determine if application, Steam, and/or web API logging should be enabled
-	cfg.LogConfig.EnableAppLogging = configureAppLogging(reader)
-	cfg.LogConfig.EnableSteamLogging = configureSteamLogging(reader)
-	cfg.LogConfig.EnableWebLogging = configureWebLogging(reader)
+	cfg.LogConfig.EnableAppLogging = configureLoggingEnable(reader, App)
+	cfg.LogConfig.EnableSteamLogging = configureLoggingEnable(reader, Steam)
+	cfg.LogConfig.EnableWebLogging = configureLoggingEnable(reader, Web)
 	// Debug mode for testing (no user option to enable)
 	cfg.LogConfig.EnableDebugMessages = defaultEnableDebugMessages
 	// Configure max log size and max log count if logging is enabled
@@ -131,11 +131,16 @@ func CreateConfig() error {
 		cfg.LogConfig.EnableWebLogging {
 		cfg.LogConfig.MaximumLogSize = configureMaxLogSize(reader)
 		cfg.LogConfig.MaximumLogCount = configureMaxLogCount(reader)
+	} else {
+		cfg.LogConfig.MaximumLogSize = defaultMaxLogSize
+		cfg.LogConfig.MaximumLogCount = defaultMaxLogCount
 	}
 
 	// Steam configuration
 	// Maximum # of servers to retrieve from Steam Master server
 	cfg.SteamConfig.MaximumHostsToReceive = configureMaxServersToRetrieve(reader)
+	// # hours before bugged "stuck" players are filtered out from the results
+	cfg.SteamConfig.SteamBugPlayerTime = configureSteamBugPlayerTime(reader)
 	// Time between Steam Master server queries
 	cfg.SteamConfig.TimeBetweenMasterQueries = configureTimeBetweenQueries(reader)
 

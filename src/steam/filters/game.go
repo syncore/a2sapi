@@ -24,7 +24,7 @@ var (
 	GameCsGo = &Game{
 		Name:          "CSGO",
 		AppID:         730,
-		IgnoreRules:   false,
+		IgnoreRules:   true, // CSGO no longer sends rules as of 1.32.3.0 (02/21/14)
 		IgnorePlayers: false,
 		IgnoreInfo:    false,
 	}

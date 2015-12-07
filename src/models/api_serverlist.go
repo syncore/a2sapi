@@ -27,9 +27,10 @@ type APIServer struct {
 	CountryInfo *DbCountry `json:"location"`
 	// 'Info' by default was *ServerInfo, but nil pointers are encoded as
 	// 'null' in JSON instead of an empty object, so use interface and handle appropriately
-	Info    interface{}        `json:"info"`
-	Players []*SteamPlayerInfo `json:"players"`
-	Rules   map[string]string  `json:"rules"`
+	Info        interface{}        `json:"info"`
+	Players     []*SteamPlayerInfo `json:"players"`
+	RealPlayers *RealPlayerInfo    `json:"realPlayers"`
+	Rules       map[string]string  `json:"rules"`
 }
 
 // GetDefaultServerList Returns a default, empty, server list with the current

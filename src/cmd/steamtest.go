@@ -4,10 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	//"steamtest/src/steam"
-	//"steamtest/src/steam/filters"
+	"steamtest/src/steam"
+	"steamtest/src/steam/filters"
 	"steamtest/src/util"
-	"steamtest/src/web"
 )
 
 var doConfig bool
@@ -27,8 +26,8 @@ func main() {
 		}
 		os.Exit(0)
 	}
-	//cfg, err := util.ReadConfig()
-	_, err := util.ReadConfig()
+	cfg, err := util.ReadConfig()
+	//_, err := util.ReadConfig()
 	if err != nil {
 		fmt.Printf("Could not read configuration file '%s' in the '%s' directory.\n",
 			util.ConfigFileName, util.ConfigDirectory)
@@ -37,11 +36,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	// filter := filters.NewFilter(filters.GameQuakeLive, filters.SrAll, nil)
-	// stop := make(chan bool, 1)
-	// go steam.StartMasterRetrieval(stop, filter, 7, cfg.TimeBetweenMasterQueries)
-	// <-stop
+	filter := filters.NewFilter(filters.GameQuakeLive, filters.SrAll, nil)
+	stop := make(chan bool, 1)
+	go steam.StartMasterRetrieval(stop, filter, 7, cfg.SteamConfig.TimeBetweenMasterQueries)
+	<-stop
 
-	web.Start()
+	//web.Start()
 
 }

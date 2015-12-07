@@ -13,10 +13,33 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const serverDbFile = "servers.sqlite"
+func createServerDB(dbfile string) error {
+	create := `CREATE TABLE servers (
+	server_id INTEGER NOT NULL,
+	host TEXT NOT NULL,
+	game TEXT NOT NULL,
+	PRIMARY KEY(server_id)
+	)`
 
-func createDb(dbfile string) error {
 	if util.FileExists(dbfile) {
+		// already exists, so verify integrity
+		db, err := sql.Open("sqlite3", dbfile)
+		if err != nil {
+			return util.LogAppErrorf(
+				"Unable to open server DB file for verification: %s", err)
+		}
+		defer db.Close()
+		var name string
+		err = db.QueryRow(
+			"SELECT name from sqlite_master where type='table' and name='servers'").Scan(&name)
+		switch {
+		case err == sql.ErrNoRows:
+			if _, err = db.Exec(create); err != nil {
+				return util.LogAppErrorf("Unable to create servers table in DB: %s", err)
+			}
+		case err != nil:
+			return util.LogAppErrorf("Server DB table verification error: %s", err)
+		}
 		return nil
 	}
 
@@ -31,13 +54,7 @@ func createDb(dbfile string) error {
 			"Unable to open server DB file for table creation: %s", err)
 	}
 	defer db.Close()
-	q := `CREATE TABLE servers (
-	server_id INTEGER NOT NULL,
-	host TEXT NOT NULL,
-	game TEXT NOT NULL,
-	PRIMARY KEY(server_id)
-	)`
-	_, err = db.Exec(q)
+	_, err = db.Exec(create)
 	if err != nil {
 		return util.LogAppErrorf("Unable to create servers table in servers DB: %s",
 			err)
@@ -90,10 +107,11 @@ func getHostAndGame(db *sql.DB, id string) (host, game string, err error) {
 // OpenServerDB Opens a database connection to the server database file or if
 // that file does not exists, creates it and then opens a database connection to it.
 func OpenServerDB() (*sql.DB, error) {
-	if err := createDb(serverDbFile); err != nil {
+	if err := verifyServerDbPath(); err != nil {
+		// will panic if not verified
 		return nil, util.LogAppError(err)
 	}
-	db, err := sql.Open("sqlite3", serverDbFile)
+	db, err := sql.Open("sqlite3", serverDbFilepath)
 	if err != nil {
 		return nil, util.LogAppError(err)
 	}

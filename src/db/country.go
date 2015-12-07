@@ -10,8 +10,6 @@ import (
 	"github.com/oschwald/maxminddb-golang"
 )
 
-const mmDbFile = "GeoLite2-City.mmdb"
-
 // This is an intermediate struct to represent the MaxMind DB format, not for JSON
 type mmdbformat struct {
 	Country struct {
@@ -40,9 +38,10 @@ func getDefaultCountryData() *models.DbCountry {
 // returned by this function.
 func OpenCountryDB() (*maxminddb.Reader, error) {
 	// Note: the caller of this function needs to handle db.Close()
-	db, err := maxminddb.Open(mmDbFile)
+	db, err := maxminddb.Open(countryDbFilePath)
 	if err != nil {
-		return nil, util.LogAppError(err)
+		util.LogAppError(err)
+		panic("Unable to open country database!")
 	}
 	return db, nil
 }

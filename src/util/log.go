@@ -98,7 +98,7 @@ func isMaxLogSizeExceeded(lt logType, cfg *Config) bool {
 	if err != nil {
 		return false
 	}
-	return f.Size() > cfg.LogConfig.MaximumLogSize
+	return f.Size() > cfg.LogConfig.MaximumLogSize*1024
 }
 
 func logDirNeedsCleaning(lt logType, cfg *Config) bool {

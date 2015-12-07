@@ -80,9 +80,10 @@ func buildMasterServerList(game *filters.Game, servers []string,
 
 		if success {
 			srv := &models.APIServer{
-				Game:    game.Name,
-				Players: players,
-				Rules:   rules,
+				Game:        game.Name,
+				Players:     players,
+				RealPlayers: removeBuggedPlayers(players),
+				Rules:       rules,
 			}
 			// this is needed to return the omitted info as an empty object in JSON
 			if useEmptyInfo {
@@ -187,9 +188,10 @@ func buildQueryServerList(hostsgames map[string]*filters.Game,
 
 		if success {
 			srv := &models.APIServer{
-				Game:    game.Name,
-				Players: players,
-				Rules:   rules,
+				Game:        game.Name,
+				Players:     players,
+				RealPlayers: removeBuggedPlayers(players),
+				Rules:       rules,
 			}
 			// this is needed to return the omitted info as an empty object in JSON
 			if useEmptyInfo {
@@ -227,6 +229,34 @@ func buildQueryServerList(hostsgames map[string]*filters.Game,
 		successcount)
 	sl = setServerIDForQueryList(sdb, sl)
 	return sl, nil
+}
+
+func removeBuggedPlayers(players []*models.SteamPlayerInfo) *models.RealPlayerInfo {
+	rpi := &models.RealPlayerInfo{
+		RealPlayerCount: len(players),
+		Players:         players,
+	}
+	cfg, err := util.ReadConfig()
+	if err != nil {
+		util.LogAppError(err)
+		return rpi
+	}
+
+	var filtered []*models.SteamPlayerInfo
+	for _, p := range players {
+		if int(p.TimeConnectedSecs) < (3600 * cfg.SteamConfig.SteamBugPlayerTime) {
+			filtered = append(filtered, p)
+		}
+	}
+	// Empty players (nil) displayed as empty array in JSON, not null
+	if len(filtered) == 0 {
+		rpi.RealPlayerCount = 0
+		rpi.Players = make([]*models.SteamPlayerInfo, 0)
+	} else {
+		rpi.RealPlayerCount = len(filtered)
+		rpi.Players = filtered
+	}
+	return rpi
 }
 
 func setServerIDForMasterList(sdb *sql.DB, sl *models.APIServerList,
