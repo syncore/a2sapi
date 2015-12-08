@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+// TODO: large -- refactor
 func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 	error) {
 	// Cannot ignore all three requests
@@ -22,15 +23,16 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 			return nil, util.LogAppErrorf("Cannot ignore all three A2S_ requests!")
 		}
 	}
-	sl := &models.APIServerList{
-		Servers:       make([]*models.APIServer, 0),
-		FailedServers: make([]string, 0),
-	}
 	successcount := 0
 	var success bool
 	var useEmptyInfo bool
 	var sdb *sql.DB
 	var sdbhosts map[string]string
+	sl := &models.APIServerList{
+		Servers:       make([]*models.APIServer, 0),
+		FailedServers: make([]string, 0),
+	}
+
 	if addtoServerDB {
 		sdbhosts = make(map[string]string, len(data.HostsGames))
 	}
@@ -91,11 +93,13 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 			ip, port, err := net.SplitHostPort(host)
 			if err == nil {
 				srv.IP = ip
-				sdbhosts[host] = game.Name
 				srv.Host = host
 				p, err := strconv.Atoi(port)
 				if err == nil {
 					srv.Port = p
+				}
+				if addtoServerDB {
+					sdbhosts[host] = game.Name
 				}
 				loc := make(chan *models.DbCountry, 1)
 				go db.GetCountryInfo(loc, cdb, ip)
@@ -109,6 +113,11 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 		}
 	}
 
+	sl.RetrievedAt = time.Now().Format("Mon Jan _2 15:04:05 2006 EST")
+	sl.RetrievedTimeStamp = time.Now().Unix()
+	sl.ServerCount = len(sl.Servers)
+	sl.FailedCount = len(sl.FailedServers)
+
 	if addtoServerDB {
 		sdb, err = db.OpenServerDB()
 		if err != nil {
@@ -116,16 +125,11 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 		}
 		defer sdb.Close()
 		go db.AddServersToDB(sdb, sdbhosts)
+		sl = setServerIDForList(sdb, sl)
 	}
-
-	sl.RetrievedAt = time.Now().Format("Mon Jan _2 15:04:05 2006 EST")
-	sl.RetrievedTimeStamp = time.Now().Unix()
-	sl.ServerCount = len(sl.Servers)
-	sl.FailedCount = len(sl.FailedServers)
 
 	util.LogAppInfo("Specific query: %d servers were successfully queried!",
 		successcount)
-	sl = setServerIDForList(sdb, sl)
 	return sl, nil
 }
 
