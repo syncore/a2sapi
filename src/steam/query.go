@@ -10,6 +10,13 @@ import (
 	"sync"
 )
 
+type a2sData struct {
+	HostsGames map[string]*filters.Game
+	Info       map[string]*models.SteamServerInfo
+	Rules      map[string]map[string]string
+	Players    map[string][]*models.SteamPlayerInfo
+}
+
 func batchInfoQuery(servers []string) map[string]*models.SteamServerInfo {
 	m := make(map[string]*models.SteamServerInfo)
 	var wg sync.WaitGroup
@@ -146,10 +153,13 @@ func DirectQuery(hosts []string) (*models.APIServerList, error) {
 			hg[h] = filters.GameUnspecified
 		}
 	}
-
-	players := batchPlayerQuery(needsPlayers)
-	rules := batchRuleQuery(needsRules)
-	sl, err := buildQueryServerList(hg, info, rules, players)
+	data := &a2sData{
+		HostsGames: hg,
+		Info:       info,
+		Rules:      batchRuleQuery(needsRules),
+		Players:    batchPlayerQuery(needsPlayers),
+	}
+	sl, err := buildServerList(data, false)
 	if err != nil {
 		return models.GetDefaultServerList(), util.LogAppError(err)
 	}
@@ -178,11 +188,14 @@ func Query(hostsgames map[string]string) (*models.APIServerList, error) {
 			needsInfo = append(needsInfo, host)
 		}
 	}
-	players := batchPlayerQuery(needsPlayers)
-	rules := batchRuleQuery(needsRules)
-	info := batchInfoQuery(needsInfo)
+	data := &a2sData{
+		HostsGames: hg,
+		Info:       batchInfoQuery(needsInfo),
+		Rules:      batchRuleQuery(needsRules),
+		Players:    batchPlayerQuery(needsPlayers),
+	}
 
-	sl, err := buildQueryServerList(hg, info, rules, players)
+	sl, err := buildServerList(data, true)
 	if err != nil {
 		return models.GetDefaultServerList(), util.LogAppError(err)
 	}

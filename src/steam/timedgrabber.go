@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
-	"steamtest/src/models"
 	"steamtest/src/steam/filters"
 	"steamtest/src/util"
 	"time"
@@ -22,26 +21,29 @@ func retrieve(filter *filters.Filter) error {
 		return util.LogAppErrorf("Cannot ignore all three AS2 requests!")
 	}
 
-	var players map[string][]*models.SteamPlayerInfo
-	var rules map[string]map[string]string
-	var info map[string]*models.SteamServerInfo
+	data := &a2sData{}
+	hg := make(map[string]*filters.Game, len(mq.Servers))
+	for _, h := range mq.Servers {
+		hg[h] = filter.Game
+	}
+	data.HostsGames = hg
+
 	// Order of retrieval is by amount of work that must be done (1 = 2, 3)
 	// 1. players (request chal #, recv chal #, req players, recv players)
 	// 2. rules (request chal #, recv chal #, req rules, recv rules)
 	// 3. info: just request info & receive info
 	// Note: some servers (i.e. new beta games) don't have all 3 of AS2_RULES/PLAYER/INFO
 	if !filter.Game.IgnorePlayers {
-		players = batchPlayerQuery(mq.Servers)
+		data.Players = batchPlayerQuery(mq.Servers)
 	}
 	if !filter.Game.IgnoreRules {
-		rules = batchRuleQuery(mq.Servers)
+		data.Rules = batchRuleQuery(mq.Servers)
 	}
 	if !filter.Game.IgnoreInfo {
-		info = batchInfoQuery(mq.Servers)
+		data.Info = batchInfoQuery(mq.Servers)
 	}
 
-	serverlist, err := buildMasterServerList(filter.Game, mq.Servers, info, rules,
-		players)
+	serverlist, err := buildServerList(data, true)
 	if err != nil {
 		return util.LogAppError(err)
 	}
