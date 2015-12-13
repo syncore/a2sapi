@@ -20,6 +20,9 @@ const (
 )
 
 var (
+	// Multi-packet response header
+	multiPacketRespHeader = []byte{0xFE, 0xFF, 0xFF, 0xFF}
+
 	// A2S_INFO: challenge request packet
 	infoChallengeReq = []byte{
 		0xFF, 0xFF, 0xFF, 0xFF,

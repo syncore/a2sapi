@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"net"
+	"sort"
 	"steamtest/src/util"
 	"strings"
 	"sync"
@@ -15,7 +16,6 @@ import (
 func getRulesInfo(host string, timeout int) ([]byte, error) {
 	conn, err := net.DialTimeout("udp", host, time.Duration(timeout)*time.Second)
 	if err != nil {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrHostConnection(err.Error()))
 		return nil, ErrHostConnection(err.Error())
 	}
@@ -25,7 +25,6 @@ func getRulesInfo(host string, timeout int) ([]byte, error) {
 
 	_, err = conn.Write(rulesChallengeReq)
 	if err != nil {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
@@ -33,12 +32,10 @@ func getRulesInfo(host string, timeout int) ([]byte, error) {
 	challengeNumResp := make([]byte, maxPacketSize)
 	_, err = conn.Read(challengeNumResp)
 	if err != nil {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 	if !bytes.HasPrefix(challengeNumResp, expectedRulesRespHeader) {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrChallengeResponse)
 		return nil, ErrChallengeResponse
 	}
@@ -46,14 +43,10 @@ func getRulesInfo(host string, timeout int) ([]byte, error) {
 	challengeNum := bytes.TrimLeft(challengeNumResp, headerStr)
 	challengeNum = challengeNum[1:5]
 	request := []byte{0xFF, 0xFF, 0xFF, 0xFF, 0x56}
-
-	for _, b := range challengeNum {
-		request = append(request, b)
-	}
+	request = append(request, challengeNum...)
 
 	_, err = conn.Write(request)
 	if err != nil {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
@@ -61,20 +54,98 @@ func getRulesInfo(host string, timeout int) ([]byte, error) {
 	var buf [maxPacketSize]byte
 	numread, err := conn.Read(buf[:maxPacketSize])
 	if err != nil {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
-	rulesInfo := make([]byte, numread)
-	copy(rulesInfo, buf[:numread])
-
+	var rulesInfo []byte
+	if bytes.HasPrefix(buf[:maxPacketSize], multiPacketRespHeader) {
+		// handle multi-packet response
+		util.WriteDebug("Detected multi-packet response.")
+		first := buf[:maxPacketSize]
+		first = first[:numread]
+		rulesInfo, err = handleMultiPacketResponse(conn, first)
+		if err != nil {
+			util.LogSteamError(ErrDataTransmit(err.Error()))
+			return nil, ErrDataTransmit(err.Error())
+		}
+	} else {
+		util.WriteDebug("Detected single-packet response.")
+		rulesInfo = make([]byte, numread)
+		copy(rulesInfo, buf[:numread])
+	}
 	return rulesInfo, nil
 }
 
+// Handle multi-packet responses for Source engine games.
+func handleMultiPacketResponse(c net.Conn, firstReceived []byte) ([]byte,
+	error) {
+	// header: 4 bytes, 0xFFFFFFFE (already verified in caller)
+	// ID: 4 bytes, signed
+	// total # of packets: 1 byte, unsigned
+	// current packet #, starts at zero: 1 byte, unsigned
+	// size: 2 bytes, only for Orange Box Engine and Newer, signed
+	// size & CRC32 sum for bzip2 compressed packets; but no longer used since late 2005
+
+	// first 4 bytes [0:4] determine if split; we've already determined that it is
+	id := int32(binary.LittleEndian.Uint32(firstReceived[4:8]))
+	total := uint32(firstReceived[8])
+	util.WriteDebug("Multi-packet: %d total packets should be read", total)
+	curNum := uint32(firstReceived[9])
+	// note: size won't exist for 4 ancient appids (215,17550,17700,240 w/protocol 7)
+	//size := int16(binary.LittleEndian.Uint16(firstReceived[10:12]))
+	packets := make(map[uint32][]byte, total)
+	packets[0] = firstReceived[12:]
+	var buf [maxPacketSize]byte
+	prevNum := curNum
+	for {
+		if curNum+1 == total {
+			util.WriteDebug("Got all %d packets.", total)
+			break
+		}
+		numread, err := c.Read(buf[:maxPacketSize])
+		if err != nil {
+			util.LogSteamError(ErrMultiPacketTransmit(err.Error()))
+			return nil, ErrMultiPacketTransmit(err.Error())
+		}
+		packet := buf[:maxPacketSize]
+		packet = packet[:numread]
+		curNum = uint32(packet[9])
+
+		if prevNum == curNum {
+			return nil, ErrMultiPacketDuplicate
+		}
+		prevNum = curNum
+
+		if int32(binary.LittleEndian.Uint32(packet[4:8])) != id {
+			util.LogSteamError(ErrPacketHeader)
+			return nil, ErrMultiPacketIDMismatch
+		}
+		if uint32(packet[9]) > total {
+			util.LogSteamError(ErrMultiPacketNumExceeded)
+			return nil, ErrMultiPacketNumExceeded
+		}
+		// skip the header
+		p := make([]byte, numread-12)
+		copy(p, packet[12:])
+		packets[curNum] = p
+
+	}
+	// sort packet keys
+	pnums := make(u32slice, len(packets))
+	for key := range packets {
+		pnums[key] = key
+	}
+	pnums.Sort()
+
+	var rules []byte
+	for _, pn := range pnums {
+		rules = append(rules, packets[pn]...)
+	}
+	return rules, nil
+}
+
 func parseRuleInfo(ruleinfo []byte) (map[string]string, error) {
-	// TODO: handle multi-packetted responses for games that use them
 	if !bytes.HasPrefix(ruleinfo, expectedRuleChunkHeader) {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrPacketHeader)
 		return nil, ErrPacketHeader
 	}
@@ -152,4 +223,17 @@ func GetRulesForServer(host string, timeout int) (map[string]string, error) {
 	}
 
 	return rules, nil
+}
+
+// u32slice attaches the methods of sort.Interface to []uint32, sorting in
+// increasing order.
+type u32slice []uint32
+
+func (s u32slice) Len() int           { return len(s) }
+func (s u32slice) Less(i, j int) bool { return s[i] < s[j] }
+func (s u32slice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+
+// Sort is a convenience method.
+func (s u32slice) Sort() {
+	sort.Sort(s)
 }

@@ -16,7 +16,6 @@ import (
 func getPlayerInfo(host string, timeout int) ([]byte, error) {
 	conn, err := net.DialTimeout("udp", host, time.Duration(timeout)*time.Second)
 	if err != nil {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrHostConnection(err.Error()))
 		return nil, ErrHostConnection(err.Error())
 	}
@@ -26,7 +25,6 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 
 	_, err = conn.Write(playerChallengeReq)
 	if err != nil {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
@@ -34,33 +32,26 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 	challengeNumResp := make([]byte, maxPacketSize)
 	_, err = conn.Read(challengeNumResp)
 	if err != nil {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 	if !bytes.HasPrefix(challengeNumResp, expectedPlayerRespHeader) {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrChallengeResponse)
 		return nil, ErrChallengeResponse
 	}
 	challengeNum := bytes.TrimLeft(challengeNumResp, headerStr)
 	challengeNum = challengeNum[1:5]
 	request := []byte{0xFF, 0xFF, 0xFF, 0xFF, 0x55}
-
-	for _, b := range challengeNum {
-		request = append(request, b)
-	}
+	request = append(request, challengeNum...)
 
 	_, err = conn.Write(request)
 	if err != nil {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 	var buf [maxPacketSize]byte
 	numread, err := conn.Read(buf[:maxPacketSize])
 	if err != nil {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
@@ -72,7 +63,6 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 
 func parsePlayerInfo(unparsed []byte) ([]*models.SteamPlayerInfo, error) {
 	if !bytes.HasPrefix(unparsed, expectedPlayerChunkHeader) {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrPacketHeader)
 		return nil, ErrPacketHeader
 	}

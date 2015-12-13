@@ -124,12 +124,9 @@ func queryMasterServer(conn net.Conn, startaddress string,
 	startaddress = fmt.Sprintf("%s\x00", startaddress)
 	addr := []byte(startaddress)
 	request := []byte{0x31}
-	for _, b := range filter.Region {
-		request = append(request, b)
-	}
-	for _, b := range addr {
-		request = append(request, b)
-	}
+	request = append(request, filter.Region...)
+	request = append(request, addr...)
+
 	for i, f := range filter.Filters {
 		for _, b := range f {
 			request = append(request, b)

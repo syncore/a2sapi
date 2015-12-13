@@ -15,7 +15,6 @@ import (
 func getServerInfo(host string, timeout int) ([]byte, error) {
 	conn, err := net.DialTimeout("udp", host, time.Duration(timeout)*time.Second)
 	if err != nil {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrHostConnection(err.Error()))
 		return nil, ErrHostConnection(err.Error())
 	}
@@ -24,7 +23,6 @@ func getServerInfo(host string, timeout int) ([]byte, error) {
 
 	_, err = conn.Write(infoChallengeReq)
 	if err != nil {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
@@ -32,7 +30,6 @@ func getServerInfo(host string, timeout int) ([]byte, error) {
 	var buf [maxPacketSize]byte
 	numread, err := conn.Read(buf[:maxPacketSize])
 	if err != nil {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
@@ -40,7 +37,6 @@ func getServerInfo(host string, timeout int) ([]byte, error) {
 	copy(serverInfo, buf[:numread])
 
 	if !bytes.HasPrefix(serverInfo, expectedInfoRespHeader) {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrPacketHeader)
 		return nil, ErrPacketHeader
 	}
@@ -50,7 +46,6 @@ func getServerInfo(host string, timeout int) ([]byte, error) {
 
 func parseServerInfo(serverinfo []byte) (*models.SteamServerInfo, error) {
 	if !bytes.HasPrefix(serverinfo, expectedInfoRespHeader) {
-		// TODO: simplify this log + return into just a return
 		util.LogSteamError(ErrPacketHeader)
 		return nil, ErrPacketHeader
 	}

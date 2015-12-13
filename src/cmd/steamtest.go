@@ -38,7 +38,8 @@ func main() {
 
 	filter := filters.NewFilter(filters.GameQuakeLive, filters.SrAll, nil)
 	stop := make(chan bool, 1)
-	go steam.StartMasterRetrieval(stop, filter, 7, cfg.SteamConfig.TimeBetweenMasterQueries)
+	go steam.StartMasterRetrieval(stop, filter, 7,
+		cfg.SteamConfig.TimeBetweenMasterQueries)
 	<-stop
 
 	//web.Start()
