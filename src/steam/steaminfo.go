@@ -185,7 +185,7 @@ func RetryFailedInfoReq(failed []string,
 				defer wg.Done()
 				r, err := GetInfoForServer(h, QueryTimeout)
 				if err != nil {
-					if err != ErrNoPlayers {
+					if err != ErrNoInfo {
 						return
 					}
 				}

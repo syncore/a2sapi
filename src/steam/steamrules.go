@@ -117,7 +117,7 @@ func handleMultiPacketResponse(c net.Conn, firstReceived []byte) ([]byte,
 		prevNum = curNum
 
 		if int32(binary.LittleEndian.Uint32(packet[4:8])) != id {
-			util.LogSteamError(ErrPacketHeader)
+			util.LogSteamError(ErrMultiPacketIDMismatch)
 			return nil, ErrMultiPacketIDMismatch
 		}
 		if uint32(packet[9]) > total {
