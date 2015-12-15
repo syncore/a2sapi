@@ -1,4 +1,4 @@
-package util
+package config
 
 // config.go - configuration operations
 
@@ -7,24 +7,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
 	"runtime"
+	"steamtest/src/constants"
+	"steamtest/src/steam/filters"
+	"steamtest/src/util"
 )
 
-var (
-	newline = getNewLineForOS()
-	// ConfigFullPath represents the OS-independent full path to the config file.
-	ConfigFullPath = path.Join(ConfigDirectory, ConfigFileName)
-)
-
-const (
-	// ConfigDirectory specifies the directory in which to store the config file.
-	ConfigDirectory = "conf"
-	// ConfigFileName specifies the name of the configuration file.
-	ConfigFileName = "config.conf"
-	// Version is the version number of the application.
-	Version = "0.1"
-)
+var newline = getNewLineForOS()
 
 // Config represents logging, steam-related, and API-related options.
 type Config struct {
@@ -40,62 +29,26 @@ func getNewLineForOS() string {
 	return "\n"
 }
 
-func createConfigDir() error {
-	if DirExists(ConfigDirectory) {
-		return nil
-	}
-	if err := os.Mkdir(ConfigDirectory, os.ModePerm); err != nil {
-		return err
-	}
-	return nil
-}
-
-func writeConfig(cfg *Config) error {
-	if err := createConfigDir(); err != nil {
-		fmt.Printf("Couldn't create '%s' dir: %s\n", ConfigDirectory, err)
-		return err
-	}
-	f, err := os.Create(ConfigFullPath)
-	if err != nil {
-		fmt.Printf("Couldn't create '%s' file: %s\n", ConfigFullPath, err)
-		return err
-	}
-	defer f.Close()
-	c, err := json.Marshal(cfg)
-	if err != nil {
-		fmt.Printf("Error marshaling JSON for '%s' file: %s\n", ConfigFullPath, err)
-		return err
-	}
-	w := bufio.NewWriter(f)
-	_, err = w.Write(c)
-	if err != nil {
-		fmt.Printf("Error writing contents of config file to disk: %s\n", err)
-		return err
-	}
-	f.Sync()
-	w.Flush()
-	fmt.Printf("Successfuly wrote config file to %s\n", ConfigFullPath)
-	return nil
-}
-
 // ReadConfig reads the configuration file from disk and returns a pointer to
 // a struct that contains the various configuration values if successful, otherwise
-// returns an error.
-func ReadConfig() (*Config, error) {
-	f, err := os.Open(ConfigFullPath)
+// panics.
+func ReadConfig() *Config {
+	f, err := os.Open(constants.ConfigFilePath)
 	if err != nil {
-		fmt.Printf("Error reading config file: %s\n", err)
-		return nil, err
+		panic(fmt.Sprintf(
+			"Error reading config file.\nYou might need to recreate with --config switch.\nError: %s",
+			err))
 	}
 	defer f.Close()
 	r := bufio.NewReader(f)
 	d := json.NewDecoder(r)
 	cfg := &Config{}
 	if err := d.Decode(cfg); err != nil {
-		fmt.Printf("Error decoding config file: %s\n", err)
-		return nil, err
+		panic(fmt.Sprintf(
+			"Error decoding config file.\nYou might need to recreate with --config switch.\nError: %s",
+			err))
 	}
-	return cfg, nil
+	return cfg
 }
 
 func getBoolString(b bool) string {
@@ -107,23 +60,23 @@ func getBoolString(b bool) string {
 
 // CreateConfig initiates the configuration creation process by collecting user
 // input for various configuration values and then writes the configuration file
-// to disk if successful, otherwise returns an error.
-func CreateConfig() error {
+// to disk if successful, otherwise panics.
+func CreateConfig() {
 	reader := bufio.NewReader(os.Stdin)
 	cfg := &Config{
 		LogConfig:   CfgLog{},
 		SteamConfig: CfgSteam{},
 		WebConfig:   CfgWeb{},
 	}
-	fmt.Printf("steamtest v%s - configuration file creation\n", Version)
+	fmt.Printf("%s - configuration file creation\n", constants.AppInfo)
 	fmt.Print(
 		"Type a value and press 'ENTER'. Leave a value empty and press 'ENTER' to use the default value.\n\n")
 
 	// Logging configuration
 	// Determine if application, Steam, and/or web API logging should be enabled
-	cfg.LogConfig.EnableAppLogging = configureLoggingEnable(reader, App)
-	cfg.LogConfig.EnableSteamLogging = configureLoggingEnable(reader, Steam)
-	cfg.LogConfig.EnableWebLogging = configureLoggingEnable(reader, Web)
+	cfg.LogConfig.EnableAppLogging = configureLoggingEnable(reader, constants.LTypeApp)
+	cfg.LogConfig.EnableSteamLogging = configureLoggingEnable(reader, constants.LTypeSteam)
+	cfg.LogConfig.EnableWebLogging = configureLoggingEnable(reader, constants.LTypeWeb)
 	// Debug mode for testing (no user option to enable)
 	cfg.LogConfig.EnableDebugMessages = defaultEnableDebugMessages
 	// Configure max log size and max log count if logging is enabled
@@ -137,12 +90,23 @@ func CreateConfig() error {
 	}
 
 	// Steam configuration
-	// Maximum # of servers to retrieve from Steam Master server
-	cfg.SteamConfig.MaximumHostsToReceive = configureMaxServersToRetrieve(reader)
+	// Query the master server automatically at timed intervals
+	cfg.SteamConfig.AutoQueryMaster = configureTimedMasterQuery(reader)
+	if cfg.SteamConfig.AutoQueryMaster {
+		// The game to automatically query the master server for at timed intervals
+		cfg.SteamConfig.AutoQueryGame = configureTimedQueryGame(reader)
+		// Time between Steam Master server queries
+		cfg.SteamConfig.TimeBetweenMasterQueries = configureTimeBetweenQueries(reader,
+			cfg.SteamConfig.AutoQueryGame)
+		// Maximum # of servers to retrieve from Steam Master server
+		cfg.SteamConfig.MaximumHostsToReceive = configureMaxServersToRetrieve(reader)
+	} else {
+		cfg.SteamConfig.AutoQueryGame = filters.GameQuakeLive.Name
+		cfg.SteamConfig.TimeBetweenMasterQueries = defaultTimeBetweenMasterQueries
+		cfg.SteamConfig.MaximumHostsToReceive = defaultMaxHostsToReceive
+	}
 	// # hours before bugged "stuck" players are filtered out from the results
 	cfg.SteamConfig.SteamBugPlayerTime = configureSteamBugPlayerTime(reader)
-	// Time between Steam Master server queries
-	cfg.SteamConfig.TimeBetweenMasterQueries = configureTimeBetweenQueries(reader)
 
 	// Web API configuration
 	// Direct queries: whether users can query any host (not just those with IDs)
@@ -154,8 +118,8 @@ func CreateConfig() error {
 	// Port that API's web server will listen on
 	cfg.WebConfig.APIWebPort = configureWebServerPort(reader)
 
-	if err := writeConfig(cfg); err != nil {
-		return err
+	if err := util.WriteJSONConfig(cfg, constants.ConfigDirectory,
+		constants.ConfigFilePath); err != nil {
+		panic(err)
 	}
-	return nil
 }

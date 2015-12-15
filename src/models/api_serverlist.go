@@ -38,7 +38,7 @@ type APIServer struct {
 // whatever reason.
 func GetDefaultServerList() *APIServerList {
 	return &APIServerList{
-		RetrievedAt:        time.Now().Format("Mon Jan _2 15:04:05 2006 EST"),
+		RetrievedAt:        time.Now().Format("Mon Jan 2 15:04:05 2006 EST"),
 		RetrievedTimeStamp: time.Now().Unix(),
 		ServerCount:        0,
 		Servers:            make([]*APIServer, 0),

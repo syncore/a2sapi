@@ -1,4 +1,4 @@
-package util
+package config
 
 import (
 	"bufio"
@@ -27,7 +27,7 @@ func configureDirectQueries(reader *bufio.Reader) bool {
 	var val bool
 	var err error
 	prompt := fmt.Sprintf(
-		"\nAllow users to directly query *any* IP address, not just those in the serverID database?\nThis is mainly for testing and has some issues depending on the game.\nIt also may have security implications so enable with caution.\n>> 'yes' or 'no' [default: %s]: ",
+		"\nAllow users to directly query *any* IP address, not just those in the serverID database?\nThis is mainly for testing and has some issues depending on the game.\nIt also may have security implications so enable with caution.\nNote: if you have timed master queries disabled & your server ID database is empty, then without this option there will be no way for users to make queries.\n>> 'yes' or 'no' [default: %s]: ",
 		getBoolString(defaultAllowDirectUserQueries))
 
 	input := func(r *bufio.Reader) (bool, error) {
@@ -47,7 +47,7 @@ func configureDirectQueries(reader *bufio.Reader) bool {
 			return false, nil
 		} else {
 			return defaultAllowDirectUserQueries,
-				fmt.Errorf("Invalid response. Valid responses: y, yes, n, no")
+				fmt.Errorf("[ERROR] Invalid response. Valid responses: y, yes, n, no")
 		}
 	}
 	for !valid {

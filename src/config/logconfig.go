@@ -1,8 +1,9 @@
-package util
+package config
 
 import (
 	"bufio"
 	"fmt"
+	"steamtest/src/constants"
 	"strconv"
 	"strings"
 )
@@ -26,30 +27,30 @@ type CfgLog struct {
 	MaximumLogCount     int   `json:"maxLogCount"`
 }
 
-func configureLoggingEnable(reader *bufio.Reader, logt logType) bool {
+func configureLoggingEnable(reader *bufio.Reader, logt constants.LogType) bool {
 	valid := false
 	var val bool
 	var err error
 	var prompt string
 	var defaultVal bool
 	switch logt {
-	case App:
+	case constants.LTypeApp:
 		defaultVal = defaultEnableAppLogging
 		prompt = fmt.Sprintf(
 			"\nLog application-related info and error messages to disk?\n>> 'yes' or 'no' [default: %s]: ",
 			getBoolString(defaultEnableAppLogging))
-	case Steam:
+	case constants.LTypeSteam:
 		defaultVal = defaultEnableSteamLogging
 		prompt = fmt.Sprintf(
 			"\nLog Steam connection info and error messages to disk?\nNOTE: this can dramatically increase resource usage and should only be used for debugging.\n>> 'yes' or 'no' [default: %s]: ",
 			getBoolString(defaultEnableSteamLogging))
-	case Web:
+	case constants.LTypeWeb:
 		defaultVal = defaultEnableWebLogging
 		prompt = fmt.Sprintf(
 			"\nShould API web-related info and error messages be logged to disk?\n>> 'yes' or 'no' [default: %s]: ",
 			getBoolString(defaultEnableWebLogging))
 	}
-	input := func(r *bufio.Reader, lt logType) (bool, error) {
+	input := func(r *bufio.Reader, lt constants.LogType) (bool, error) {
 		enable, err := r.ReadString('\n')
 		if err != nil {
 			return defaultVal, fmt.Errorf("Unable to read respone: %s", err)
@@ -65,7 +66,7 @@ func configureLoggingEnable(reader *bufio.Reader, logt logType) bool {
 			return false, nil
 		} else {
 			return defaultVal,
-				fmt.Errorf("Invalid response. Valid responses: y, yes, n, no")
+				fmt.Errorf("[ERROR] Invalid response. Valid responses: y, yes, n, no")
 		}
 	}
 	for !valid {

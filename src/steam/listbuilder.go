@@ -7,20 +7,20 @@ package steam
 import (
 	"database/sql"
 	"net"
+	"steamtest/src/config"
 	"steamtest/src/db"
+	"steamtest/src/logger"
 	"steamtest/src/models"
-	"steamtest/src/util"
 	"strconv"
 	"time"
 )
 
-// TODO: large -- refactor
 func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 	error) {
 	// Cannot ignore all three requests
 	for _, g := range data.HostsGames {
 		if g.IgnoreInfo && g.IgnorePlayers && g.IgnoreRules {
-			return nil, util.LogAppErrorf("Cannot ignore all three A2S_ requests!")
+			return nil, logger.LogAppErrorf("Cannot ignore all three A2S_ requests!")
 		}
 	}
 	successcount := 0
@@ -39,7 +39,7 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 
 	cdb, err := db.OpenCountryDB()
 	if err != nil {
-		return nil, util.LogAppError(err)
+		return nil, logger.LogAppError(err)
 	}
 	defer cdb.Close()
 
@@ -108,12 +108,11 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 			sl.Servers = append(sl.Servers, srv)
 			successcount++
 		} else {
-			util.WriteDebug("failed consists of: %s", host)
 			sl.FailedServers = append(sl.FailedServers, host)
 		}
 	}
 
-	sl.RetrievedAt = time.Now().Format("Mon Jan _2 15:04:05 2006 EST")
+	sl.RetrievedAt = time.Now().Format("Mon Jan 2 15:04:05 2006 EST")
 	sl.RetrievedTimeStamp = time.Now().Unix()
 	sl.ServerCount = len(sl.Servers)
 	sl.FailedCount = len(sl.FailedServers)
@@ -121,15 +120,18 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 	if addtoServerDB {
 		sdb, err = db.OpenServerDB()
 		if err != nil {
-			return nil, util.LogAppError(err)
+			return nil, logger.LogAppError(err)
 		}
 		defer sdb.Close()
 		go db.AddServersToDB(sdb, sdbhosts)
 		sl = setServerIDForList(sdb, sl)
 	}
 
-	util.LogAppInfo("Specific query: %d servers were successfully queried!",
-		successcount)
+	logger.LogAppInfo(
+		"Successfully queried (%d/%d) servers. %d timed out or otherwise failed.",
+		successcount, len(data.HostsGames), sl.FailedCount)
+	logger.WriteDebug("Server Queries: Successful: (%d/%d) servers\tFailed: %d servers",
+		successcount, len(data.HostsGames), sl.FailedCount)
 	return sl, nil
 }
 
@@ -138,12 +140,7 @@ func removeBuggedPlayers(players []*models.SteamPlayerInfo) *models.RealPlayerIn
 		RealPlayerCount: len(players),
 		Players:         players,
 	}
-	cfg, err := util.ReadConfig()
-	if err != nil {
-		util.LogAppError(err)
-		return rpi
-	}
-
+	cfg := config.ReadConfig()
 	var filtered []*models.SteamPlayerInfo
 	for _, p := range players {
 		if int(p.TimeConnectedSecs) < (3600 * cfg.SteamConfig.SteamBugPlayerTime) {

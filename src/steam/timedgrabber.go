@@ -6,19 +6,19 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
+	"steamtest/src/logger"
 	"steamtest/src/steam/filters"
-	"steamtest/src/util"
 	"time"
 )
 
 func retrieve(filter *filters.Filter) error {
 	mq, err := NewMasterQuery(filter)
 	if err != nil {
-		return util.LogSteamErrorf("Master server error: %s", err)
+		return logger.LogSteamErrorf("Master server error: %s", err)
 	}
 
 	if filter.Game.IgnoreInfo && filter.Game.IgnorePlayers && filter.Game.IgnoreRules {
-		return util.LogAppErrorf("Cannot ignore all three AS2 requests!")
+		return logger.LogAppErrorf("Cannot ignore all three AS2 requests!")
 	}
 
 	data := &a2sData{}
@@ -45,23 +45,23 @@ func retrieve(filter *filters.Filter) error {
 
 	serverlist, err := buildServerList(data, true)
 	if err != nil {
-		return util.LogAppError(err)
+		return logger.LogAppError(err)
 	}
 
 	j, err := json.Marshal(serverlist)
 	if err != nil {
-		return util.LogAppErrorf("Error marshaling json: %s", err)
+		return logger.LogAppErrorf("Error marshaling json: %s", err)
 	}
 	file, err := os.Create("servers.json")
 	if err != nil {
-		return util.LogAppErrorf("Error creating json file: %s", err)
+		return logger.LogAppErrorf("Error creating json file: %s", err)
 	}
 	defer file.Close()
 	file.Sync()
 	writer := bufio.NewWriter(file)
 	_, err = writer.Write(j)
 	if err != nil {
-		return util.LogAppErrorf("Error writing json file: %s", err)
+		return logger.LogAppErrorf("Error writing json file: %s", err)
 	}
 	writer.Flush()
 	return nil
@@ -74,8 +74,14 @@ func retrieve(filter *filters.Filter) error {
 func StartMasterRetrieval(stop chan bool, filter *filters.Filter,
 	initialDelay int, timeBetweenQueries int) {
 	retrticker := time.NewTicker(time.Duration(timeBetweenQueries) * time.Second)
-	util.LogAppInfo("Waiting %d seconds before attempting first retrieval...",
-		initialDelay)
+
+	logger.WriteDebug(
+		"Waiting %d seconds before grabbing %s servers. Will retrieve servers every %d secs afterwards.",
+		initialDelay, filter.Game.Name, timeBetweenQueries)
+
+	logger.LogAppInfo(
+		"Waiting %d seconds before grabbing %s servers from master. Will retrieve every %d secs afterwards.",
+		initialDelay, filter.Game.Name, timeBetweenQueries)
 
 	firstretrieval := time.NewTimer(time.Duration(initialDelay) * time.Second)
 	<-firstretrieval.C
@@ -85,8 +91,10 @@ func StartMasterRetrieval(stop chan bool, filter *filters.Filter,
 		select {
 		case <-retrticker.C:
 			go func(*filters.Filter) {
-				util.LogAppInfo("%s: Starting %s master server query", time.Now().Format(
-					"Mon Jan _2 15:04:05 2006 EST"), filter.Game.Name)
+				logger.WriteDebug("%s: Starting %s master server query", time.Now().Format(
+					"Mon Jan 2 15:04:05 2006 EST"), filter.Game.Name)
+				logger.LogAppInfo("%s: Starting %s master server query", time.Now().Format(
+					"Mon Jan 2 15:04:05 2006 EST"), filter.Game.Name)
 				_ = retrieve(filter)
 			}(filter)
 		case <-stop:

@@ -7,8 +7,8 @@ import (
 	"encoding/binary"
 	"math"
 	"net"
+	"steamtest/src/logger"
 	"steamtest/src/models"
-	"steamtest/src/util"
 	"sync"
 	"time"
 )
@@ -16,7 +16,7 @@ import (
 func getPlayerInfo(host string, timeout int) ([]byte, error) {
 	conn, err := net.DialTimeout("udp", host, time.Duration(timeout)*time.Second)
 	if err != nil {
-		util.LogSteamError(ErrHostConnection(err.Error()))
+		logger.LogSteamError(ErrHostConnection(err.Error()))
 		return nil, ErrHostConnection(err.Error())
 	}
 
@@ -25,18 +25,18 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 
 	_, err = conn.Write(playerChallengeReq)
 	if err != nil {
-		util.LogSteamError(ErrDataTransmit(err.Error()))
+		logger.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 
 	challengeNumResp := make([]byte, maxPacketSize)
 	_, err = conn.Read(challengeNumResp)
 	if err != nil {
-		util.LogSteamError(ErrDataTransmit(err.Error()))
+		logger.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 	if !bytes.HasPrefix(challengeNumResp, expectedPlayerRespHeader) {
-		util.LogSteamError(ErrChallengeResponse)
+		logger.LogSteamError(ErrChallengeResponse)
 		return nil, ErrChallengeResponse
 	}
 	challengeNum := bytes.TrimLeft(challengeNumResp, headerStr)
@@ -46,13 +46,13 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 
 	_, err = conn.Write(request)
 	if err != nil {
-		util.LogSteamError(ErrDataTransmit(err.Error()))
+		logger.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 	var buf [maxPacketSize]byte
 	numread, err := conn.Read(buf[:maxPacketSize])
 	if err != nil {
-		util.LogSteamError(ErrDataTransmit(err.Error()))
+		logger.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 	pi := make([]byte, numread)
@@ -63,7 +63,7 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 
 func parsePlayerInfo(unparsed []byte) ([]*models.SteamPlayerInfo, error) {
 	if !bytes.HasPrefix(unparsed, expectedPlayerChunkHeader) {
-		util.LogSteamError(ErrPacketHeader)
+		logger.LogSteamError(ErrPacketHeader)
 		return nil, ErrPacketHeader
 	}
 	unparsed = bytes.TrimLeft(unparsed, headerStr)
@@ -147,7 +147,7 @@ func RetryFailedPlayersReq(failed []string,
 
 // GetPlayersForServer requests A2S_PLAYER info for a given host within timeout seconds.
 func GetPlayersForServer(host string, timeout int) ([]*models.SteamPlayerInfo, error) {
-	// Caller will log. Return err instead of wrapped util.LogSteamError so as not
+	// Caller will log. Return err instead of wrapped logger.LogSteamError so as not
 	// to interfere with custom error types that need to be analyzed when
 	// determining if retry needs to be done.
 	pi, err := getPlayerInfo(host, timeout)

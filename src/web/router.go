@@ -4,20 +4,21 @@ package web
 
 import (
 	"net/http"
+	"steamtest/src/config"
 	"strings"
 	"time"
 
-	"steamtest/src/util"
+	"steamtest/src/logger"
 
 	"github.com/gorilla/mux"
 )
 
-func newRouter(cfg *util.Config) *mux.Router {
+func newRouter(cfg *config.Config) *mux.Router {
 	r := mux.NewRouter().StrictSlash(true)
 	for _, ar := range apiRoutes {
 		var handler http.Handler
 		handler = ar.handlerFunc
-		handler = util.LogWebRequest(handler, ar.name)
+		handler = logger.LogWebRequest(handler, ar.name)
 
 		r.Methods(ar.method).
 			MatcherFunc(pathQStrToLowerMatcherFunc(r, ar.path, ar.queryStrings,
@@ -40,7 +41,7 @@ func pathQStrToLowerMatcherFunc(router *mux.Router,
 		var qstrok bool
 		// case-insensitive paths
 		if strings.HasPrefix(strings.ToLower(req.URL.Path), strings.ToLower(routepath)) {
-			util.WriteDebug("PATH: %s matches route path: %s", req.URL.Path, routepath)
+			logger.WriteDebug("PATH: %s matches route path: %s", req.URL.Path, routepath)
 			pathok = true
 		}
 		//case-insensitive query strings
@@ -51,10 +52,10 @@ func pathQStrToLowerMatcherFunc(router *mux.Router,
 			qry := req.URL.Query()
 			truecount := 0
 			for key := range qry {
-				util.WriteDebug("URL query string key is: %s", key)
+				logger.WriteDebug("URL query string key is: %s", key)
 				for _, qs := range querystrings {
 					if strings.EqualFold(key, qs.name) && qs.required {
-						util.WriteDebug("KEY: %s matches query string: %s", key, qs.name)
+						logger.WriteDebug("KEY: %s matches query string: %s", key, qs.name)
 						truecount++
 						break
 					}

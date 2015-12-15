@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"steamtest/src/db"
+	"steamtest/src/logger"
 	"steamtest/src/models"
 	"steamtest/src/steam"
-	"steamtest/src/util"
 )
 
 func getServerIDRetriever(w http.ResponseWriter, hosts []string) {
@@ -16,10 +16,10 @@ func getServerIDRetriever(w http.ResponseWriter, hosts []string) {
 	sdb, err := db.OpenServerDB()
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		util.LogWebError(err)
+		logger.LogWebError(err)
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerID()); err != nil {
 			w.WriteHeader(http.StatusNotFound)
-			util.LogWebError(err)
+			logger.LogWebError(err)
 			return
 		}
 		return
@@ -30,14 +30,14 @@ func getServerIDRetriever(w http.ResponseWriter, hosts []string) {
 	if len(ids.Servers) > 0 {
 		if err := json.NewEncoder(w).Encode(ids); err != nil {
 			w.WriteHeader(http.StatusNotFound)
-			util.LogWebError(err)
+			logger.LogWebError(err)
 			return
 		}
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerID()); err != nil {
 			w.WriteHeader(http.StatusNotFound)
-			util.LogWebError(err)
+			logger.LogWebError(err)
 			return
 		}
 	}
@@ -48,10 +48,10 @@ func queryServerIDRetriever(w http.ResponseWriter, ids []string) {
 	sdb, err := db.OpenServerDB()
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		util.LogWebError(err)
+		logger.LogWebError(err)
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
 			w.WriteHeader(http.StatusNotFound)
-			util.LogWebError(err)
+			logger.LogWebError(err)
 		}
 		return
 	}
@@ -61,24 +61,24 @@ func queryServerIDRetriever(w http.ResponseWriter, ids []string) {
 	if len(hostsgames) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			util.LogWebError(err)
+			logger.LogWebError(err)
 		}
 		return
 	}
 	serverlist, err := steam.Query(hostsgames)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		util.LogWebError(err)
+		logger.LogWebError(err)
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
 			w.WriteHeader(http.StatusNotFound)
-			util.LogWebError(err)
+			logger.LogWebError(err)
 			return
 		}
 		return
 	}
 	if err := json.NewEncoder(w).Encode(serverlist); err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		util.LogWebError(err)
+		logger.LogWebError(err)
 	}
 }
 
@@ -86,16 +86,16 @@ func queryServerAddrRetriever(w http.ResponseWriter, addresses []string) {
 	serverlist, err := steam.DirectQuery(addresses)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		util.LogWebError(err)
+		logger.LogWebError(err)
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
 			w.WriteHeader(http.StatusNotFound)
-			util.LogWebError(err)
+			logger.LogWebError(err)
 			return
 		}
 		return
 	}
 	if err := json.NewEncoder(w).Encode(serverlist); err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		util.LogWebError(err)
+		logger.LogWebError(err)
 	}
 }

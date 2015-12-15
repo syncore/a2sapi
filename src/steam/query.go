@@ -4,9 +4,9 @@ package steam
 // for building a list to return to the API
 
 import (
+	"steamtest/src/logger"
 	"steamtest/src/models"
 	"steamtest/src/steam/filters"
-	"steamtest/src/util"
 	"sync"
 )
 
@@ -133,23 +133,23 @@ func DirectQuery(hosts []string) (*models.APIServerList, error) {
 	needsRules := make([]string, len(hosts))
 
 	for _, h := range hosts {
-		util.WriteDebug("direct query for %s. will try to figure out needed queries", h)
-		if info != nil {
-			util.WriteDebug("A2S_INFO not nil. got gameid: %d", info[h].ExtraData.GameID)
+		logger.WriteDebug("direct query for %s. will try to figure out needed queries", h)
+		if info[h] != nil {
+			logger.WriteDebug("A2S_INFO not nil. got gameid: %d", info[h].ExtraData.GameID)
 			fg := filters.GetGameByAppID(info[h].ExtraData.GameID)
 			hg[h] = fg
 			if !fg.IgnorePlayers {
-				util.WriteDebug("based on game %s for %s, will need to get A2S_PLAYERS",
+				logger.WriteDebug("based on game %s for %s, will need to get A2S_PLAYERS",
 					fg.Name, h)
 				needsPlayers = append(needsPlayers, h)
 			}
 			if !fg.IgnoreRules {
-				util.WriteDebug("based on game %s for %s, will need to get A2S_RULES",
+				logger.WriteDebug("based on game %s for %s, will need to get A2S_RULES",
 					fg.Name, h)
 				needsRules = append(needsRules, h)
 			}
 		} else {
-			util.WriteDebug("A2S_INFO is nil. game will be unspecified; results may vary")
+			logger.WriteDebug("A2S_INFO is nil. game will be unspecified; results may vary")
 			hg[h] = filters.GameUnspecified
 		}
 	}
@@ -161,7 +161,7 @@ func DirectQuery(hosts []string) (*models.APIServerList, error) {
 	}
 	sl, err := buildServerList(data, false)
 	if err != nil {
-		return models.GetDefaultServerList(), util.LogAppError(err)
+		return models.GetDefaultServerList(), logger.LogAppError(err)
 	}
 	return sl, nil
 }
@@ -197,7 +197,7 @@ func Query(hostsgames map[string]string) (*models.APIServerList, error) {
 
 	sl, err := buildServerList(data, true)
 	if err != nil {
-		return models.GetDefaultServerList(), util.LogAppError(err)
+		return models.GetDefaultServerList(), logger.LogAppError(err)
 	}
 	return sl, nil
 }

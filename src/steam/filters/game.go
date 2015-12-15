@@ -1,24 +1,35 @@
 package filters
 
-import "strings"
+// game.go - Steam game-to-appid operations, A2S ignore mappings, and game list.
 
-// game.go - Steam game-to-appid and A2S rule ignore mappings
+import (
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"os"
+	"steamtest/src/constants"
+	"steamtest/src/util"
+	"strings"
+)
 
-// Game This struct represents a queryable Steam game, including its application ID
+// Game represents a queryable Steam game, including its application ID
 // and whether particular A2S requests need to be ignored when querying.
 type Game struct {
-	Name  string
-	AppID uint64
+	Name  string `json:"name"`
+	AppID uint64 `json:"appID"`
 	// Some games (i.e. newer/beta ones) do not have all 3 of A2S_INFO,PLAYER,RULES
 	// any of these ignore values set to true will skip that request when querying
-	IgnoreRules   bool
-	IgnorePlayers bool
-	IgnoreInfo    bool
+	IgnoreRules   bool `json:"ignoreRules"`
+	IgnorePlayers bool `json:"ignorePlayers"`
+	IgnoreInfo    bool `json:"ignoreInfo"`
 }
 
-type games []*Game
+// GameList represents the list of games.
+type GameList struct {
+	Games []*Game `json:"games"`
+}
 
-// A few games, additional games can be added from https://steamdb.info/apps/
+// A few default games, additional games can be added from https://steamdb.info/apps/
 var (
 	// GameCsGo Counter-Strike: GO
 	GameCsGo = &Game{
@@ -54,6 +65,8 @@ var (
 	}
 	// GameUnspecified Unspecified game for direct server queries, if enabled;
 	// if unspecified games actually ignore some A2S requests there will be issues.
+	// This is intentionally left out of the gl GameList struct so it is not user-
+	// selectable in the configuration creation.
 	GameUnspecified = &Game{
 		Name:          "Unspecified",
 		AppID:         0,
@@ -62,12 +75,19 @@ var (
 		IgnoreInfo:    false,
 	}
 
-	gamelist = games{
-		GameCsGo,
-		GameQuakeLive,
-		GameReflex,
-		GameTF2,
-		GameUnspecified,
+	defaultGames = GameList{
+		Games: []*Game{
+			GameCsGo,
+			GameQuakeLive,
+			GameReflex,
+			GameTF2,
+		},
+	}
+	highServerCountGames = GameList{
+		Games: []*Game{
+			GameCsGo,
+			GameTF2,
+		},
 	}
 )
 
@@ -75,10 +95,19 @@ func (g *Game) String() string {
 	return g.Name
 }
 
+// GetGameNames returns a slice of strings containing the games' names.
+func GetGameNames() []string {
+	var names []string
+	for _, g := range ReadGames() {
+		names = append(names, g.Name)
+	}
+	return names
+}
+
 // GetGameByName searches the list of pre-defined games and returns a pointer to
 // a Game struct based on the name of the game.
 func GetGameByName(name string) *Game {
-	for _, g := range gamelist {
+	for _, g := range ReadGames() {
 		if strings.EqualFold(name, g.Name) {
 			return g
 		}
@@ -89,7 +118,7 @@ func GetGameByName(name string) *Game {
 // GetGameByAppID searches the list of pre-defined games and returns a pointer to
 // a Game struct based on the AppID of the game.
 func GetGameByAppID(appid uint64) *Game {
-	for _, g := range gamelist {
+	for _, g := range ReadGames() {
 		if appid == g.AppID {
 			return g
 		}
@@ -109,4 +138,61 @@ func NewGame(name string, appid uint64, ignoreRules, ignorePlayers,
 		IgnorePlayers: ignorePlayers,
 		IgnoreInfo:    ignoreInfo,
 	}
+}
+
+// ReadGames reads the game file from disk and returns a slice to a pointer of
+// Game structs if successful, otherwise panics.
+func ReadGames() []*Game {
+	var f *os.File
+	var err error
+	f, err = os.Open(constants.GameFileFullPath)
+	if err != nil {
+		// try to create
+		DumpDefaultGames()
+		// re-open
+		f, err = os.Open(constants.GameFileFullPath)
+		if err != nil {
+			panic(fmt.Sprintf("Error reading games file file: %s\n", err))
+		}
+	}
+	defer f.Close()
+	r := bufio.NewReader(f)
+	d := json.NewDecoder(r)
+	games := &GameList{}
+	if err := d.Decode(games); err != nil {
+		panic(fmt.Sprintf("Error decoding games file file: %s\n", err))
+	}
+	return games.Games
+}
+
+// DumpDefaultGames writes the default struct containing the default games to disk
+// on success, otherwise panics.
+func DumpDefaultGames() {
+	if err := util.WriteJSONConfig(defaultGames, constants.ConfigDirectory,
+		constants.GameFileFullPath); err != nil {
+		panic(err)
+	}
+}
+
+// IsValidGame determines whether the specified game exists within the list of
+// games and returns true if it does, otherwise false.
+func IsValidGame(name string) bool {
+	for _, g := range ReadGames() {
+		if strings.EqualFold(name, g.Name) {
+			return true
+		}
+	}
+	return false
+}
+
+// HasHighServerCount determines if the specified game is in the list of games
+// that are known to return more than 6930 servers, which is the value at which
+// Valve begins to throttle future responses from the master server.
+func HasHighServerCount(name string) bool {
+	for _, g := range highServerCountGames.Games {
+		if strings.EqualFold(name, g.Name) {
+			return true
+		}
+	}
+	return false
 }

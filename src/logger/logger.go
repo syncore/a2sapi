@@ -1,4 +1,4 @@
-package util
+package logger
 
 import (
 	"fmt"
@@ -7,13 +7,15 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"steamtest/src/config"
+	"steamtest/src/constants"
+	"steamtest/src/util"
 	"strconv"
 	"strings"
 	"time"
 )
 
 type logLevel int
-type logType int
 
 const (
 	lDebug logLevel = iota
@@ -21,57 +23,33 @@ const (
 	lInfo
 )
 
-const (
-	App logType = iota
-	Debug
-	Steam
-	Web
-)
-
-const (
-	appLogFilename   = "app.log"
-	steamLogFilename = "steam.log"
-	webLogFilename   = "web.log"
-	logDirectory     = "logs"
-)
-
-func getLogPath(lt logType) string {
+func getLogPath(lt constants.LogType) string {
 	switch lt {
-	case App:
-		return path.Join(logDirectory, appLogFilename)
-	case Steam:
-		return path.Join(logDirectory, steamLogFilename)
-	case Web:
-		return path.Join(logDirectory, webLogFilename)
+	case constants.LTypeApp:
+		return constants.AppLogFilePath
+	case constants.LTypeSteam:
+		return constants.SteamLogFilePath
+	case constants.LTypeWeb:
+		return constants.WebLogFilePath
 	default:
-		return path.Join(logDirectory, appLogFilename)
+		return constants.AppLogFilePath
 	}
 }
 
-func getLogFilenameFromType(lt logType) string {
+func getLogFilenameFromType(lt constants.LogType) string {
 	switch lt {
-	case App:
-		return appLogFilename
-	case Steam:
-		return steamLogFilename
-	case Web:
-		return webLogFilename
+	case constants.LTypeApp:
+		return constants.AppLogFilename
+	case constants.LTypeSteam:
+		return constants.SteamLogFilename
+	case constants.LTypeWeb:
+		return constants.WebLogFilename
 	default:
-		return appLogFilename
+		return constants.AppLogFilename
 	}
 }
 
-func createLogDir() error {
-	if DirExists(logDirectory) {
-		return nil
-	}
-	if err := os.Mkdir(logDirectory, os.ModePerm); err != nil {
-		return err
-	}
-	return nil
-}
-
-func createLogFile(lt logType) error {
+func createLogFile(lt constants.LogType) error {
 	f, err := os.Create(getLogPath(lt))
 	if err != nil {
 		return err
@@ -80,20 +58,20 @@ func createLogFile(lt logType) error {
 	return nil
 }
 
-func deleteLogs(lt logType) error {
+func deleteLogs(lt constants.LogType) error {
 	logfiles, err := getLogFiles(lt)
 	if err != nil {
 		return err
 	}
 	for _, f := range logfiles {
-		if err := os.Remove(path.Join(logDirectory, f)); err != nil {
+		if err := os.Remove(path.Join(constants.LogDirectory, f)); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func isMaxLogSizeExceeded(lt logType, cfg *Config) bool {
+func isMaxLogSizeExceeded(lt constants.LogType, cfg *config.Config) bool {
 	f, err := os.Stat(getLogPath(lt))
 	if err != nil {
 		return false
@@ -101,8 +79,8 @@ func isMaxLogSizeExceeded(lt logType, cfg *Config) bool {
 	return f.Size() > cfg.LogConfig.MaximumLogSize*1024
 }
 
-func logDirNeedsCleaning(lt logType, cfg *Config) bool {
-	files, err := ioutil.ReadDir(logDirectory)
+func logDirNeedsCleaning(lt constants.LogType, cfg *config.Config) bool {
+	files, err := ioutil.ReadDir(constants.LogDirectory)
 	if err != nil {
 		return false
 	}
@@ -122,8 +100,8 @@ func logDirNeedsCleaning(lt logType, cfg *Config) bool {
 	return logCount > cfg.LogConfig.MaximumLogCount
 }
 
-func getLogFiles(lt logType) ([]string, error) {
-	files, err := ioutil.ReadDir(logDirectory)
+func getLogFiles(lt constants.LogType) ([]string, error) {
+	files, err := ioutil.ReadDir(constants.LogDirectory)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +121,7 @@ func getLogFiles(lt logType) ([]string, error) {
 	return logfiles, nil
 }
 
-func getLatestAndEarliestLogNum(lt logType) (latest int, earliest int,
+func getLatestAndEarliestLogNum(lt constants.LogType) (latest int, earliest int,
 	err error) {
 	logfiles, err := getLogFiles(lt)
 	if err != nil {
@@ -174,7 +152,7 @@ func getLatestAndEarliestLogNum(lt logType) (latest int, earliest int,
 	return latest, earliest, nil
 }
 
-func getLatestAndEarliestLog(lt logType) (latestlogfile string,
+func getLatestAndEarliestLog(lt constants.LogType) (latestlogfile string,
 	earliestlogfile string, err error) {
 	latestlognum, earliestlognum, err := getLatestAndEarliestLogNum(lt)
 	if err != nil {
@@ -196,11 +174,11 @@ func getLatestAndEarliestLog(lt logType) (latestlogfile string,
 
 }
 
-func verifyLogPaths(lt logType) error {
-	if err := createLogDir(); err != nil {
+func verifyLogPaths(lt constants.LogType) error {
+	if err := util.CreateDirectory(constants.LogDirectory); err != nil {
 		return err
 	}
-	if !FileExists(getLogPath(lt)) {
+	if !util.FileExists(getLogPath(lt)) {
 		if err := createLogFile(lt); err != nil {
 			return fmt.Errorf("verifyLogPaths error: %s", err)
 		}
@@ -208,7 +186,7 @@ func verifyLogPaths(lt logType) error {
 	return nil
 }
 
-func verifyLogSettings(lt logType, cfg *Config) error {
+func verifyLogSettings(lt constants.LogType, cfg *config.Config) error {
 	// too many stale logs
 	if logDirNeedsCleaning(lt, cfg) {
 		// delete stale logs
@@ -228,7 +206,7 @@ func verifyLogSettings(lt logType, cfg *Config) error {
 		}
 		// only app|web.log exists, rename it to app|web.log.1 & re-create
 		if strings.EqualFold(latestlog, getLogFilenameFromType(lt)) {
-			if err := os.Rename(getLogPath(lt), path.Join(logDirectory,
+			if err := os.Rename(getLogPath(lt), path.Join(constants.LogDirectory,
 				fmt.Sprintf("%s.1", getLogFilenameFromType(lt)))); err != nil {
 				return fmt.Errorf("verifyLogSettings error: %s\n", err)
 			}
@@ -242,7 +220,7 @@ func verifyLogSettings(lt logType, cfg *Config) error {
 			if err != nil {
 				return fmt.Errorf("verifyLogSettings error: %s\n", err)
 			}
-			if err := os.Rename(getLogPath(lt), path.Join(logDirectory,
+			if err := os.Rename(getLogPath(lt), path.Join(constants.LogDirectory,
 				fmt.Sprintf("%s.%d", getLogFilenameFromType(lt),
 					latestlognum+1))); err != nil {
 				return fmt.Errorf("verifyLogSettings error: %s\n", err)
@@ -256,25 +234,23 @@ func verifyLogSettings(lt logType, cfg *Config) error {
 	return nil
 }
 
-func writeLogEntry(lt logType, loglevel logLevel, msg string,
+func writeLogEntry(lt constants.LogType, loglevel logLevel, msg string,
 	text ...interface{}) error {
-	cfg, err := ReadConfig()
-	if err != nil {
-		return err
-	}
-	if lt == App && !cfg.LogConfig.EnableAppLogging {
+	cfg := config.ReadConfig()
+
+	if lt == constants.LTypeApp && !cfg.LogConfig.EnableAppLogging {
 		return nil
-	} else if lt == Debug && !cfg.LogConfig.EnableDebugMessages {
+	} else if lt == constants.LTypeDebug && !cfg.LogConfig.EnableDebugMessages {
 		return nil
-	} else if lt == Steam && !cfg.LogConfig.EnableSteamLogging {
+	} else if lt == constants.LTypeSteam && !cfg.LogConfig.EnableSteamLogging {
 		return nil
-	} else if lt == Web && !cfg.LogConfig.EnableWebLogging {
+	} else if lt == constants.LTypeWeb && !cfg.LogConfig.EnableWebLogging {
 		return nil
 	}
 
-	if lt == Debug {
+	if lt == constants.LTypeDebug {
 		fmt.Printf(fmt.Sprintf("[%s] %s - %s\n",
-			loglevel, time.Now().Format("Mon Jan _2 15:04:05 2006 EST"),
+			loglevel, time.Now().Format("Mon Jan 2 15:04:05 2006 EST"),
 			fmt.Sprintf(msg, text...)))
 		return nil
 	}
@@ -314,62 +290,74 @@ func (l logLevel) String() string {
 	}
 }
 
+// WriteDebug writes the specified debug message to to stdout, if enabled.
 func WriteDebug(msg string, input ...interface{}) {
-	if err := writeLogEntry(Debug, lDebug, msg, input...); err != nil {
+	if err := writeLogEntry(constants.LTypeDebug, lDebug, msg, input...); err != nil {
 		fmt.Print(err)
 	}
 }
 
+// LogAppError logs application-related errors, if enabled, to the app log file.
 func LogAppError(e error, input ...interface{}) error {
-	_ = writeLogEntry(App, lError, e.Error(), input...)
+	_ = writeLogEntry(constants.LTypeApp, lError, e.Error(), input...)
 	return fmt.Errorf(e.Error(), input...)
 }
 
+// LogAppErrorf logs formatted application-related errors, if enabled, to the app log file.
 func LogAppErrorf(msg string, input ...interface{}) error {
-	_ = writeLogEntry(App, lError, msg, input...)
+	_ = writeLogEntry(constants.LTypeApp, lError, msg, input...)
 	return fmt.Errorf(msg, input...)
 }
+
+// LogAppInfo logs application-related info messages, if enabled, to the app log file.
 func LogAppInfo(msg string, input ...interface{}) {
-	_ = writeLogEntry(App, lInfo, msg, input...)
+	_ = writeLogEntry(constants.LTypeApp, lInfo, msg, input...)
 }
 
+// LogSteamInfo logs Steam-related info messages, if enabled, to the Steam log file.
 func LogSteamInfo(msg string, input ...interface{}) {
-	_ = writeLogEntry(Steam, lInfo, msg, input...)
+	_ = writeLogEntry(constants.LTypeSteam, lInfo, msg, input...)
 }
 
+// LogSteamError logs Steam-related errors, if enabled, to the Steam log file.
 func LogSteamError(e error, input ...interface{}) error {
-	_ = writeLogEntry(Steam, lError, e.Error(), input...)
+	_ = writeLogEntry(constants.LTypeSteam, lError, e.Error(), input...)
 	return fmt.Errorf(e.Error(), input...)
 }
 
+// LogSteamErrorf logs formatted Steam-related errors, if enabled, to the Steam log file.
 func LogSteamErrorf(msg string, input ...interface{}) error {
-	_ = writeLogEntry(Steam, lError, msg, input...)
+	_ = writeLogEntry(constants.LTypeSteam, lError, msg, input...)
 	return fmt.Errorf(msg, input...)
 }
 
+// LogWebError logs API-related web errors, if enabled, to the web log file.
 func LogWebError(e error, input ...interface{}) error {
-	_ = writeLogEntry(Web, lError, e.Error(), input...)
+	_ = writeLogEntry(constants.LTypeWeb, lError, e.Error(), input...)
 	return fmt.Errorf(e.Error(), input...)
 }
 
+// LogWebErrorf logs formatted API-related web errors, if enabled, to the web log file.
 func LogWebErrorf(msg string, input ...interface{}) error {
-	if err := writeLogEntry(Web, lError, msg, input...); err != nil {
+	if err := writeLogEntry(constants.LTypeWeb, lError, msg, input...); err != nil {
 		fmt.Print(err)
 	}
 	return fmt.Errorf(msg, input...)
 }
 
+// LogWebRequest logs web requests as debug messages, if enabled to stdout, as well
+// as logging web requests as info messages to the web log file.
 func LogWebRequest(inner http.Handler, name string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		inner.ServeHTTP(w, r)
 
-		if err := writeLogEntry(Debug, lDebug, fmt.Sprintf(
+		if err := writeLogEntry(constants.LTypeDebug, lDebug, fmt.Sprintf(
 			"URL: %s\tPATH: %s\tQUERY:%v", r.URL, r.URL.Path,
 			r.URL.Query())); err != nil {
 			fmt.Print(err)
 		}
 
-		if err := writeLogEntry(Web, lInfo, fmt.Sprintf("%s\t%s\t%s\t%s",
+		if err := writeLogEntry(constants.LTypeWeb, lInfo, fmt.Sprintf("%s\t%s\t%s\t%s",
 			r.Method, r.RequestURI, r.RemoteAddr, name)); err != nil {
 			fmt.Print(err)
 		}

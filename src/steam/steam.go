@@ -1,6 +1,6 @@
 package steam
 
-import "steamtest/src/util"
+import "steamtest/src/config"
 
 const (
 	headerStr       = "\xFF\xFF\xFF\xFF"
@@ -9,7 +9,7 @@ const (
 	QueryRetryCount = 3    // # of times to re-request rules, players, info on failure
 )
 
-var cfg *util.Config
+var cfg *config.Config
 
 type IgnoredRequest int
 

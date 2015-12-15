@@ -6,6 +6,8 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"steamtest/src/constants"
+	"steamtest/src/logger"
 	"steamtest/src/models"
 	"steamtest/src/steam/filters"
 	"steamtest/src/util"
@@ -25,7 +27,7 @@ func createServerDB(dbfile string) error {
 		// already exists, so verify integrity
 		db, err := sql.Open("sqlite3", dbfile)
 		if err != nil {
-			return util.LogAppErrorf(
+			return logger.LogAppErrorf(
 				"Unable to open server DB file for verification: %s", err)
 		}
 		defer db.Close()
@@ -35,28 +37,28 @@ func createServerDB(dbfile string) error {
 		switch {
 		case err == sql.ErrNoRows:
 			if _, err = db.Exec(create); err != nil {
-				return util.LogAppErrorf("Unable to create servers table in DB: %s", err)
+				return logger.LogAppErrorf("Unable to create servers table in DB: %s", err)
 			}
 		case err != nil:
-			return util.LogAppErrorf("Server DB table verification error: %s", err)
+			return logger.LogAppErrorf("Server DB table verification error: %s", err)
 		}
 		return nil
 	}
 
 	f, err := os.Create(dbfile)
 	if err != nil {
-		return util.LogAppErrorf("Unable to create server DB: %s", err)
+		return logger.LogAppErrorf("Unable to create server DB: %s", err)
 	}
 	defer f.Close()
 	db, err := sql.Open("sqlite3", dbfile)
 	if err != nil {
-		return util.LogAppErrorf(
+		return logger.LogAppErrorf(
 			"Unable to open server DB file for table creation: %s", err)
 	}
 	defer db.Close()
 	_, err = db.Exec(create)
 	if err != nil {
-		return util.LogAppErrorf("Unable to create servers table in servers DB: %s",
+		return logger.LogAppErrorf("Unable to create servers table in servers DB: %s",
 			err)
 	}
 	return nil
@@ -67,7 +69,7 @@ func serverExists(db *sql.DB, host string, game string) (bool, error) {
 		"SELECT host, game FROM servers WHERE host =? AND GAME =? LIMIT 1",
 		host, game)
 	if err != nil {
-		return false, util.LogAppErrorf(
+		return false, logger.LogAppErrorf(
 			"Error querying database for host %s and game %s: %s", host, game, err)
 	}
 
@@ -76,7 +78,7 @@ func serverExists(db *sql.DB, host string, game string) (bool, error) {
 	var g string
 	for rows.Next() {
 		if err := rows.Scan(&h, &g); err != nil {
-			return false, util.LogAppErrorf(
+			return false, logger.LogAppErrorf(
 				"Error querying database for host %s and game %s: %s",
 				host, game, err)
 		}
@@ -91,13 +93,13 @@ func getHostAndGame(db *sql.DB, id string) (host, game string, err error) {
 	rows, err := db.Query("SELECT host, game FROM servers WHERE server_id =? LIMIT 1",
 		id)
 	if err != nil {
-		return host, game, util.LogAppErrorf("Error querying database for id %s: %s",
+		return host, game, logger.LogAppErrorf("Error querying database for id %s: %s",
 			id, err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		if err := rows.Scan(&host, &game); err != nil {
-			return host, game, util.LogAppErrorf("Error querying database for id %s: %s",
+			return host, game, logger.LogAppErrorf("Error querying database for id %s: %s",
 				id, err)
 		}
 	}
@@ -109,11 +111,11 @@ func getHostAndGame(db *sql.DB, id string) (host, game string, err error) {
 func OpenServerDB() (*sql.DB, error) {
 	if err := verifyServerDbPath(); err != nil {
 		// will panic if not verified
-		return nil, util.LogAppError(err)
+		return nil, logger.LogAppError(err)
 	}
-	db, err := sql.Open("sqlite3", serverDbFilepath)
+	db, err := sql.Open("sqlite3", constants.ServerDbFilePath)
 	if err != nil {
-		return nil, util.LogAppError(err)
+		return nil, logger.LogAppError(err)
 	}
 	return db, nil
 }
@@ -138,7 +140,7 @@ func AddServersToDB(db *sql.DB, hostsgames map[string]string) {
 	}
 	tx, err := db.Begin()
 	if err != nil {
-		util.LogAppErrorf("AddServersToDB error creating tx: %s", err)
+		logger.LogAppErrorf("AddServersToDB error creating tx: %s", err)
 		return
 	}
 	var txexecerr error
@@ -146,19 +148,19 @@ func AddServersToDB(db *sql.DB, hostsgames map[string]string) {
 		_, txexecerr = tx.Exec("INSERT INTO servers (host, game) VALUES ($1, $2)",
 			host, game)
 		if txexecerr != nil {
-			util.LogAppErrorf(
+			logger.LogAppErrorf(
 				"AddServersToDB exec error for host %s and game %s: %s", host, game, err)
 			break
 		}
 	}
 	if txexecerr != nil {
 		if err = tx.Rollback(); err != nil {
-			util.LogAppErrorf("AddServersToDB error rolling back tx: %s", err)
+			logger.LogAppErrorf("AddServersToDB error rolling back tx: %s", err)
 			return
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		util.LogAppErrorf("AddServersToDB error committing tx: %s", err)
+		logger.LogAppErrorf("AddServersToDB error committing tx: %s", err)
 		return
 	}
 }
@@ -176,7 +178,7 @@ func GetIDsForServerList(result chan map[string]int64, db *sql.DB,
 			"SELECT server_id FROM servers WHERE host =? AND game =? LIMIT 1",
 			host, game)
 		if err != nil {
-			util.LogAppErrorf(
+			logger.LogAppErrorf(
 				"Error querying database to retrieve ID for host %s and game %s: %s",
 				host, game, err)
 			return
@@ -185,7 +187,7 @@ func GetIDsForServerList(result chan map[string]int64, db *sql.DB,
 		var id int64
 		for rows.Next() {
 			if err := rows.Scan(&id); err != nil {
-				util.LogAppErrorf("Error querying database to retrieve ID for host %s: %s",
+				logger.LogAppErrorf("Error querying database to retrieve ID for host %s: %s",
 					host, err)
 				return
 			}
@@ -202,12 +204,12 @@ func GetIDsForServerList(result chan map[string]int64, db *sql.DB,
 func GetIDsAPIQuery(result chan *models.DbServerID, db *sql.DB, hosts []string) {
 	m := &models.DbServerID{}
 	for _, h := range hosts {
-		util.WriteDebug("DB: GetIDsAPIQuery, host: %s", h)
+		logger.WriteDebug("DB: GetIDsAPIQuery, host: %s", h)
 		rows, err := db.Query(
 			"SELECT server_id, host, game FROM servers WHERE host LIKE ?",
 			fmt.Sprintf("%%%s%%", h))
 		if err != nil {
-			util.LogAppErrorf("Error querying database to retrieve ID for host %s: %s",
+			logger.LogAppErrorf("Error querying database to retrieve ID for host %s: %s",
 				h, err)
 			return
 		}
@@ -219,7 +221,7 @@ func GetIDsAPIQuery(result chan *models.DbServerID, db *sql.DB, hosts []string) 
 		for rows.Next() {
 			sid := &models.DbServer{}
 			if err := rows.Scan(&id, &host, &game); err != nil {
-				util.LogAppErrorf("Error querying database to retrieve ID for host %s: %s",
+				logger.LogAppErrorf("Error querying database to retrieve ID for host %s: %s",
 					h, err)
 				return
 			}
@@ -243,7 +245,7 @@ func GetHostsAndGameFromIDAPIQuery(result chan map[string]string, db *sql.DB,
 	for _, id := range ids {
 		host, game, err := getHostAndGame(db, id)
 		if err != nil {
-			util.LogAppErrorf("Error getting host from ID for API query: %s", err)
+			logger.LogAppErrorf("Error getting host from ID for API query: %s", err)
 			return
 		}
 		if host == "" && game == "" {

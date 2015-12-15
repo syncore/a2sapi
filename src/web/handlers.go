@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"steamtest/src/config"
+	"steamtest/src/logger"
 	"steamtest/src/models"
-	"steamtest/src/util"
 	"strings"
 )
 
@@ -28,7 +29,7 @@ func getServerID(w http.ResponseWriter, r *http.Request) {
 
 	hosts := getQStrValues(r.URL.Query(), getServerIDQueryStr)
 	for _, v := range hosts {
-		util.WriteDebug("host slice values: %s", v)
+		logger.WriteDebug("host slice values: %s", v)
 		// basically require at least 2 octets
 		if len(v) < 4 {
 			w.WriteHeader(http.StatusBadRequest)
@@ -44,30 +45,21 @@ func getServerID(w http.ResponseWriter, r *http.Request) {
 func queryServerID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	ids := getQStrValues(r.URL.Query(), queryServerIDQueryStr)
-	util.WriteDebug("queryServerID: ids length: %d", len(ids))
-	util.WriteDebug("queryServerID: ids are: %s", ids)
+	logger.WriteDebug("queryServerID: ids length: %d", len(ids))
+	logger.WriteDebug("queryServerID: ids are: %s", ids)
 
 	if ids[0] == "" {
 		w.WriteHeader(http.StatusNotFound)
-		util.WriteDebug("queryServerID: Got empty query. Ignoring.")
+		logger.WriteDebug("queryServerID: Got empty query. Ignoring.")
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			util.LogWebError(err)
+			logger.LogWebError(err)
 			return
 		}
 		return
 	}
-	cfg, err := util.ReadConfig()
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		util.LogAppError(err)
-		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			util.LogWebError(err)
-			return
-		}
-		return
-	}
+	cfg := config.ReadConfig()
 	if len(ids) > cfg.WebConfig.MaximumHostsPerAPIQuery {
-		util.WriteDebug("Maximum number of allowed API query hosts exceeded, truncating")
+		logger.WriteDebug("Maximum number of allowed API query hosts exceeded, truncating")
 		ids = ids[:cfg.WebConfig.MaximumHostsPerAPIQuery]
 	}
 
@@ -77,16 +69,7 @@ func queryServerID(w http.ResponseWriter, r *http.Request) {
 func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	cfg, err := util.ReadConfig()
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		util.LogAppError(err)
-		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			util.LogWebError(err)
-			return
-		}
-		return
-	}
+	cfg := config.ReadConfig()
 	if !cfg.WebConfig.AllowDirectUserQueries {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, `{"error":"Not allowed"}`)
@@ -94,14 +77,14 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 	}
 
 	addresses := getQStrValues(r.URL.Query(), queryServerAddrQueryStr)
-	util.WriteDebug("addresses length: %d", len(addresses))
-	util.WriteDebug("addresses are: %s", addresses)
+	logger.WriteDebug("addresses length: %d", len(addresses))
+	logger.WriteDebug("addresses are: %s", addresses)
 
 	if addresses[0] == "" {
 		w.WriteHeader(http.StatusNotFound)
-		util.WriteDebug("queryServerAddr: Got empty address query. Ignoring.")
+		logger.WriteDebug("queryServerAddr: Got empty address query. Ignoring.")
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			util.LogWebError(err)
+			logger.LogWebError(err)
 			return
 		}
 		return
@@ -109,25 +92,25 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 
 	var parsedaddresses []string
 	for _, addr := range addresses {
-		ip, port, err := net.SplitHostPort(addr)
+		host, err := net.ResolveTCPAddr("tcp4", addr)
 		if err != nil {
 			continue
 		}
-		parsedaddresses = append(parsedaddresses, fmt.Sprintf("%s:%s", ip, port))
+		parsedaddresses = append(parsedaddresses, fmt.Sprintf("%s:%d", host.IP, host.Port))
 	}
 
 	if len(parsedaddresses) == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		util.WriteDebug("queryServerAddr: No valid addresses for query. Ignoring.")
+		logger.WriteDebug("queryServerAddr: No valid addresses for query. Ignoring.")
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			util.LogWebError(err)
+			logger.LogWebError(err)
 			return
 		}
 		return
 	}
 
 	if len(parsedaddresses) > cfg.WebConfig.MaximumHostsPerAPIQuery {
-		util.WriteDebug("Maximum number of allowed API query hosts exceeded, truncating")
+		logger.WriteDebug("Maximum number of allowed API query hosts exceeded, truncating")
 		parsedaddresses = parsedaddresses[:cfg.WebConfig.MaximumHostsPerAPIQuery]
 	}
 	queryServerAddrRetriever(w, parsedaddresses)

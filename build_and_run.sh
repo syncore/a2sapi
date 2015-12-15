@@ -1,2 +1,2 @@
-go build -i %cd%\src\cmd\steamtest.go
+go build -i %cd%\src\steamtest.go
 ./steamtest

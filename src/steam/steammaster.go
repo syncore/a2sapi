@@ -6,8 +6,9 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"steamtest/src/config"
+	"steamtest/src/logger"
 	"steamtest/src/steam/filters"
-	"steamtest/src/util"
 	"time"
 )
 
@@ -31,8 +32,8 @@ func getServers(filter *filters.Filter) ([]string, error) {
 		time.Duration(QueryTimeout)*time.Second)
 	if err != nil {
 		// TODO: can this be simplified as:
-		// return nil, util.LogAppError(ErrHostConnection(err.Error()))
-		util.LogSteamError(ErrHostConnection(err.Error()))
+		// return nil, logger.LogAppError(ErrHostConnection(err.Error()))
+		logger.LogSteamError(ErrHostConnection(err.Error()))
 		return nil, ErrHostConnection(err.Error())
 	}
 
@@ -47,14 +48,14 @@ func getServers(filter *filters.Filter) ([]string, error) {
 		// get hosts:ports beginning after header (0xFF, 0xFF, 0xFF, 0xFF, 0x66, 0x0A)
 		ips, total, err := extractHosts(s[6:])
 		if err != nil {
-			return nil, util.LogAppErrorf("Error when extracting addresses: %s",
+			return nil, logger.LogAppErrorf("Error when extracting addresses: %s",
 				err)
 		}
 		retrieved = retrieved + total
-		util.LogSteamInfo("%d hosts retrieved so far from master.", retrieved)
+		logger.LogSteamInfo("%d hosts retrieved so far from master.", retrieved)
 		for _, ip := range ips {
 			if count >= cfg.SteamConfig.MaximumHostsToReceive {
-				util.LogSteamInfo("Max host limit of %d reached!",
+				logger.LogSteamInfo("Max host limit of %d reached!",
 					cfg.SteamConfig.MaximumHostsToReceive)
 				complete = true
 				break
@@ -64,11 +65,11 @@ func getServers(filter *filters.Filter) ([]string, error) {
 		}
 
 		if (serverlist[len(serverlist)-1]) != "0.0.0.0:0" {
-			util.LogSteamInfo("More hosts need to be retrieved. Last IP was: %s",
+			logger.LogSteamInfo("More hosts need to be retrieved. Last IP was: %s",
 				serverlist[len(serverlist)-1])
 			addr = serverlist[len(serverlist)-1]
 		} else {
-			util.LogSteamInfo("IP retrieval complete!")
+			logger.LogSteamInfo("IP retrieval complete!")
 			complete = true
 			break
 		}
@@ -86,17 +87,17 @@ func extractHosts(hbs []byte) ([]string, int, error) {
 	total := 0
 	for i := 0; i < len(hbs); i++ {
 		if len(sl) > 0 && sl[len(sl)-1] == "0.0.0.0:0" {
-			util.LogSteamInfo("0.0.0.0:0 detected. Got %d total hosts.", total-1)
+			logger.LogSteamInfo("0.0.0.0:0 detected. Got %d total hosts.", total-1)
 			break
 		}
 		if pos+6 > len(hbs) {
-			util.LogSteamInfo("Got %d total hosts.", total)
+			logger.LogSteamInfo("Got %d total hosts.", total)
 			break
 		}
 
 		host, err := parseIP(hbs[pos : pos+6])
 		if err != nil {
-			util.LogAppErrorf("Error parsing host: %s", err)
+			logger.LogAppErrorf("Error parsing host: %s", err)
 		} else {
 			sl = append(sl, host)
 			total++
@@ -109,7 +110,7 @@ func extractHosts(hbs []byte) ([]string, int, error) {
 
 func parseIP(k []byte) (string, error) {
 	if len(k) != 6 {
-		return "", util.LogSteamErrorf("Invalid IP byte size. Got: %d, expected 6",
+		return "", logger.LogSteamErrorf("Invalid IP byte size. Got: %d, expected 6",
 			len(k))
 	}
 	port := int16(k[5]) | int16(k[4])<<8
@@ -139,8 +140,8 @@ func queryMasterServer(conn net.Conn, startaddress string,
 	_, err := conn.Write(request)
 	if err != nil {
 		// TODO: can this be simplified as:
-		//return nil, util.LogSteamError(ErrDataTransmit(err.Error()))
-		util.LogSteamError(ErrDataTransmit(err.Error()))
+		//return nil, logger.LogSteamError(ErrDataTransmit(err.Error()))
+		logger.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 
@@ -148,8 +149,8 @@ func queryMasterServer(conn net.Conn, startaddress string,
 	numread, err := conn.Read(buf[:maxPacketSize])
 	if err != nil {
 		// TODO: can this be simplified as:
-		//return nil, util.LogSteamError(ErrDataTransmit(err.Error()))
-		util.LogSteamError(ErrDataTransmit(err.Error()))
+		//return nil, logger.LogSteamError(ErrDataTransmit(err.Error()))
+		logger.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
 
@@ -158,8 +159,8 @@ func queryMasterServer(conn net.Conn, startaddress string,
 
 	if !bytes.HasPrefix(masterResponse, expectedMasterRespHeader) {
 		// TODO: can this be simplified as:
-		//return nil, util.LogSteamError(ErrPacketHeader)
-		util.LogSteamError(ErrPacketHeader)
+		//return nil, logger.LogSteamError(ErrPacketHeader)
+		logger.LogSteamError(ErrPacketHeader)
 		return nil, ErrPacketHeader
 	}
 
@@ -170,17 +171,12 @@ func queryMasterServer(conn net.Conn, startaddress string,
 // returning a pointer to a MasterQuery struct containing the hosts retrieved in
 // the event of success or an error in the event of failure.
 func NewMasterQuery(filter *filters.Filter) (*MasterQuery, error) {
-	var err error
-	cfg, err = util.ReadConfig()
-	if err != nil {
-		return nil, err
-	}
-
+	cfg = config.ReadConfig()
 	sl, err := getServers(filter)
 	if err != nil {
 		return nil, err
 	}
-	util.LogSteamInfo("*** Retrieved %d %s servers.", len(sl), filter.Game.Name)
+	logger.LogSteamInfo("*** Retrieved %d %s servers.", len(sl), filter.Game.Name)
 
 	return &MasterQuery{Servers: sl}, nil
 }

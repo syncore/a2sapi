@@ -4,8 +4,9 @@ package db
 
 import (
 	"net"
+	"steamtest/src/constants"
+	"steamtest/src/logger"
 	"steamtest/src/models"
-	"steamtest/src/util"
 
 	"github.com/oschwald/maxminddb-golang"
 )
@@ -38,9 +39,9 @@ func getDefaultCountryData() *models.DbCountry {
 // returned by this function.
 func OpenCountryDB() (*maxminddb.Reader, error) {
 	// Note: the caller of this function needs to handle db.Close()
-	db, err := maxminddb.Open(countryDbFilePath)
+	db, err := maxminddb.Open(constants.CountryDbFilePath)
 	if err != nil {
-		util.LogAppError(err)
+		logger.LogAppError(err)
 		panic("Unable to open country database!")
 	}
 	return db, nil
