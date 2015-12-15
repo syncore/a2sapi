@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// MasterQuery contains the servers returned by a query to the Steam master server.
 type MasterQuery struct {
 	Servers []string
 }
@@ -31,8 +32,6 @@ func getServers(filter *filters.Filter) ([]string, error) {
 	c, err = net.DialTimeout("udp", masterServerHost,
 		time.Duration(QueryTimeout)*time.Second)
 	if err != nil {
-		// TODO: can this be simplified as:
-		// return nil, logger.LogAppError(ErrHostConnection(err.Error()))
 		logger.LogSteamError(ErrHostConnection(err.Error()))
 		return nil, ErrHostConnection(err.Error())
 	}
@@ -139,8 +138,6 @@ func queryMasterServer(conn net.Conn, startaddress string,
 
 	_, err := conn.Write(request)
 	if err != nil {
-		// TODO: can this be simplified as:
-		//return nil, logger.LogSteamError(ErrDataTransmit(err.Error()))
 		logger.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
@@ -148,8 +145,6 @@ func queryMasterServer(conn net.Conn, startaddress string,
 	var buf [maxPacketSize]byte
 	numread, err := conn.Read(buf[:maxPacketSize])
 	if err != nil {
-		// TODO: can this be simplified as:
-		//return nil, logger.LogSteamError(ErrDataTransmit(err.Error()))
 		logger.LogSteamError(ErrDataTransmit(err.Error()))
 		return nil, ErrDataTransmit(err.Error())
 	}
@@ -158,8 +153,6 @@ func queryMasterServer(conn net.Conn, startaddress string,
 	copy(masterResponse, buf[:numread])
 
 	if !bytes.HasPrefix(masterResponse, expectedMasterRespHeader) {
-		// TODO: can this be simplified as:
-		//return nil, logger.LogSteamError(ErrPacketHeader)
 		logger.LogSteamError(ErrPacketHeader)
 		return nil, ErrPacketHeader
 	}

@@ -3,22 +3,17 @@ package steam
 import "steamtest/src/config"
 
 const (
-	headerStr       = "\xFF\xFF\xFF\xFF"
-	maxPacketSize   = 1400 // specified by steam protocol
-	QueryTimeout    = 3    // sec; connect, read & write timeout. Should be > 1
-	QueryRetryCount = 3    // # of times to re-request rules, players, info on failure
+	headerStr     = "\xFF\xFF\xFF\xFF"
+	maxPacketSize = 1400 // specified by steam protocol
+	// QueryTimeout is the connect, read, and write timeout in seconds. It should
+	// be greater than 1.
+	QueryTimeout = 3
+	// QueryRetryCount is the number of times to re-request rules, players, and info
+	// on failure.
+	QueryRetryCount = 3
 )
 
 var cfg *config.Config
-
-type IgnoredRequest int
-
-const (
-	IgnoreRulesRequest IgnoredRequest = iota
-	IgnorePlayerRequest
-	IgnoreInfoRequest
-)
-
 var (
 	// Multi-packet response header
 	multiPacketRespHeader = []byte{0xFE, 0xFF, 0xFF, 0xFF}

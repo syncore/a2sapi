@@ -56,7 +56,6 @@ func main() {
 		}
 		// HTTP server + API + Steam auto-querier
 		go web.Start(runSilent)
-		// + Steam querier
 		filter := filters.NewFilter(autoQueryGame, filters.SrAll, nil)
 		stop := make(chan bool, 1)
 		go steam.StartMasterRetrieval(stop, filter, 7,

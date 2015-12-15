@@ -28,16 +28,17 @@ func retrieve(filter *filters.Filter) error {
 	}
 	data.HostsGames = hg
 
-	// Order of retrieval is by amount of work that must be done (1 = 2, 3)
-	// 1. players (request chal #, recv chal #, req players, recv players)
-	// 2. rules (request chal #, recv chal #, req rules, recv rules)
+	// Order of retrieval is by amount of work that must be done (generally 1, 2, 3)
+	// 1. rules (request chal #, recv chal #, req rules, recv rules)
+	// games with multi-packet A2S_RULES replies do the most work; otherwise 1 = 2, 3
+	// 2. players (request chal #, recv chal #, req players, recv players)
 	// 3. info: just request info & receive info
 	// Note: some servers (i.e. new beta games) don't have all 3 of AS2_RULES/PLAYER/INFO
-	if !filter.Game.IgnorePlayers {
-		data.Players = batchPlayerQuery(mq.Servers)
-	}
 	if !filter.Game.IgnoreRules {
 		data.Rules = batchRuleQuery(mq.Servers)
+	}
+	if !filter.Game.IgnorePlayers {
+		data.Players = batchPlayerQuery(mq.Servers)
 	}
 	if !filter.Game.IgnoreInfo {
 		data.Info = batchInfoQuery(mq.Servers)
@@ -48,6 +49,8 @@ func retrieve(filter *filters.Filter) error {
 		return logger.LogAppError(err)
 	}
 
+	// TODO: a debugMode in the configuration which if enabled will dump servers.json
+	// if not, then it won't (for when master server list is stored in memory)
 	j, err := json.Marshal(serverlist)
 	if err != nil {
 		return logger.LogAppErrorf("Error marshaling json: %s", err)

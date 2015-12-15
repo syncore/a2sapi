@@ -65,8 +65,8 @@ var (
 	}
 	// GameUnspecified Unspecified game for direct server queries, if enabled;
 	// if unspecified games actually ignore some A2S requests there will be issues.
-	// This is intentionally left out of the gl GameList struct so it is not user-
-	// selectable in the configuration creation.
+	// This is intentionally left out of the defaultGames GameList struct so it
+	//is not user-selectable in the configuration creation.
 	GameUnspecified = &Game{
 		Name:          "Unspecified",
 		AppID:         0,

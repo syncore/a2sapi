@@ -129,8 +129,8 @@ func DirectQuery(hosts []string) (*models.APIServerList, error) {
 	// (1) A2S_INFO for game/host, (2) extra data A2S_INFO flag & field w/ appid,
 	//(3) game has been defined in game.go with the correct AppID and A2S ignore flags
 	info := batchInfoQuery(hosts)
-	needsPlayers := make([]string, len(hosts))
 	needsRules := make([]string, len(hosts))
+	needsPlayers := make([]string, len(hosts))
 
 	for _, h := range hosts {
 		logger.WriteDebug("direct query for %s. will try to figure out needed queries", h)
@@ -138,15 +138,15 @@ func DirectQuery(hosts []string) (*models.APIServerList, error) {
 			logger.WriteDebug("A2S_INFO not nil. got gameid: %d", info[h].ExtraData.GameID)
 			fg := filters.GetGameByAppID(info[h].ExtraData.GameID)
 			hg[h] = fg
-			if !fg.IgnorePlayers {
-				logger.WriteDebug("based on game %s for %s, will need to get A2S_PLAYERS",
-					fg.Name, h)
-				needsPlayers = append(needsPlayers, h)
-			}
 			if !fg.IgnoreRules {
 				logger.WriteDebug("based on game %s for %s, will need to get A2S_RULES",
 					fg.Name, h)
 				needsRules = append(needsRules, h)
+			}
+			if !fg.IgnorePlayers {
+				logger.WriteDebug("based on game %s for %s, will need to get A2S_PLAYERS",
+					fg.Name, h)
+				needsPlayers = append(needsPlayers, h)
 			}
 		} else {
 			logger.WriteDebug("A2S_INFO is nil. game will be unspecified; results may vary")
@@ -178,11 +178,11 @@ func Query(hostsgames map[string]string) (*models.APIServerList, error) {
 	for host, game := range hostsgames {
 		fg := filters.GetGameByName(game)
 		hg[host] = fg
-		if !fg.IgnorePlayers {
-			needsPlayers = append(needsPlayers, host)
-		}
 		if !fg.IgnoreRules {
 			needsRules = append(needsRules, host)
+		}
+		if !fg.IgnorePlayers {
+			needsPlayers = append(needsPlayers, host)
 		}
 		if !fg.IgnoreInfo {
 			needsInfo = append(needsInfo, host)
