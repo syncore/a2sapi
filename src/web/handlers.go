@@ -24,6 +24,15 @@ func getQStrValues(m map[string][]string, querystring string) []string {
 	return vals
 }
 
+func getServers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if err := json.NewEncoder(w).Encode(models.MasterList); err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		logger.LogWebError(err)
+		return
+	}
+}
+
 func getServerID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 

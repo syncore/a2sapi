@@ -28,6 +28,18 @@ const (
 
 var apiRoutes = []route{
 	route{
+		name:   "GetServers",
+		method: "GET",
+		path:   "/getServers",
+		// queryStrings: []querystring{
+		// 	querystring{
+		// 		name:     getServerIDQueryStr,
+		// 		required: true,
+		// 	},
+		// },
+		handlerFunc: getServers,
+	},
+	route{
 		name:   "GetServerID",
 		method: "GET",
 		path:   "/getServerID",

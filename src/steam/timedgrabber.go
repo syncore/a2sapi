@@ -5,20 +5,23 @@ package steam
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"os"
+	"steamtest/src/config"
 	"steamtest/src/logger"
+	"steamtest/src/models"
 	"steamtest/src/steam/filters"
 	"time"
 )
 
-func retrieve(filter *filters.Filter) error {
+func retrieve(filter *filters.Filter) (*models.APIServerList, error) {
 	mq, err := NewMasterQuery(filter)
 	if err != nil {
-		return logger.LogSteamErrorf("Master server error: %s", err)
+		return nil, logger.LogSteamErrorf("Master server error: %s", err)
 	}
 
 	if filter.Game.IgnoreInfo && filter.Game.IgnorePlayers && filter.Game.IgnoreRules {
-		return logger.LogAppErrorf("Cannot ignore all three AS2 requests!")
+		return nil, logger.LogAppErrorf("Cannot ignore all three AS2 requests!")
 	}
 
 	data := &a2sData{}
@@ -46,16 +49,27 @@ func retrieve(filter *filters.Filter) error {
 
 	serverlist, err := buildServerList(data, true)
 	if err != nil {
-		return logger.LogAppError(err)
+		return nil, logger.LogAppError(err)
 	}
 
-	// TODO: a debugMode in the configuration which if enabled will dump servers.json
-	// if not, then it won't (for when master server list is stored in memory)
-	j, err := json.Marshal(serverlist)
+	if config.ReadConfig().SteamConfig.EnableServerDump {
+		if err := dumpServersToDisk(filter.Game.Name, serverlist); err != nil {
+			logger.LogAppError(err)
+		}
+	}
+
+	return serverlist, nil
+}
+
+func dumpServersToDisk(gamename string, sl *models.APIServerList) error {
+	j, err := json.Marshal(sl)
 	if err != nil {
 		return logger.LogAppErrorf("Error marshaling json: %s", err)
 	}
-	file, err := os.Create("servers.json")
+	t := time.Now()
+	// Windows doesn't allow ":" in filename so use '-' separators for time
+	file, err := os.Create(fmt.Sprintf("%s-servers-%d-%02d-%02d.%02d-%02d-%02d.json",
+		gamename, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second()))
 	if err != nil {
 		return logger.LogAppErrorf("Error creating json file: %s", err)
 	}
@@ -88,7 +102,11 @@ func StartMasterRetrieval(stop chan bool, filter *filters.Filter,
 
 	firstretrieval := time.NewTimer(time.Duration(initialDelay) * time.Second)
 	<-firstretrieval.C
-	_ = retrieve(filter)
+	sl, err := retrieve(filter)
+	if err != nil {
+		logger.LogAppErrorf("Error when performing timed master retrieval: %s", err)
+	}
+	models.MasterList = sl
 
 	for {
 		select {
@@ -98,7 +116,11 @@ func StartMasterRetrieval(stop chan bool, filter *filters.Filter,
 					"Mon Jan 2 15:04:05 2006 EST"), filter.Game.Name)
 				logger.LogAppInfo("%s: Starting %s master server query", time.Now().Format(
 					"Mon Jan 2 15:04:05 2006 EST"), filter.Game.Name)
-				_ = retrieve(filter)
+				sl, err := retrieve(filter)
+				if err != nil {
+					logger.LogAppErrorf("Error when performing timed master retrieval: %s", err)
+				}
+				models.MasterList = sl
 			}(filter)
 		case <-stop:
 			retrticker.Stop()

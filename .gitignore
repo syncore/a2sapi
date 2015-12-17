@@ -36,3 +36,4 @@ steamtest.exe
 steamtest
 logs
 *.mmdb
+*servers-*.json

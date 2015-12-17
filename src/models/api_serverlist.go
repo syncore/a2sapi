@@ -33,6 +33,10 @@ type APIServer struct {
 	Rules       map[string]string  `json:"rules"`
 }
 
+// MasterList represents the list of all servers returned from the master server
+// and directly exposed to the user via queries if timed auto queries are enabled.
+var MasterList *APIServerList
+
 // GetDefaultServerList Returns a default, empty, server list with the current
 // date and time in response to a server detail list request that failed for
 // whatever reason.
