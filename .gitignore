@@ -37,3 +37,4 @@ steamtest
 logs
 *.mmdb
 *servers-*.json
+api-test-servers.json

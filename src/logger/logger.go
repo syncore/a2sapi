@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"regexp"
@@ -240,7 +241,7 @@ func writeLogEntry(lt constants.LogType, loglevel logLevel, msg string,
 
 	if lt == constants.LTypeApp && !cfg.LogConfig.EnableAppLogging {
 		return nil
-	} else if lt == constants.LTypeDebug && !cfg.LogConfig.EnableDebugMessages {
+	} else if lt == constants.LTypeDebug && !cfg.DebugConfig.EnableDebugMessages {
 		return nil
 	} else if lt == constants.LTypeSteam && !cfg.LogConfig.EnableSteamLogging {
 		return nil
@@ -350,15 +351,18 @@ func LogWebErrorf(msg string, input ...interface{}) error {
 func LogWebRequest(inner http.Handler, name string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		inner.ServeHTTP(w, r)
-
+		u, err := url.QueryUnescape(r.URL.String())
+		if err != nil {
+			u = fmt.Sprintf("Invalid URL [missing 2 chars after percent sign]: %s", r.URL.String())
+		}
 		if err := writeLogEntry(constants.LTypeDebug, lDebug, fmt.Sprintf(
-			"URL: %s\tPATH: %s\tQUERY:%v", r.URL, r.URL.Path,
+			"URL: %s\tPATH: %s\tQUERY:%v", u, r.URL.Path,
 			r.URL.Query())); err != nil {
 			fmt.Print(err)
 		}
 
 		if err := writeLogEntry(constants.LTypeWeb, lInfo, fmt.Sprintf("%s\t%s\t%s\t%s",
-			r.Method, r.RequestURI, r.RemoteAddr, name)); err != nil {
+			r.Method, u, r.RemoteAddr, name)); err != nil {
 			fmt.Print(err)
 		}
 	})

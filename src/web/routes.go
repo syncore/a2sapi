@@ -19,57 +19,78 @@ type querystring struct {
 
 const (
 	// /getServerID?address=
-	getServerIDQueryStr = "address"
+	getServerIDQStr = "address"
 	// /queryServerID?id=
-	queryServerIDQueryStr = "id"
+	queryServerIDQStr = "id"
 	// /queryServerAddr?address=
-	queryServerAddrQueryStr = "address"
+	queryServerAddrQStr = "address"
+
+	// getServers filters:
+
+	// getServers?country=
+	getServersCountryQStr = "country"
+	// getServers?region=
+	getServersRegionQStr = "region"
+	// getServers?state=
+	getServersStateQStr = "state"
 )
 
 var apiRoutes = []route{
+	// getServers
 	route{
 		name:   "GetServers",
 		method: "GET",
 		path:   "/getServers",
-		// queryStrings: []querystring{
-		// 	querystring{
-		// 		name:     getServerIDQueryStr,
-		// 		required: true,
-		// 	},
-		// },
+		queryStrings: []querystring{
+			querystring{
+				name:     getServersCountryQStr,
+				required: false,
+			},
+			querystring{
+				name:     getServersRegionQStr,
+				required: false,
+			},
+			querystring{
+				name:     getServersStateQStr,
+				required: false,
+			},
+		},
 		handlerFunc: getServers,
 	},
+	// getServerID
 	route{
 		name:   "GetServerID",
 		method: "GET",
 		path:   "/getServerID",
 		queryStrings: []querystring{
 			querystring{
-				name:     getServerIDQueryStr,
+				name:     getServerIDQStr,
 				required: true,
 			},
 		},
 		handlerFunc: getServerID,
 	},
+	// queryServerID
 	route{
 		name:   "QueryServerID",
 		method: "GET",
 		path:   "/queryServerID",
 		queryStrings: []querystring{
 			querystring{
-				name:     queryServerIDQueryStr,
+				name:     queryServerIDQStr,
 				required: true,
 			},
 		},
 		handlerFunc: queryServerID,
 	},
+	// queryServerAddr
 	route{
 		name:   "QueryServerAddr",
 		method: "GET",
 		path:   "/queryServerAddr",
 		queryStrings: []querystring{
 			querystring{
-				name:     queryServerAddrQueryStr,
+				name:     queryServerAddrQStr,
 				required: true,
 			},
 		},

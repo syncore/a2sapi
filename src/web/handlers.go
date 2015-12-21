@@ -3,10 +3,12 @@ package web
 // handlers.go - Handler functions for API
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"steamtest/src/config"
 	"steamtest/src/logger"
 	"steamtest/src/models"
@@ -21,22 +23,55 @@ func getQStrValues(m map[string][]string, querystring string) []string {
 			break
 		}
 	}
+	// case where there's no value after query string (i.e: ?querystring=)
+	if vals[0] == "" {
+		return nil
+	}
 	return vals
+}
+
+func dumpFileAsMasterList(filename string) *models.APIServerList {
+	f, err := os.Open(filename)
+	if err != nil {
+		logger.LogAppErrorf("Unable to open test API server dump file: %s", err)
+		return nil
+	}
+	defer f.Close()
+	r := bufio.NewReader(f)
+	d := json.NewDecoder(r)
+	ml := &models.APIServerList{}
+	if err := d.Decode(ml); err != nil {
+		logger.LogAppErrorf("Unable to decode test API server dump as json: %s", err)
+		return nil
+	}
+	return ml
 }
 
 func getServers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if err := json.NewEncoder(w).Encode(models.MasterList); err != nil {
+	var ml *models.APIServerList
+	if config.ReadConfig().DebugConfig.ServerDumpFileAsMasterList {
+		ml = dumpFileAsMasterList(config.ReadConfig().DebugConfig.ServerDumpFilename)
+	} else {
+		ml = models.MasterList
+	}
+
+	lf := getLocationFilters(r.URL.Query())
+	logger.WriteDebug("location filters: %v", lf)
+	ml = filterByLocation(lf, ml)
+
+	if err := json.NewEncoder(w).Encode(ml); err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		logger.LogWebError(err)
 		return
 	}
+
 }
 
 func getServerID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	hosts := getQStrValues(r.URL.Query(), getServerIDQueryStr)
+	hosts := getQStrValues(r.URL.Query(), getServerIDQStr)
 	for _, v := range hosts {
 		logger.WriteDebug("host slice values: %s", v)
 		// basically require at least 2 octets
@@ -53,7 +88,7 @@ func getServerID(w http.ResponseWriter, r *http.Request) {
 
 func queryServerID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	ids := getQStrValues(r.URL.Query(), queryServerIDQueryStr)
+	ids := getQStrValues(r.URL.Query(), queryServerIDQStr)
 	logger.WriteDebug("queryServerID: ids length: %d", len(ids))
 	logger.WriteDebug("queryServerID: ids are: %s", ids)
 
@@ -85,7 +120,7 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addresses := getQStrValues(r.URL.Query(), queryServerAddrQueryStr)
+	addresses := getQStrValues(r.URL.Query(), queryServerAddrQStr)
 	logger.WriteDebug("addresses length: %d", len(addresses))
 	logger.WriteDebug("addresses are: %s", addresses)
 

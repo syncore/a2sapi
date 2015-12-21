@@ -20,6 +20,7 @@ type Config struct {
 	LogConfig   CfgLog   `json:"logConfig"`
 	SteamConfig CfgSteam `json:"steamConfig"`
 	WebConfig   CfgWeb   `json:"webConfig"`
+	DebugConfig CfgDebug `json:"debugConfig"`
 }
 
 func getNewLineForOS() string {
@@ -67,6 +68,7 @@ func CreateConfig() {
 		LogConfig:   CfgLog{},
 		SteamConfig: CfgSteam{},
 		WebConfig:   CfgWeb{},
+		DebugConfig: CfgDebug{},
 	}
 	fmt.Printf("%s - configuration file creation\n", constants.AppInfo)
 	fmt.Print(
@@ -77,8 +79,6 @@ func CreateConfig() {
 	cfg.LogConfig.EnableAppLogging = configureLoggingEnable(reader, constants.LTypeApp)
 	cfg.LogConfig.EnableSteamLogging = configureLoggingEnable(reader, constants.LTypeSteam)
 	cfg.LogConfig.EnableWebLogging = configureLoggingEnable(reader, constants.LTypeWeb)
-	// Debug mode for testing (no user option to enable)
-	cfg.LogConfig.EnableDebugMessages = defaultEnableDebugMessages
 	// Configure max log size and max log count if logging is enabled
 	if cfg.LogConfig.EnableAppLogging || cfg.LogConfig.EnableSteamLogging ||
 		cfg.LogConfig.EnableWebLogging {
@@ -117,6 +117,16 @@ func CreateConfig() {
 	cfg.WebConfig.APIWebTimeout = configureWebTimeout(reader)
 	// Port that API's web server will listen on
 	cfg.WebConfig.APIWebPort = configureWebServerPort(reader)
+
+	// Debug configuration (not user-selectable. for debug/development purposes)
+	// Print a few "debug" messages to stdout
+	cfg.DebugConfig.EnableDebugMessages = defaultEnableDebugMessages
+	// Dump the retrieved server information to a JSON file on disk
+	cfg.DebugConfig.EnableServerDump = defaultEnableServerDump
+	// Use a pre-defined JSON file as disk as the master server list for the API
+	cfg.DebugConfig.ServerDumpFileAsMasterList = defaultServerDumpFileAsMasterList
+	// Name of the pre-defined JSON file to use as the master server list for API
+	cfg.DebugConfig.ServerDumpFilename = defaultServerDumpFile
 
 	if err := util.WriteJSONConfig(cfg, constants.ConfigDirectory,
 		constants.ConfigFilePath); err != nil {

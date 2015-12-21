@@ -9,22 +9,20 @@ import (
 )
 
 const (
-	defaultEnableDebugMessages = false
-	defaultEnableAppLogging    = true
-	defaultEnableSteamLogging  = false
-	defaultEnableWebLogging    = true
-	defaultMaxLogSize          = 5120
-	defaultMaxLogCount         = 6
+	defaultEnableAppLogging   = true
+	defaultEnableSteamLogging = false
+	defaultEnableWebLogging   = true
+	defaultMaxLogSize         = 5120
+	defaultMaxLogCount        = 6
 )
 
 // CfgLog represents logging-related configuration options.
 type CfgLog struct {
-	EnableDebugMessages bool  `json:"debugMessages"`
-	EnableAppLogging    bool  `json:"enableAppLogging"`
-	EnableSteamLogging  bool  `json:"enableSteamLogging"`
-	EnableWebLogging    bool  `json:"enableWebLogging"`
-	MaximumLogSize      int64 `json:"maxLogFilesize"`
-	MaximumLogCount     int   `json:"maxLogCount"`
+	EnableAppLogging   bool  `json:"enableAppLogging"`
+	EnableSteamLogging bool  `json:"enableSteamLogging"`
+	EnableWebLogging   bool  `json:"enableWebLogging"`
+	MaximumLogSize     int64 `json:"maxLogFilesize"`
+	MaximumLogCount    int   `json:"maxLogCount"`
 }
 
 func configureLoggingEnable(reader *bufio.Reader, logt constants.LogType) bool {

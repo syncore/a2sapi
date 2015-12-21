@@ -11,11 +11,10 @@ import (
 
 const (
 	defaultBuggedPlayerTime         = 7
-	defaultEnableServerDump         = false
 	defaultMaxHostsToReceive        = 4000
 	defaultAutoQueryMaster          = false
 	defaultTimeBetweenMasterQueries = 90
-	// this value is not used in JSON, only in the config dialog
+	// defaultTimeForHighServerCount: not used in JSON, only in the config dialog
 	defaultTimeForHighServerCount = 120
 )
 
@@ -24,7 +23,6 @@ type CfgSteam struct {
 	SteamBugPlayerTime       int    `json:"steamBugPlayerHours"`
 	AutoQueryMaster          bool   `json:"timedMasterServerQuery"`
 	AutoQueryGame            string `json:"gameForTimedMasterQuery"`
-	EnableServerDump         bool   `json:"dumpServers"` // dump JSON to disk (debug)
 	TimeBetweenMasterQueries int    `json:"timeBetweenMasterQueries"`
 	MaximumHostsToReceive    int    `json:"maxHostsToReceive"`
 }
