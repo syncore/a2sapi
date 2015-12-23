@@ -25,7 +25,6 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 	}
 	successcount := 0
 	var success bool
-	var useEmptyInfo bool
 	var sdb *sql.DB
 	var sdbhosts map[string]string
 	sl := &models.APIServerList{
@@ -44,8 +43,11 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 	defer cdb.Close()
 
 	for host, game := range data.HostsGames {
-		var i interface{}
 		info, iok := data.Info[host]
+		if info == nil {
+			// pointer to struct would be 'null' in json, instead: empty object in JSON
+			info = &models.SteamServerInfo{}
+		}
 		players, pok := data.Players[host]
 		if players == nil {
 			// return empty array instead of nil pointers (null) in json
@@ -56,8 +58,6 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 
 		if game.IgnoreInfo {
 			success = pok && rok
-			useEmptyInfo = true
-			i = make(map[string]int, 0)
 		}
 		if game.IgnorePlayers {
 			success = iok && rok
@@ -82,20 +82,15 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 				Players:     players,
 				RealPlayers: removeBuggedPlayers(players),
 				Rules:       rules,
-			}
-			// this is needed to return the omitted info as an empty object in JSON
-			if useEmptyInfo {
-				srv.Info = i
-			} else {
-				srv.Info = info
+				Info:        info,
 			}
 
-			ip, port, err := net.SplitHostPort(host)
-			if err == nil {
+			ip, port, serr := net.SplitHostPort(host)
+			if serr == nil {
 				srv.IP = ip
 				srv.Host = host
-				p, err := strconv.Atoi(port)
-				if err == nil {
+				p, perr := strconv.Atoi(port)
+				if perr == nil {
 					srv.Port = p
 				}
 				if addtoServerDB {

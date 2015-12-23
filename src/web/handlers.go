@@ -12,25 +12,9 @@ import (
 	"steamtest/src/config"
 	"steamtest/src/logger"
 	"steamtest/src/models"
-	"strings"
 )
 
-func getQStrValues(m map[string][]string, querystring string) []string {
-	var vals []string
-	for k := range m {
-		if strings.EqualFold(k, querystring) {
-			vals = strings.Split(m[k][0], ",")
-			break
-		}
-	}
-	// case where there's no value after query string (i.e: ?querystring=)
-	if vals[0] == "" {
-		return nil
-	}
-	return vals
-}
-
-func dumpFileAsMasterList(filename string) *models.APIServerList {
+func useDumpFileAsMasterList(filename string) *models.APIServerList {
 	f, err := os.Open(filename)
 	if err != nil {
 		logger.LogAppErrorf("Unable to open test API server dump file: %s", err)
@@ -51,18 +35,25 @@ func getServers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var ml *models.APIServerList
 	if config.ReadConfig().DebugConfig.ServerDumpFileAsMasterList {
-		ml = dumpFileAsMasterList(config.ReadConfig().DebugConfig.ServerDumpFilename)
+		ml = useDumpFileAsMasterList(config.ReadConfig().DebugConfig.ServerDumpFilename)
 	} else {
 		ml = models.MasterList
 	}
+	// Master list is empty (i.e. during first retrieval/startup)
+	if ml == nil {
+		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
+			writeJSONEncodeError(w, err)
+			return
+		}
+		return
+	}
 
-	lf := getLocationFilters(r.URL.Query())
-	logger.WriteDebug("location filters: %v", lf)
-	ml = filterByLocation(lf, ml)
+	srvfilters := getSrvFilterFromQString(r.URL.Query(), getServersQueryStrings)
+	logger.WriteDebug("server list will be filtered with: %v", srvfilters)
+	ml = filterServers(srvfilters, ml)
 
 	if err := json.NewEncoder(w).Encode(ml); err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		logger.LogWebError(err)
+		writeJSONEncodeError(w, err)
 		return
 	}
 
@@ -71,13 +62,14 @@ func getServers(w http.ResponseWriter, r *http.Request) {
 func getServerID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	hosts := getQStrValues(r.URL.Query(), getServerIDQStr)
+	hosts := getQStringValues(r.URL.Query(), qsGetServerID)
 	for _, v := range hosts {
 		logger.WriteDebug("host slice values: %s", v)
 		// basically require at least 2 octets
 		if len(v) < 4 {
 			w.WriteHeader(http.StatusBadRequest)
 			if err := json.NewEncoder(w).Encode(models.GetDefaultServerID()); err != nil {
+				writeJSONEncodeError(w, err)
 				return
 			}
 			return
@@ -88,7 +80,7 @@ func getServerID(w http.ResponseWriter, r *http.Request) {
 
 func queryServerID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	ids := getQStrValues(r.URL.Query(), queryServerIDQStr)
+	ids := getQStringValues(r.URL.Query(), qsQueryServerID)
 	logger.WriteDebug("queryServerID: ids length: %d", len(ids))
 	logger.WriteDebug("queryServerID: ids are: %s", ids)
 
@@ -96,7 +88,7 @@ func queryServerID(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		logger.WriteDebug("queryServerID: Got empty query. Ignoring.")
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			logger.LogWebError(err)
+			writeJSONEncodeError(w, err)
 			return
 		}
 		return
@@ -120,7 +112,7 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addresses := getQStrValues(r.URL.Query(), queryServerAddrQStr)
+	addresses := getQStringValues(r.URL.Query(), qsQueryServerAddr)
 	logger.WriteDebug("addresses length: %d", len(addresses))
 	logger.WriteDebug("addresses are: %s", addresses)
 
@@ -128,7 +120,7 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		logger.WriteDebug("queryServerAddr: Got empty address query. Ignoring.")
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			logger.LogWebError(err)
+			writeJSONEncodeError(w, err)
 			return
 		}
 		return
@@ -147,7 +139,7 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		logger.WriteDebug("queryServerAddr: No valid addresses for query. Ignoring.")
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			logger.LogWebError(err)
+			writeJSONEncodeError(w, err)
 			return
 		}
 		return
@@ -158,4 +150,18 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 		parsedaddresses = parsedaddresses[:cfg.WebConfig.MaximumHostsPerAPIQuery]
 	}
 	queryServerAddrRetriever(w, parsedaddresses)
+}
+
+// setNotFoundAndLog sets the error code of the underlying writer to 404 (not found)
+// and internally logs the error.
+func setNotFoundAndLog(w http.ResponseWriter, err error) {
+	w.WriteHeader(http.StatusNotFound)
+	logger.LogWebError(err)
+}
+
+// writeJSONEncodeError displays a generic error message, returns an error code
+// of 404 not found, and logs an error related to unsuccessful JSON encoding.
+func writeJSONEncodeError(w http.ResponseWriter, err error) {
+	setNotFoundAndLog(w, err)
+	fmt.Fprintf(w, `{"error":"An error occurred."}`)
 }
