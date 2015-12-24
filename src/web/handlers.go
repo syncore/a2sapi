@@ -41,22 +41,16 @@ func getServers(w http.ResponseWriter, r *http.Request) {
 	}
 	// Master list is empty (i.e. during first retrieval/startup)
 	if ml == nil {
-		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			writeJSONEncodeError(w, err)
+		if success := writeJSONResponse(w, models.GetDefaultServerList()); !success {
 			return
 		}
-		return
 	}
-
 	srvfilters := getSrvFilterFromQString(r.URL.Query(), getServersQueryStrings)
 	logger.WriteDebug("server list will be filtered with: %v", srvfilters)
 	ml = filterServers(srvfilters, ml)
-
-	if err := json.NewEncoder(w).Encode(ml); err != nil {
-		writeJSONEncodeError(w, err)
+	if success := writeJSONResponse(w, ml); !success {
 		return
 	}
-
 }
 
 func getServerID(w http.ResponseWriter, r *http.Request) {
@@ -68,11 +62,9 @@ func getServerID(w http.ResponseWriter, r *http.Request) {
 		// basically require at least 2 octets
 		if len(v) < 4 {
 			w.WriteHeader(http.StatusBadRequest)
-			if err := json.NewEncoder(w).Encode(models.GetDefaultServerID()); err != nil {
-				writeJSONEncodeError(w, err)
+			if success := writeJSONResponse(w, models.GetDefaultServerID()); !success {
 				return
 			}
-			return
 		}
 	}
 	getServerIDRetriever(w, hosts)
@@ -84,14 +76,12 @@ func queryServerID(w http.ResponseWriter, r *http.Request) {
 	logger.WriteDebug("queryServerID: ids length: %d", len(ids))
 	logger.WriteDebug("queryServerID: ids are: %s", ids)
 
-	if ids[0] == "" {
+	if ids == nil {
 		w.WriteHeader(http.StatusNotFound)
 		logger.WriteDebug("queryServerID: Got empty query. Ignoring.")
-		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			writeJSONEncodeError(w, err)
+		if success := writeJSONResponse(w, models.GetDefaultServerList()); !success {
 			return
 		}
-		return
 	}
 	cfg := config.ReadConfig()
 	if len(ids) > cfg.WebConfig.MaximumHostsPerAPIQuery {
@@ -111,19 +101,16 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"error":"Not allowed"}`)
 		return
 	}
-
 	addresses := getQStringValues(r.URL.Query(), qsQueryServerAddr)
 	logger.WriteDebug("addresses length: %d", len(addresses))
 	logger.WriteDebug("addresses are: %s", addresses)
 
-	if addresses[0] == "" {
+	if addresses == nil {
 		w.WriteHeader(http.StatusNotFound)
 		logger.WriteDebug("queryServerAddr: Got empty address query. Ignoring.")
-		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			writeJSONEncodeError(w, err)
+		if success := writeJSONResponse(w, models.GetDefaultServerList()); !success {
 			return
 		}
-		return
 	}
 
 	var parsedaddresses []string
@@ -138,11 +125,9 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 	if len(parsedaddresses) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		logger.WriteDebug("queryServerAddr: No valid addresses for query. Ignoring.")
-		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			writeJSONEncodeError(w, err)
+		if success := writeJSONResponse(w, models.GetDefaultServerList()); !success {
 			return
 		}
-		return
 	}
 
 	if len(parsedaddresses) > cfg.WebConfig.MaximumHostsPerAPIQuery {
@@ -150,6 +135,17 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 		parsedaddresses = parsedaddresses[:cfg.WebConfig.MaximumHostsPerAPIQuery]
 	}
 	queryServerAddrRetriever(w, parsedaddresses)
+}
+
+// writeJSONResponse encodes data as JSON and writes it to w, returning true if
+// successful; if unsuccessful, the error will be logged and it will return false
+// while displaying a generic error message to the user.
+func writeJSONResponse(w http.ResponseWriter, data interface{}) bool {
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		writeJSONEncodeError(w, err)
+		return false
+	}
+	return true
 }
 
 // setNotFoundAndLog sets the error code of the underlying writer to 404 (not found)
