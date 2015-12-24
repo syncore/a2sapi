@@ -51,7 +51,7 @@ func main() {
 			fmt.Println("Invalid game specified for automatic timed query!")
 			fmt.Printf(
 				"You may need to delete: '%s' and/or recreate the config with: %s --%s",
-				constants.GameFileFullPath, constants.GameFileFullPath)
+				constants.GameFileFullPath, os.Args[0], configFlag)
 			os.Exit(1)
 		}
 		// HTTP server + API + Steam auto-querier
@@ -91,7 +91,7 @@ func checkRequiredConfigs() {
 		fmt.Printf("Could not read configuration file '%s' in the '%s' directory.\n",
 			constants.ConfigFilename, constants.ConfigDirectory)
 		fmt.Printf("You must generate the configuration file with: %s --%s\n",
-			constants.GameFileFullPath)
+			os.Args[0], configFlag)
 		os.Exit(1)
 	}
 }
