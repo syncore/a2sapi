@@ -25,16 +25,21 @@ type CfgWeb struct {
 func configureDirectQueries(reader *bufio.Reader) bool {
 	valid := false
 	var val bool
-	var err error
-	prompt := fmt.Sprintf(
-		"\nAllow users to directly query *any* IP address, not just those in the serverID database?\nThis is mainly for testing and has some issues depending on the game.\nIt also may have security implications so enable with caution.\nNote: if you have timed master queries disabled & your server ID database is empty, then without this option there will be no way for users to make queries.\n>> 'yes' or 'no' [default: %s]: ",
-		getBoolString(defaultAllowDirectUserQueries))
+	prompt := fmt.Sprintf(`
+Allow users to directly query *any* IP address, not just those in the serverID
+database? This is mainly for testing and may have some issues for some games. It
+also may have abuse implications since your server could query unknown, user-
+specified IP addresses. Note: if you have timed master queries disabled & your
+server ID database is empty, then without this option there will be no way for
+users to make queries.
+%s`, promptColor("> 'yes' or 'no' [default: %s]: ",
+		getBoolString(defaultAllowDirectUserQueries)))
 
 	input := func(r *bufio.Reader) (bool, error) {
-		enable, err := r.ReadString('\n')
-		if err != nil {
+		enable, rserr := r.ReadString('\n')
+		if rserr != nil {
 			return defaultAllowDirectUserQueries,
-				fmt.Errorf("Unable to read respone: %s", err)
+				fmt.Errorf("Unable to read respone: %s", rserr)
 		}
 		if enable == newline {
 			return defaultAllowDirectUserQueries, nil
@@ -50,11 +55,12 @@ func configureDirectQueries(reader *bufio.Reader) bool {
 				fmt.Errorf("[ERROR] Invalid response. Valid responses: y, yes, n, no")
 		}
 	}
+	var err error
 	for !valid {
 		fmt.Print(prompt)
 		val, err = input(reader)
 		if err != nil {
-			fmt.Println(err)
+			errorColor(err)
 		} else {
 			valid = true
 		}
@@ -65,20 +71,21 @@ func configureDirectQueries(reader *bufio.Reader) bool {
 func configureMaxHostsPerAPIQuery(reader *bufio.Reader) int {
 	valid := false
 	var val int
-	var err error
-	prompt := fmt.Sprintf(
-		"\nEnter the maximum number of servers that users may query at a time via the API.\n>> [default: %d]: ", defaultMaxHostsPerAPIQuery)
+	prompt := fmt.Sprintf(`
+Enter the maximum number of servers that users may query at a time via the API.
+%s`, promptColor("> [default: %d]: ", defaultMaxHostsPerAPIQuery))
 
 	input := func(r *bufio.Reader) (int, error) {
-		hostsval, err := r.ReadString('\n')
-		if err != nil {
-			return defaultMaxHostsPerAPIQuery, fmt.Errorf("Unable to read response: %s", err)
+		hostsval, rserr := r.ReadString('\n')
+		if rserr != nil {
+			return defaultMaxHostsPerAPIQuery, fmt.Errorf("Unable to read response: %s",
+				rserr)
 		}
 		if hostsval == newline {
 			return defaultMaxHostsPerAPIQuery, nil
 		}
-		response, err := strconv.Atoi(strings.Trim(hostsval, newline))
-		if err != nil {
+		response, rserr := strconv.Atoi(strings.Trim(hostsval, newline))
+		if rserr != nil {
 			return defaultMaxHostsPerAPIQuery,
 				fmt.Errorf("[ERROR] Maximum hosts to allow per API query must be a positive number")
 		}
@@ -88,11 +95,12 @@ func configureMaxHostsPerAPIQuery(reader *bufio.Reader) int {
 		}
 		return response, nil
 	}
+	var err error
 	for !valid {
 		fmt.Print(prompt)
 		val, err = input(reader)
 		if err != nil {
-			fmt.Println(err)
+			errorColor(err)
 		} else {
 			valid = true
 		}
@@ -103,21 +111,20 @@ func configureMaxHostsPerAPIQuery(reader *bufio.Reader) int {
 func configureWebServerPort(reader *bufio.Reader) int {
 	valid := false
 	var val int
-	var err error
-	prompt := fmt.Sprintf(
-		"\nEnter the port number on which the API web server will listen.\n>> [default: %d]: ",
-		defaultAPIWebPort)
+	prompt := fmt.Sprintf(`
+Enter the port number on which the API web server will listen.
+%s`, promptColor("> [default: %d]: ", defaultAPIWebPort))
 
 	input := func(r *bufio.Reader) (int, error) {
-		portval, err := r.ReadString('\n')
-		if err != nil {
-			return defaultAPIWebPort, fmt.Errorf("Unable to read response: %s", err)
+		portval, rserr := r.ReadString('\n')
+		if rserr != nil {
+			return defaultAPIWebPort, fmt.Errorf("Unable to read response: %s", rserr)
 		}
 		if portval == newline {
 			return defaultAPIWebPort, nil
 		}
-		response, err := strconv.Atoi(strings.Trim(portval, newline))
-		if err != nil {
+		response, rserr := strconv.Atoi(strings.Trim(portval, newline))
+		if rserr != nil {
 			return defaultAPIWebPort,
 				fmt.Errorf("[ERROR] API webserver port must be between 1 and 65535")
 		}
@@ -127,11 +134,12 @@ func configureWebServerPort(reader *bufio.Reader) int {
 		}
 		return response, nil
 	}
+	var err error
 	for !valid {
 		fmt.Print(prompt)
 		val, err = input(reader)
 		if err != nil {
-			fmt.Println(err)
+			errorColor(err)
 		} else {
 			valid = true
 		}
@@ -142,20 +150,23 @@ func configureWebServerPort(reader *bufio.Reader) int {
 func configureWebTimeout(reader *bufio.Reader) int {
 	valid := false
 	var val int
-	var err error
-	prompt := fmt.Sprintf("\nEnter the time in seconds before an HTTP request times out.\nThis must be at least 5 seconds; don't set this too low or the response will not be returned to the user.\n>> [default: %d]: ",
-		defaultAPIWebTimeout)
+	prompt := fmt.Sprintf(`
+Enter the time in seconds before an HTTP request times out. This must be at
+least 5 seconds; don't set this too low or the response will not be returned
+to the user.
+%s`, promptColor("> [default: %d]: ", defaultAPIWebTimeout))
 
 	input := func(r *bufio.Reader) (int, error) {
-		timeoutval, err := r.ReadString('\n')
-		if err != nil {
-			return defaultAPIWebTimeout, fmt.Errorf("Unable to read response: %s", err)
+		timeoutval, rserr := r.ReadString('\n')
+		if rserr != nil {
+			return defaultAPIWebTimeout, fmt.Errorf("Unable to read response: %s",
+				rserr)
 		}
 		if timeoutval == newline {
 			return defaultAPIWebTimeout, nil
 		}
-		response, err := strconv.Atoi(strings.Trim(timeoutval, newline))
-		if err != nil {
+		response, rserr := strconv.Atoi(strings.Trim(timeoutval, newline))
+		if rserr != nil {
 			return defaultAPIWebTimeout,
 				fmt.Errorf("[ERROR] API timeout cannot be less than 5 seconds")
 		}
@@ -165,11 +176,12 @@ func configureWebTimeout(reader *bufio.Reader) int {
 		}
 		return response, nil
 	}
+	var err error
 	for !valid {
 		fmt.Print(prompt)
 		val, err = input(reader)
 		if err != nil {
-			fmt.Println(err)
+			errorColor(err)
 		} else {
 			valid = true
 		}

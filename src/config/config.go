@@ -11,8 +11,12 @@ import (
 	"steamtest/src/constants"
 	"steamtest/src/steam/filters"
 	"steamtest/src/util"
+
+	"github.com/fatih/color"
 )
 
+var promptColor = color.New(color.FgHiGreen).SprintfFunc()
+var errorColor = color.New(color.FgHiRed).PrintlnFunc()
 var newline = getNewLineForOS()
 
 // Config represents logging, steam-related, and API-related options.
@@ -70,9 +74,11 @@ func CreateConfig() {
 		WebConfig:   CfgWeb{},
 		DebugConfig: CfgDebug{},
 	}
+	color.Set(color.FgHiYellow)
 	fmt.Printf("%s - configuration file creation\n", constants.AppInfo)
 	fmt.Print(
 		"Type a value and press 'ENTER'. Leave a value empty and press 'ENTER' to use the default value.\n\n")
+	color.Unset()
 
 	// Logging configuration
 	// Determine if application, Steam, and/or web API logging should be enabled
