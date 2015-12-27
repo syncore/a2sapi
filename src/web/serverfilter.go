@@ -99,6 +99,10 @@ func findMatches(sqf slQueryFilter,
 func filterServers(sqf []slQueryFilter,
 	sl *models.APIServerList) *models.APIServerList {
 
+	if sl == nil {
+		return models.GetDefaultServerList()
+	}
+
 	filtered := sl.Servers
 	for _, s := range sqf {
 		filtered = findMatches(s, filtered)

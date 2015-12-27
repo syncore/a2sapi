@@ -82,7 +82,7 @@ func configureTimedQueryGame(reader *bufio.Reader) string {
 Choose the game you would like to automatically retrieve servers for at timed
 intervals. Possible choices are: %s
 More games can be added via the %s file.
-%s`, games, constants.GameFileFullPath, promptColor("> [default: NONE]"))
+%s`, games, constants.GameFileFullPath, promptColor("> [default: NONE]: "))
 
 	input := func(r *bufio.Reader) (string, error) {
 		gameval, rserr := r.ReadString('\n')

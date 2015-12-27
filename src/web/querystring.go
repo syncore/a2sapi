@@ -152,6 +152,9 @@ func getQStringValues(m map[string][]string, querystring string) []string {
 			break
 		}
 	}
+	if vals == nil {
+		return nil
+	}
 	// case where there's no value after query string (i.e: ?querystring=)
 	if vals[0] == "" {
 		return nil

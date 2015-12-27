@@ -3,6 +3,7 @@ package db
 // country.go - Country geolocation database lookup.
 
 import (
+	"fmt"
 	"net"
 	"steamtest/src/constants"
 	"steamtest/src/logger"
@@ -42,7 +43,7 @@ func OpenCountryDB() (*maxminddb.Reader, error) {
 	db, err := maxminddb.Open(constants.CountryDbFilePath)
 	if err != nil {
 		logger.LogAppError(err)
-		panic("Unable to open country database!")
+		panic(fmt.Sprintf("Unable to open country database: %s", err))
 	}
 	return db, nil
 }
