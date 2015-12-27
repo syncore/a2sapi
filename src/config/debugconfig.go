@@ -6,7 +6,7 @@ const (
 	defaultEnableDebugMessages        = false
 	defaultEnableServerDump           = false
 	defaultServerDumpFileAsMasterList = false
-	defaultServerDumpFile             = "api-test-servers.json"
+	defaultServerDumpFile             = "serverdump.json"
 )
 
 // CfgDebug represents options for debugging and development.

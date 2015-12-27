@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defaultBuggedPlayerTime         = 7
+	defaultBuggedPlayerTime         = 6
 	defaultMaxHostsToReceive        = 4000
 	defaultAutoQueryMaster          = false
 	defaultTimeBetweenMasterQueries = 90
@@ -212,8 +212,9 @@ func configureSteamBugPlayerTime(reader *bufio.Reader) int {
 	prompt := fmt.Sprintf(`
 Enter the time, in hours, before a player is considered "bugged" or stuck on a
 server. This can filter out bots and "bugged" non-real players. This is to
-address the well-known Steam issue where players with very high playing time
-get "stuck" in the player list. This value must be at least 3 hours.
+address the well-known issue in certain games (i.e. Quake Live) where game servers
+do not receive the Steam de-auth message which causes players to get "stuck" in
+the player list, long after they've disconnected. This value must be at least 3 hours.
 %s`, promptColor("> [default: %d]: ", defaultBuggedPlayerTime))
 
 	input := func(r *bufio.Reader) (int, error) {

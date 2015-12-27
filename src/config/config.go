@@ -38,20 +38,20 @@ func getNewLineForOS() string {
 // a struct that contains the various configuration values if successful, otherwise
 // panics.
 func ReadConfig() *Config {
-	f, err := os.Open(constants.ConfigFilePath)
+	f, err := os.Open(constants.GetCfgPath())
 	if err != nil {
-		panic(fmt.Sprintf(
-			"Error reading config file.\nYou might need to recreate with --config switch.\nError: %s",
-			err))
+		panic(fmt.Sprintf(`
+"Error reading config file. You might need to recreate it by using
+the --config switch. Error: %s`, err))
 	}
 	defer f.Close()
 	r := bufio.NewReader(f)
 	d := json.NewDecoder(r)
 	cfg := &Config{}
 	if err := d.Decode(cfg); err != nil {
-		panic(fmt.Sprintf(
-			"Error decoding config file.\nYou might need to recreate with --config switch.\nError: %s",
-			err))
+		panic(fmt.Sprintf(`
+"Error decoding config file. You might need to recreate it by using
+the --config switch. Error: %s`, err))
 	}
 	return cfg
 }
@@ -75,9 +75,12 @@ func CreateConfig() {
 		DebugConfig: CfgDebug{},
 	}
 	color.Set(color.FgHiYellow)
-	fmt.Printf("%s - configuration file creation\n", constants.AppInfo)
-	fmt.Print(
-		"Type a value and press 'ENTER'. Leave a value empty and press 'ENTER' to use the default value.\n\n")
+	fmt.Printf(`
+%s - configuration file creation
+Type a value and press 'ENTER'. Leave a value empty and press 'ENTER' to use the
+default value.
+
+`, constants.AppInfo)
 	color.Unset()
 
 	// Logging configuration
@@ -136,6 +139,58 @@ func CreateConfig() {
 
 	if err := util.WriteJSONConfig(cfg, constants.ConfigDirectory,
 		constants.ConfigFilePath); err != nil {
+		panic(err)
+	}
+}
+
+// CreateDebugConfig creates the configuration file that is used when running the
+// applciation in debug mode.
+func CreateDebugConfig() {
+	cfg := &Config{}
+	cfg.LogConfig.EnableAppLogging = true
+	cfg.LogConfig.EnableSteamLogging = false // even in debug mode; disable
+	cfg.LogConfig.EnableWebLogging = true
+	cfg.LogConfig.MaximumLogCount = defaultMaxLogCount
+	cfg.LogConfig.MaximumLogSize = defaultMaxLogSize
+	cfg.SteamConfig.SteamBugPlayerTime = defaultBuggedPlayerTime
+	cfg.SteamConfig.AutoQueryMaster = false
+	cfg.SteamConfig.AutoQueryGame = "QuakeLive"
+	cfg.SteamConfig.TimeBetweenMasterQueries = defaultTimeBetweenMasterQueries
+	cfg.SteamConfig.MaximumHostsToReceive = defaultMaxHostsToReceive
+	cfg.WebConfig.AllowDirectUserQueries = true
+	cfg.WebConfig.APIWebPort = defaultAPIWebPort
+	cfg.WebConfig.APIWebTimeout = defaultAPIWebTimeout
+	cfg.WebConfig.MaximumHostsPerAPIQuery = defaultMaxHostsPerAPIQuery
+	cfg.DebugConfig.EnableDebugMessages = true
+	cfg.DebugConfig.EnableServerDump = true
+	cfg.DebugConfig.ServerDumpFileAsMasterList = true
+	cfg.DebugConfig.ServerDumpFilename = defaultServerDumpFile
+	if err := util.WriteJSONConfig(cfg, constants.ConfigDirectory,
+		constants.DebugConfigFilePath); err != nil {
+		panic(err)
+	}
+}
+
+// CreateTestConfig creates the configuration that is used when running automated
+// testing.
+func CreateTestConfig() {
+	// boolean values intentionally default to false and are omitted unless
+	// otherwise specified, which is different from the normal configuration
+	cfg := &Config{}
+	cfg.LogConfig.MaximumLogCount = defaultMaxLogCount
+	cfg.LogConfig.MaximumLogSize = defaultMaxLogSize
+	cfg.SteamConfig.SteamBugPlayerTime = defaultBuggedPlayerTime
+	cfg.SteamConfig.AutoQueryGame = "QuakeLive"
+	cfg.SteamConfig.TimeBetweenMasterQueries = defaultTimeBetweenMasterQueries
+	cfg.SteamConfig.MaximumHostsToReceive = defaultMaxHostsToReceive
+	cfg.WebConfig.AllowDirectUserQueries = true
+	cfg.WebConfig.APIWebPort = 40081
+	cfg.WebConfig.APIWebTimeout = defaultAPIWebTimeout
+	cfg.WebConfig.MaximumHostsPerAPIQuery = defaultMaxHostsPerAPIQuery
+	cfg.DebugConfig.ServerDumpFileAsMasterList = true
+	cfg.DebugConfig.ServerDumpFilename = "test-api-servers.json"
+	if err := util.WriteJSONConfig(cfg, constants.TestTempDirectory,
+		constants.TestConfigFilePath); err != nil {
 		panic(err)
 	}
 }

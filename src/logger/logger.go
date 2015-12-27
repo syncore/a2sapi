@@ -50,15 +50,6 @@ func getLogFilenameFromType(lt constants.LogType) string {
 	}
 }
 
-func createLogFile(lt constants.LogType) error {
-	f, err := os.Create(getLogPath(lt))
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	return nil
-}
-
 func deleteLogs(lt constants.LogType) error {
 	logfiles, err := getLogFiles(lt)
 	if err != nil {
@@ -180,7 +171,7 @@ func verifyLogPaths(lt constants.LogType) error {
 		return err
 	}
 	if !util.FileExists(getLogPath(lt)) {
-		if err := createLogFile(lt); err != nil {
+		if err := util.CreateEmptyFile(getLogPath(lt), false); err != nil {
 			return fmt.Errorf("verifyLogPaths error: %s", err)
 		}
 	}
@@ -195,7 +186,7 @@ func verifyLogSettings(lt constants.LogType, cfg *config.Config) error {
 			return fmt.Errorf("verifyLogSettings error: %s\n", err)
 		}
 		// re-create default logfile
-		if err := createLogFile(lt); err != nil {
+		if err := util.CreateEmptyFile(getLogPath(lt), true); err != nil {
 			return fmt.Errorf("verifyLogSettings error: %s\n", err)
 		}
 	}
@@ -212,7 +203,7 @@ func verifyLogSettings(lt constants.LogType, cfg *config.Config) error {
 				return fmt.Errorf("verifyLogSettings error: %s\n", err)
 			}
 			// re-create default app|web.log
-			if err := createLogFile(lt); err != nil {
+			if err := util.CreateEmptyFile(getLogPath(lt), true); err != nil {
 				return fmt.Errorf("verifyLogSettings error: %s\n", err)
 			}
 		} else {
@@ -227,7 +218,7 @@ func verifyLogSettings(lt constants.LogType, cfg *config.Config) error {
 				return fmt.Errorf("verifyLogSettings error: %s\n", err)
 			}
 			// re-create
-			if err := createLogFile(lt); err != nil {
+			if err := util.CreateEmptyFile(getLogPath(lt), true); err != nil {
 				return fmt.Errorf("verifyLogSettings error: %s\n", err)
 			}
 		}
@@ -353,7 +344,8 @@ func LogWebRequest(inner http.Handler, name string) http.Handler {
 		inner.ServeHTTP(w, r)
 		u, err := url.QueryUnescape(r.URL.String())
 		if err != nil {
-			u = fmt.Sprintf("Invalid URL [missing 2 chars after percent sign]: %s", r.URL.String())
+			u = fmt.Sprintf("Invalid URL [missing 2 chars after percent sign]: %s",
+				r.URL.String())
 		}
 		if err := writeLogEntry(constants.LTypeDebug, lDebug, fmt.Sprintf(
 			"URL: %s\tPATH: %s\tQUERY:%v", u, r.URL.Path,

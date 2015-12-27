@@ -5,7 +5,6 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"os"
 	"steamtest/src/constants"
 	"steamtest/src/logger"
 	"steamtest/src/models"
@@ -45,11 +44,11 @@ func createServerDB(dbfile string) error {
 		return nil
 	}
 
-	f, err := os.Create(dbfile)
+	err := util.CreateEmptyFile(dbfile, true)
 	if err != nil {
 		return logger.LogAppErrorf("Unable to create server DB: %s", err)
 	}
-	defer f.Close()
+
 	db, err := sql.Open("sqlite3", dbfile)
 	if err != nil {
 		return logger.LogAppErrorf(

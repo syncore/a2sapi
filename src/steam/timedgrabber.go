@@ -3,14 +3,14 @@ package steam
 // timedgrabber.go - Timed retrieval of servers from the Steam Master server.
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
-	"os"
 	"steamtest/src/config"
+	"steamtest/src/constants"
 	"steamtest/src/logger"
 	"steamtest/src/models"
 	"steamtest/src/steam/filters"
+	"steamtest/src/util"
 	"time"
 )
 
@@ -67,20 +67,18 @@ func dumpServersToDisk(gamename string, sl *models.APIServerList) error {
 		return logger.LogAppErrorf("Error marshaling json: %s", err)
 	}
 	t := time.Now()
+	if err := util.CreateDirectory(constants.DumpDirectory); err != nil {
+		return logger.LogAppErrorf("Couldn't create '%s' dir: %s\n",
+			constants.DumpDirectory, err)
+	}
 	// Windows doesn't allow ":" in filename so use '-' separators for time
-	file, err := os.Create(fmt.Sprintf("%s-servers-%d-%02d-%02d.%02d-%02d-%02d.json",
-		gamename, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second()))
+	err = util.CreateByteFile(j, constants.DumpFileFullPath(
+		fmt.Sprintf("%s-servers-%d-%02d-%02d.%02d-%02d-%02d.json",
+			gamename, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())),
+		true)
 	if err != nil {
-		return logger.LogAppErrorf("Error creating json file: %s", err)
+		return logger.LogAppErrorf("Error creating server dump file: %s", err)
 	}
-	defer file.Close()
-	file.Sync()
-	writer := bufio.NewWriter(file)
-	_, err = writer.Write(j)
-	if err != nil {
-		return logger.LogAppErrorf("Error writing json file: %s", err)
-	}
-	writer.Flush()
 	return nil
 }
 
@@ -93,12 +91,10 @@ func StartMasterRetrieval(stop chan bool, filter *filters.Filter,
 	retrticker := time.NewTicker(time.Duration(timeBetweenQueries) * time.Second)
 
 	logger.WriteDebug(
-		"Waiting %d seconds before grabbing %s servers. Will retrieve servers every %d secs afterwards.",
-		initialDelay, filter.Game.Name, timeBetweenQueries)
+		"Waiting %d seconds before grabbing %s servers. Will retrieve servers every %d secs afterwards.", initialDelay, filter.Game.Name, timeBetweenQueries)
 
 	logger.LogAppInfo(
-		"Waiting %d seconds before grabbing %s servers from master. Will retrieve every %d secs afterwards.",
-		initialDelay, filter.Game.Name, timeBetweenQueries)
+		"Waiting %d seconds before grabbing %s servers from master. Will retrieve every %d secs afterwards.", initialDelay, filter.Game.Name, timeBetweenQueries)
 
 	firstretrieval := time.NewTimer(time.Duration(initialDelay) * time.Second)
 	<-firstretrieval.C
@@ -118,7 +114,8 @@ func StartMasterRetrieval(stop chan bool, filter *filters.Filter,
 					"Mon Jan 2 15:04:05 2006 EST"), filter.Game.Name)
 				sl, err := retrieve(filter)
 				if err != nil {
-					logger.LogAppErrorf("Error when performing timed master retrieval: %s", err)
+					logger.LogAppErrorf("Error when performing timed master retrieval: %s",
+						err)
 				}
 				models.MasterList = sl
 			}(filter)

@@ -13,23 +13,27 @@ import (
 )
 
 var (
-	doConfig  bool
-	runSilent bool
+	doConfig       bool
+	useDebugConfig bool
+	runSilent      bool
 )
 
 const (
 	configFlag = "config"
+	debugFlag  = "debug"
 	silentFlag = "silent"
 )
 
 func init() {
 	flag.BoolVar(&doConfig, configFlag, false, "Generate the configuration file")
+	flag.BoolVar(&useDebugConfig, debugFlag, false, "Use debug mode configuration file")
 	flag.BoolVar(&runSilent, silentFlag, false,
-		"Launch without displaying startup information.")
+		"Launch without displaying startup information")
 }
 
 func main() {
 	flag.Parse()
+
 	if doConfig {
 		if !util.FileExists(constants.GameFileFullPath) {
 			filters.DumpDefaultGames()
@@ -37,7 +41,30 @@ func main() {
 		config.CreateConfig()
 		os.Exit(0)
 	}
-	checkRequiredConfigs()
+
+	if useDebugConfig {
+		config.CreateDebugConfig()
+		constants.IsDebug = true
+		launch(true)
+	} else {
+		launch(false)
+	}
+}
+
+func launch(isDebug bool) {
+	if !util.FileExists(constants.GameFileFullPath) {
+		filters.DumpDefaultGames()
+	}
+	if !isDebug {
+		if !util.FileExists(constants.ConfigFilePath) {
+			fmt.Printf("Could not read configuration file '%s' in the '%s' directory.\n",
+				constants.ConfigFilename, constants.ConfigDirectory)
+			fmt.Printf("You must generate the configuration file with: %s --%s\n",
+				os.Args[0], configFlag)
+			os.Exit(1)
+		}
+	}
+
 	cfg := config.ReadConfig()
 
 	if !runSilent {
@@ -69,7 +96,9 @@ func main() {
 
 func printStartInfo(cfg *config.Config) {
 	fmt.Printf("Launching %s\n", constants.AppInfo)
-
+	if useDebugConfig {
+		fmt.Println("NOTE: We're currently using debug the configuration!")
+	}
 	if cfg.SteamConfig.AutoQueryMaster {
 		fmt.Println("Automatic timed master server queries: enabled")
 		fmt.Printf("Automatic timed master server queries every %d seconds\n",
@@ -80,18 +109,5 @@ func printStartInfo(cfg *config.Config) {
 			cfg.SteamConfig.MaximumHostsToReceive)
 	} else {
 		fmt.Println("Automatic timed master server queries: disabled")
-	}
-}
-
-func checkRequiredConfigs() {
-	if !util.FileExists(constants.GameFileFullPath) {
-		filters.DumpDefaultGames()
-	}
-	if !util.FileExists(constants.ConfigFilePath) {
-		fmt.Printf("Could not read configuration file '%s' in the '%s' directory.\n",
-			constants.ConfigFilename, constants.ConfigDirectory)
-		fmt.Printf("You must generate the configuration file with: %s --%s\n",
-			os.Args[0], configFlag)
-		os.Exit(1)
 	}
 }

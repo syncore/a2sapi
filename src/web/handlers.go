@@ -10,12 +10,13 @@ import (
 	"net/http"
 	"os"
 	"steamtest/src/config"
+	"steamtest/src/constants"
 	"steamtest/src/logger"
 	"steamtest/src/models"
 )
 
-func useDumpFileAsMasterList(filename string) *models.APIServerList {
-	f, err := os.Open(filename)
+func useDumpFileAsMasterList(dumppath string) *models.APIServerList {
+	f, err := os.Open(dumppath)
 	if err != nil {
 		logger.LogAppErrorf("Unable to open test API server dump file: %s", err)
 		return nil
@@ -35,22 +36,20 @@ func getServers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var ml *models.APIServerList
 	if config.ReadConfig().DebugConfig.ServerDumpFileAsMasterList {
-		ml = useDumpFileAsMasterList(config.ReadConfig().DebugConfig.ServerDumpFilename)
+		ml = useDumpFileAsMasterList(constants.DumpFileFullPath(
+			config.ReadConfig().DebugConfig.ServerDumpFilename))
 	} else {
 		ml = models.MasterList
 	}
 	// Master list is empty (i.e. during first retrieval/startup)
 	if ml == nil {
-		if success := writeJSONResponse(w, models.GetDefaultServerList()); !success {
-			return
-		}
+		writeJSONResponse(w, models.GetDefaultServerList())
+		return
 	}
 	srvfilters := getSrvFilterFromQString(r.URL.Query(), getServersQueryStrings)
 	logger.WriteDebug("server list will be filtered with: %v", srvfilters)
 	ml = filterServers(srvfilters, ml)
-	if success := writeJSONResponse(w, ml); !success {
-		return
-	}
+	writeJSONResponse(w, ml)
 }
 
 func getServerID(w http.ResponseWriter, r *http.Request) {
@@ -62,9 +61,8 @@ func getServerID(w http.ResponseWriter, r *http.Request) {
 		// basically require at least 2 octets
 		if len(v) < 4 {
 			w.WriteHeader(http.StatusBadRequest)
-			if success := writeJSONResponse(w, models.GetDefaultServerID()); !success {
-				return
-			}
+			writeJSONResponse(w, models.GetDefaultServerID())
+			return
 		}
 	}
 	getServerIDRetriever(w, hosts)
@@ -79,9 +77,8 @@ func queryServerID(w http.ResponseWriter, r *http.Request) {
 	if ids == nil {
 		w.WriteHeader(http.StatusNotFound)
 		logger.WriteDebug("queryServerID: Got empty query. Ignoring.")
-		if success := writeJSONResponse(w, models.GetDefaultServerList()); !success {
-			return
-		}
+		writeJSONResponse(w, models.GetDefaultServerList())
+		return
 	}
 	cfg := config.ReadConfig()
 	if len(ids) > cfg.WebConfig.MaximumHostsPerAPIQuery {
@@ -108,9 +105,8 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 	if addresses == nil {
 		w.WriteHeader(http.StatusNotFound)
 		logger.WriteDebug("queryServerAddr: Got empty address query. Ignoring.")
-		if success := writeJSONResponse(w, models.GetDefaultServerList()); !success {
-			return
-		}
+		writeJSONResponse(w, models.GetDefaultServerList())
+		return
 	}
 
 	var parsedaddresses []string
@@ -125,9 +121,8 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 	if len(parsedaddresses) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		logger.WriteDebug("queryServerAddr: No valid addresses for query. Ignoring.")
-		if success := writeJSONResponse(w, models.GetDefaultServerList()); !success {
-			return
-		}
+		writeJSONResponse(w, models.GetDefaultServerList())
+		return
 	}
 
 	if len(parsedaddresses) > cfg.WebConfig.MaximumHostsPerAPIQuery {
@@ -137,15 +132,12 @@ func queryServerAddr(w http.ResponseWriter, r *http.Request) {
 	queryServerAddrRetriever(w, parsedaddresses)
 }
 
-// writeJSONResponse encodes data as JSON and writes it to w, returning true if
-// successful; if unsuccessful, the error will be logged and it will return false
-// while displaying a generic error message to the user.
-func writeJSONResponse(w http.ResponseWriter, data interface{}) bool {
+// writeJSONResponse encodes data as JSON and writes it to w; if unsuccessful,
+// the error will be logged and a generic error message will be displayed to the user.
+func writeJSONResponse(w http.ResponseWriter, data interface{}) {
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		writeJSONEncodeError(w, err)
-		return false
 	}
-	return true
 }
 
 // setNotFoundAndLog sets the error code of the underlying writer to 404 (not found)
