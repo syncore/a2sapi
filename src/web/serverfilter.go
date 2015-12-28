@@ -97,13 +97,13 @@ func findMatches(sqf slQueryFilter,
 // filterServers takes the server filters and the last retrieved server list and
 // returns a new, filtered server list based on the matched filters.
 func filterServers(sqf []slQueryFilter,
-	sl *models.APIServerList) *models.APIServerList {
-
-	if sl == nil {
+	a *models.APIServerList) *models.APIServerList {
+	if a == nil {
 		return models.GetDefaultServerList()
 	}
+	filtered := make([]*models.APIServer, len(a.Servers))
+	copy(filtered, a.Servers)
 
-	filtered := sl.Servers
 	for _, s := range sqf {
 		filtered = findMatches(s, filtered)
 	}
@@ -111,9 +111,12 @@ func filterServers(sqf []slQueryFilter,
 		// JSON empty array instead of null
 		filtered = make([]*models.APIServer, 0)
 	}
-	sl.Servers = filtered
-	sl.ServerCount = len(filtered)
-	sl.FailedCount = 0
-	sl.FailedServers = make([]string, 0)
-	return sl
+	return &models.APIServerList{
+		RetrievedAt:        a.RetrievedAt,
+		RetrievedTimeStamp: a.RetrievedTimeStamp,
+		Servers:            filtered,
+		ServerCount:        len(filtered),
+		FailedCount:        0,
+		FailedServers:      make([]string, 0),
+	}
 }

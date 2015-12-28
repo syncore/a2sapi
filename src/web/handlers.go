@@ -34,22 +34,22 @@ func useDumpFileAsMasterList(dumppath string) *models.APIServerList {
 
 func getServers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	var ml *models.APIServerList
+	var asl *models.APIServerList
 	if config.ReadConfig().DebugConfig.ServerDumpFileAsMasterList {
-		ml = useDumpFileAsMasterList(constants.DumpFileFullPath(
+		asl = useDumpFileAsMasterList(constants.DumpFileFullPath(
 			config.ReadConfig().DebugConfig.ServerDumpFilename))
 	} else {
-		ml = models.MasterList
+		asl = models.MasterList
 	}
-	// Master list is empty (i.e. during first retrieval/startup)
-	if ml == nil {
+	// Empty (i.e. during first retrieval/startup)
+	if asl == nil {
 		writeJSONResponse(w, models.GetDefaultServerList())
 		return
 	}
 	srvfilters := getSrvFilterFromQString(r.URL.Query(), getServersQueryStrings)
 	logger.WriteDebug("server list will be filtered with: %v", srvfilters)
-	ml = filterServers(srvfilters, ml)
-	writeJSONResponse(w, ml)
+	list := filterServers(srvfilters, asl)
+	writeJSONResponse(w, list)
 }
 
 func getServerID(w http.ResponseWriter, r *http.Request) {
