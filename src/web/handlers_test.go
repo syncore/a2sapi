@@ -47,7 +47,7 @@ func init() {
 		panic("Unable to create dump directory used in tests")
 	}
 	err = util.CreateByteFile(constants.TestServerDumpJSON, constants.DumpFileFullPath(
-		config.ReadConfig().DebugConfig.ServerDumpFilename), true)
+		cfg.DebugConfig.ServerDumpFilename), true)
 	if err != nil {
 		panic(fmt.Sprintf("Test dump file creation error: %s", err))
 	}

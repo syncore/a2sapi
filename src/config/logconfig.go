@@ -26,10 +26,9 @@ type CfgLog struct {
 }
 
 func configureLoggingEnable(reader *bufio.Reader, logt constants.LogType) bool {
-	valid := false
-	var val bool
+	valid, val, defaultVal := false, false, false
 	var prompt string
-	var defaultVal bool
+
 	switch logt {
 	case constants.LTypeApp:
 		defaultVal = defaultEnableAppLogging

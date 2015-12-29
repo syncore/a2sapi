@@ -10,8 +10,10 @@ type SteamPlayerInfo struct {
 	TimeConnectedTot  string  `json:"totalConnected"`
 }
 
-// RealPlayerInfo is a collection of all players estimated to be 'real', that is, not a bot or bugged/stuck player
-type RealPlayerInfo struct {
-	RealPlayerCount int                `json:"count"`
-	Players         []*SteamPlayerInfo `json:"players"`
+// FilteredPlayerInfo is a collection of all players on a server that actually
+// exist on the server and are not bugged or stuck due to the Steam de-auth
+// bug that exists in game servers for certain games (such as Quake Live)
+type FilteredPlayerInfo struct {
+	FilteredPlayerCount int                `json:"count"`
+	FilteredPlayers     []*SteamPlayerInfo `json:"players"`
 }

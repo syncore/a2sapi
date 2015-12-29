@@ -5,21 +5,21 @@ package models
 // SteamServerInfo represents the original information returned by a direct
 // A2S_INFO query of a given host.
 type SteamServerInfo struct {
-	Protocol    int             `json:"protocol,omitempty"`
-	Name        string          `json:"serverName,omitempty"`
-	Map         string          `json:"map,omitempty"`
-	Folder      string          `json:"gameDir,omitempty"`
-	Game        string          `json:"game,omitempty"`
-	ID          int16           `json:"steamApp,omitempty"`
-	Players     int16           `json:"players,omitempty"`
-	MaxPlayers  int16           `json:"maxPlayers,omitempty"`
-	Bots        int16           `json:"bots,omitempty"`
-	ServerType  string          `json:"serverType,omitempty"`
-	Environment string          `json:"serverOS,omitempty"`
-	Visibility  int16           `json:"private,omitempty"`
-	VAC         int16           `json:"antiCheat,omitempty"`
-	Version     string          `json:"serverVersion,omitempty"`
-	ExtraData   *SteamExtraData `json:"extra,omitempty"`
+	Protocol    int             `json:"protocol"`
+	Name        string          `json:"serverName"`
+	Map         string          `json:"map"`
+	Folder      string          `json:"gameDir"`
+	Game        string          `json:"game"`
+	ID          int16           `json:"steamApp"`
+	Players     int16           `json:"players"`
+	MaxPlayers  int16           `json:"maxPlayers"`
+	Bots        int16           `json:"bots"`
+	ServerType  string          `json:"serverType"`
+	Environment string          `json:"serverOS"`
+	Visibility  int16           `json:"private"`
+	VAC         int16           `json:"antiCheat"`
+	Version     string          `json:"serverVersion"`
+	ExtraData   *SteamExtraData `json:"extra"`
 }
 
 // SteamExtraData represents the original extra data field, if present returned

@@ -35,9 +35,11 @@ func useDumpFileAsMasterList(dumppath string) *models.APIServerList {
 func getServers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var asl *models.APIServerList
-	if config.ReadConfig().DebugConfig.ServerDumpFileAsMasterList {
+	cfg := config.ReadConfig()
+
+	if cfg.DebugConfig.ServerDumpFileAsMasterList {
 		asl = useDumpFileAsMasterList(constants.DumpFileFullPath(
-			config.ReadConfig().DebugConfig.ServerDumpFilename))
+			cfg.DebugConfig.ServerDumpFilename))
 	} else {
 		asl = models.MasterList
 	}

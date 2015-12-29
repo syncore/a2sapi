@@ -23,8 +23,7 @@ type CfgWeb struct {
 }
 
 func configureDirectQueries(reader *bufio.Reader) bool {
-	valid := false
-	var val bool
+	valid, val := false, false
 	prompt := fmt.Sprintf(`
 Allow users to directly query *any* IP address, not just those in the serverID
 database? This is mainly for testing and may have some issues for some games. It

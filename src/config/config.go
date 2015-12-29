@@ -114,8 +114,6 @@ default value.
 		cfg.SteamConfig.TimeBetweenMasterQueries = defaultTimeBetweenMasterQueries
 		cfg.SteamConfig.MaximumHostsToReceive = defaultMaxHostsToReceive
 	}
-	// # hours before bugged "stuck" players are filtered out from the results
-	cfg.SteamConfig.SteamBugPlayerTime = configureSteamBugPlayerTime(reader)
 
 	// Web API configuration
 	// Direct queries: whether users can query any host (not just those with IDs)
@@ -152,7 +150,6 @@ func CreateDebugConfig() {
 	cfg.LogConfig.EnableWebLogging = true
 	cfg.LogConfig.MaximumLogCount = defaultMaxLogCount
 	cfg.LogConfig.MaximumLogSize = defaultMaxLogSize
-	cfg.SteamConfig.SteamBugPlayerTime = defaultBuggedPlayerTime
 	cfg.SteamConfig.AutoQueryMaster = false
 	cfg.SteamConfig.AutoQueryGame = "QuakeLive"
 	cfg.SteamConfig.TimeBetweenMasterQueries = defaultTimeBetweenMasterQueries
@@ -179,7 +176,6 @@ func CreateTestConfig() {
 	cfg := &Config{}
 	cfg.LogConfig.MaximumLogCount = defaultMaxLogCount
 	cfg.LogConfig.MaximumLogSize = defaultMaxLogSize
-	cfg.SteamConfig.SteamBugPlayerTime = defaultBuggedPlayerTime
 	cfg.SteamConfig.AutoQueryGame = "QuakeLive"
 	cfg.SteamConfig.TimeBetweenMasterQueries = defaultTimeBetweenMasterQueries
 	cfg.SteamConfig.MaximumHostsToReceive = defaultMaxHostsToReceive

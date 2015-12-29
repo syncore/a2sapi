@@ -19,16 +19,16 @@ type APIServerList struct {
 // APIServer represents an individual game server's information, including its
 // A2S information as well as its geographical data. if available.
 type APIServer struct {
-	ID          int64              `json:"serverId"`
-	Host        string             `json:"address"`
-	Game        string             `json:"-"`
-	IP          string             `json:"ip"`
-	Port        int                `json:"port"`
-	CountryInfo *DbCountry         `json:"location"`
-	Info        *SteamServerInfo   `json:"info"`
-	Players     []*SteamPlayerInfo `json:"players"`
-	RealPlayers *RealPlayerInfo    `json:"realPlayers"`
-	Rules       map[string]string  `json:"rules"`
+	ID              int64               `json:"serverId"`
+	Host            string              `json:"address"`
+	Game            string              `json:"-"`
+	IP              string              `json:"ip"`
+	Port            int                 `json:"port"`
+	CountryInfo     *DbCountry          `json:"location"`
+	Info            *SteamServerInfo    `json:"info"`
+	Players         []*SteamPlayerInfo  `json:"players"`
+	FilteredPlayers *FilteredPlayerInfo `json:"filteredPlayers"`
+	Rules           map[string]string   `json:"rules"`
 }
 
 // MasterList represents the list of all servers returned from the master server

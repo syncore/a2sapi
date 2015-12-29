@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	defaultBuggedPlayerTime         = 6
 	defaultMaxHostsToReceive        = 4000
 	defaultAutoQueryMaster          = false
 	defaultTimeBetweenMasterQueries = 90
@@ -20,7 +19,6 @@ const (
 
 // CfgSteam represents Steam-related configuration options.
 type CfgSteam struct {
-	SteamBugPlayerTime       int    `json:"steamBugPlayerHours"`
 	AutoQueryMaster          bool   `json:"timedMasterServerQuery"`
 	AutoQueryGame            string `json:"gameForTimedMasterQuery"`
 	TimeBetweenMasterQueries int    `json:"timeBetweenMasterQueries"`
@@ -28,8 +26,7 @@ type CfgSteam struct {
 }
 
 func configureTimedMasterQuery(reader *bufio.Reader) bool {
-	valid := false
-	var val bool
+	valid, val := false, false
 	prompt := fmt.Sprintf(`
 Perform a timed automatic retrieval of game servers from the Steam
 master server? This is necessary if you want the API to maintain a
@@ -190,50 +187,6 @@ Valve will throttle future requests for 1 min.
 [ERROR] Game %s typically returns more than 6930 servers so the time between
 Steam master server queries will need to be at least %d`, game,
 				defaultTimeForHighServerCount)
-		}
-		return response, nil
-	}
-	var err error
-	for !valid {
-		fmt.Print(prompt)
-		val, err = input(reader)
-		if err != nil {
-			errorColor(err)
-		} else {
-			valid = true
-		}
-	}
-	return val
-}
-
-func configureSteamBugPlayerTime(reader *bufio.Reader) int {
-	valid := false
-	var val int
-	prompt := fmt.Sprintf(`
-Enter the time, in hours, before a player is considered "bugged" or stuck on a
-server. This can filter out bots and "bugged" non-real players. This is to
-address the well-known issue in certain games (i.e. Quake Live) where game servers
-do not receive the Steam de-auth message which causes players to get "stuck" in
-the player list, long after they've disconnected. This value must be at least 3 hours.
-%s`, promptColor("> [default: %d]: ", defaultBuggedPlayerTime))
-
-	input := func(r *bufio.Reader) (int, error) {
-		timeval, rserr := r.ReadString('\n')
-		if rserr != nil {
-			return defaultBuggedPlayerTime, fmt.Errorf("Unable to read response: %s",
-				rserr)
-		}
-		if timeval == newline {
-			return defaultBuggedPlayerTime, nil
-		}
-		response, rserr := strconv.Atoi(strings.Trim(timeval, newline))
-		if rserr != nil {
-			return defaultBuggedPlayerTime,
-				fmt.Errorf("[ERROR] Bugged player time must be at least 3 hours")
-		}
-		if response < 3 {
-			return defaultBuggedPlayerTime,
-				fmt.Errorf("[ERROR] Bugged player time must be at least 3 hours")
 		}
 		return response, nil
 	}

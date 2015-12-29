@@ -1,7 +1,5 @@
 package steam
 
-import "steamtest/src/config"
-
 const (
 	headerStr     = "\xFF\xFF\xFF\xFF"
 	maxPacketSize = 1400 // specified by steam protocol
@@ -13,7 +11,6 @@ const (
 	QueryRetryCount = 3
 )
 
-var cfg *config.Config
 var (
 	// Multi-packet response header
 	multiPacketRespHeader = []byte{0xFE, 0xFF, 0xFF, 0xFF}

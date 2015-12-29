@@ -7,7 +7,6 @@ package steam
 import (
 	"database/sql"
 	"net"
-	"steamtest/src/config"
 	"steamtest/src/db"
 	"steamtest/src/logger"
 	"steamtest/src/models"
@@ -45,7 +44,6 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 	for host, game := range data.HostsGames {
 		info, iok := data.Info[host]
 		if info == nil {
-			// pointer to struct would be 'null' in json, instead: empty object in JSON
 			info = &models.SteamServerInfo{}
 		}
 		players, pok := data.Players[host]
@@ -78,11 +76,11 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 
 		if success {
 			srv := &models.APIServer{
-				Game:        game.Name,
-				Players:     players,
-				RealPlayers: removeBuggedPlayers(players),
-				Rules:       rules,
-				Info:        info,
+				Game:            game.Name,
+				Players:         players,
+				FilteredPlayers: removeBuggedPlayers(players),
+				Rules:           rules,
+				Info:            info,
 			}
 
 			ip, port, serr := net.SplitHostPort(host)
@@ -130,25 +128,30 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 	return sl, nil
 }
 
-func removeBuggedPlayers(players []*models.SteamPlayerInfo) *models.RealPlayerInfo {
-	rpi := &models.RealPlayerInfo{
-		RealPlayerCount: len(players),
-		Players:         players,
+// removeBuggedPlayers filters the players to removes "bugged" or stuck players
+// from the player list in games like Quake Live where certain servers do not
+// correctly send the Steam de-auth message, causing "ghost" or phantom players
+// to exist on servers.
+func removeBuggedPlayers(players []*models.SteamPlayerInfo) *models.FilteredPlayerInfo {
+	rpi := &models.FilteredPlayerInfo{
+		FilteredPlayerCount: len(players),
+		FilteredPlayers:     players,
 	}
-	cfg := config.ReadConfig()
 	var filtered []*models.SteamPlayerInfo
+	// 4 hour threshold with no score; also can leave bots intact in list
 	for _, p := range players {
-		if int(p.TimeConnectedSecs) < (3600 * cfg.SteamConfig.SteamBugPlayerTime) {
-			filtered = append(filtered, p)
+		if p.Score == 0 && int(p.TimeConnectedSecs) > (3600*4) {
+			continue
 		}
+		filtered = append(filtered, p)
 	}
 	// Empty players (nil) displayed as empty array in JSON, not null
 	if len(filtered) == 0 {
-		rpi.RealPlayerCount = 0
-		rpi.Players = make([]*models.SteamPlayerInfo, 0)
+		rpi.FilteredPlayerCount = 0
+		rpi.FilteredPlayers = make([]*models.SteamPlayerInfo, 0)
 	} else {
-		rpi.RealPlayerCount = len(filtered)
-		rpi.Players = filtered
+		rpi.FilteredPlayerCount = len(filtered)
+		rpi.FilteredPlayers = filtered
 	}
 	return rpi
 }

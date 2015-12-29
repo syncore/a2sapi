@@ -73,8 +73,7 @@ func serverExists(db *sql.DB, host string, game string) (bool, error) {
 	}
 
 	defer rows.Close()
-	var h string
-	var g string
+	h, g := "", ""
 	for rows.Next() {
 		if err := rows.Scan(&h, &g); err != nil {
 			return false, logger.LogAppErrorf(
@@ -214,8 +213,7 @@ func GetIDsAPIQuery(result chan *models.DbServerID, db *sql.DB, hosts []string) 
 		}
 		defer rows.Close()
 		var id int64
-		var host string
-		var game string
+		host, game := "", ""
 
 		for rows.Next() {
 			sid := &models.DbServer{}

@@ -98,6 +98,8 @@ func StartMasterRetrieval(stop chan bool, filter *filters.Filter,
 
 	firstretrieval := time.NewTimer(time.Duration(initialDelay) * time.Second)
 	<-firstretrieval.C
+	logger.WriteDebug("Starting first retrieval of %s servers from master.",
+		filter.Game.Name)
 	sl, err := retrieve(filter)
 	if err != nil {
 		logger.LogAppErrorf("Error when performing timed master retrieval: %s", err)

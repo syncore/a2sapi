@@ -30,7 +30,7 @@ func findMatches(sqf slQueryFilter,
 	servers []*models.APIServer) []*models.APIServer {
 	var matched []*models.APIServer
 	var ssearch string
-	var bsearch bool
+	bsearcht, bsearchf, useContains := false, false, false
 
 	for _, srv := range servers {
 		switch sqf.name {
@@ -43,6 +43,7 @@ func findMatches(sqf slQueryFilter,
 			ssearch = srv.CountryInfo.State
 		// info-based
 		case qsGetServersName:
+			useContains = true
 			ssearch = srv.Info.Name
 		case qsGetServersType:
 			ssearch = srv.Info.ServerType
@@ -51,40 +52,47 @@ func findMatches(sqf slQueryFilter,
 		case qsGetServersVersion:
 			ssearch = srv.Info.Version
 		case qsGetServersKeywords:
+			useContains = true
 			ssearch = srv.Info.ExtraData.Keywords
 		case qsGetServersHasPlayers:
 			if strings.EqualFold(sqf.values[0], "true") {
-				bsearch = srv.Info.Players > 0
+				bsearcht = srv.Info.Players > 0
 			} else {
-				bsearch = srv.Info.Players == 0
+				bsearchf = srv.Info.Players == 0
 			}
 		case qsGetServersHasBots:
 			if strings.EqualFold(sqf.values[0], "true") {
-				bsearch = srv.Info.Bots > 0
+				bsearcht = srv.Info.Bots > 0
 			} else {
-				bsearch = srv.Info.Bots == 0
+				bsearchf = srv.Info.Bots == 0
 			}
 		case qsGetServersHasPassword:
 			if strings.EqualFold(sqf.values[0], "true") {
-				bsearch = srv.Info.Visibility == 1
+				bsearcht = srv.Info.Visibility == 1
 			} else {
-				bsearch = srv.Info.Visibility == 0
+				bsearchf = srv.Info.Visibility == 0
 			}
 		case qsGetServersHasAntiCheat:
 			if strings.EqualFold(sqf.values[0], "true") {
-				bsearch = srv.Info.VAC == 1
+				bsearcht = srv.Info.VAC == 1
 			} else {
-				bsearch = srv.Info.VAC == 0
+				bsearchf = srv.Info.VAC == 0
 			}
 		}
 		if sqf.needsbool {
-			if strings.EqualFold(sqf.values[0], "true") && bsearch {
+			if strings.EqualFold(sqf.values[0], "true") && bsearcht {
 				matched = append(matched, srv)
-			} else if strings.EqualFold(sqf.values[0], "false") && !bsearch {
+			} else if strings.EqualFold(sqf.values[0], "false") && bsearchf {
 				matched = append(matched, srv)
 			}
 		} else {
 			for _, val := range sqf.values {
+				if useContains {
+					val, ssearch = strings.ToLower(val), strings.ToLower(ssearch)
+					if strings.Contains(ssearch, val) {
+						matched = append(matched, srv)
+					}
+				}
 				if strings.EqualFold(ssearch, val) {
 					matched = append(matched, srv)
 				}

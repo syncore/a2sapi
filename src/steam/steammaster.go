@@ -21,11 +21,11 @@ const masterServerHost = "hl2master.steampowered.com:27011"
 
 func getServers(filter *filters.Filter) ([]string, error) {
 
+	cfg := config.ReadConfig()
 	var serverlist []string
 	var c net.Conn
 	var err error
-	retrieved := 0
-	count := 0
+	retrieved, count := 0, 0
 	complete := false
 	addr := "0.0.0.0:0"
 
@@ -82,8 +82,7 @@ func getServers(filter *filters.Filter) ([]string, error) {
 
 func extractHosts(hbs []byte) ([]string, int, error) {
 	var sl []string
-	pos := 0
-	total := 0
+	pos, total := 0, 0
 	for i := 0; i < len(hbs); i++ {
 		if len(sl) > 0 && sl[len(sl)-1] == "0.0.0.0:0" {
 			logger.LogSteamInfo("0.0.0.0:0 detected. Got %d total hosts.", total-1)
@@ -164,7 +163,6 @@ func queryMasterServer(conn net.Conn, startaddress string,
 // returning a pointer to a MasterQuery struct containing the hosts retrieved in
 // the event of success or an error in the event of failure.
 func NewMasterQuery(filter *filters.Filter) (*MasterQuery, error) {
-	cfg = config.ReadConfig()
 	sl, err := getServers(filter)
 	if err != nil {
 		return nil, err
