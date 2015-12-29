@@ -54,6 +54,12 @@ func findMatches(sqf slQueryFilter,
 		case qsGetServersKeywords:
 			useContains = true
 			ssearch = srv.Info.ExtraData.Keywords
+		case qsGetServersIsNotFull:
+			if strings.EqualFold(sqf.values[0], "true") {
+				bsearcht = srv.Info.Players != srv.Info.MaxPlayers
+			} else {
+				bsearchf = srv.Info.Players <= srv.Info.MaxPlayers
+			}
 		case qsGetServersHasPlayers:
 			if strings.EqualFold(sqf.values[0], "true") {
 				bsearcht = srv.Info.Players > 0

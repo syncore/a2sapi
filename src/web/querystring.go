@@ -62,6 +62,8 @@ const (
 	qsGetServersHasPassword = "hasPassword"
 	// ?hasAntiCheat= (bool)
 	qsGetServersHasAntiCheat = "hasAntiCheat"
+	// ?isNotFull= (bool)
+	qsGetServersIsNotFull = "isNotFull"
 )
 
 // getServerID query strings
@@ -137,6 +139,10 @@ var getServersQueryStrings = []querystring{
 	},
 	querystring{
 		name:     qsGetServersHasAntiCheat,
+		boolonly: true,
+	},
+	querystring{
+		name:     qsGetServersIsNotFull,
 		boolonly: true,
 	},
 }
