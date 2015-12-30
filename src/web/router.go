@@ -37,8 +37,7 @@ func pathQStrToLowerMatcherFunc(router *mux.Router,
 	requiredQsCount int) func(req *http.Request,
 	rt *mux.RouteMatch) bool {
 	return func(req *http.Request, rt *mux.RouteMatch) bool {
-		var pathok bool
-		var qstrok bool
+		pathok, qstrok := false, false
 		// case-insensitive paths
 		if strings.HasPrefix(strings.ToLower(req.URL.Path), strings.ToLower(routepath)) {
 			logger.WriteDebug("PATH: %s matches route path: %s", req.URL.Path, routepath)
