@@ -98,9 +98,10 @@ func findMatches(sqf slQueryFilter,
 					if strings.Contains(ssearch, val) {
 						matched = append(matched, srv)
 					}
-				}
-				if strings.EqualFold(ssearch, val) {
-					matched = append(matched, srv)
+				} else {
+					if strings.EqualFold(ssearch, val) {
+						matched = append(matched, srv)
+					}
 				}
 			}
 		}

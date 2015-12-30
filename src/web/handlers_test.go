@@ -30,7 +30,7 @@ type ResponseRecoder struct {
 }
 
 func init() {
-	// need base directory
+	// need base directory for config and other files
 	err := os.Chdir("../..")
 	if err != nil {
 		panic("Unable to change directory for tests")

@@ -147,7 +147,7 @@ var getServersQueryStrings = []querystring{
 	},
 }
 
-// getQStringValues takes the map returned by a *http.Request URL.Query(), and
+// getQStringValues takes the map returned by a *http.Request URL.Query(),
 // extracts and returns the values of a key defined in that map which is
 // specified as a known querystring value to match.
 func getQStringValues(m map[string][]string, querystring string) []string {
