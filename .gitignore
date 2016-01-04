@@ -39,4 +39,6 @@ logs
 *.mmdb
 *servers-*.json
 api-test-servers.json
+test-api-servers.json
+test_temp
 serverdump.json

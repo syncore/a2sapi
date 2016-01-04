@@ -35,6 +35,7 @@ func init() {
 	if err != nil {
 		panic("Unable to change directory for tests")
 	}
+	doCleanup()
 	// use testing configuration
 	config.CreateTestConfig()
 	constants.IsTest = true
@@ -72,12 +73,6 @@ func init() {
 			panic("Unable to start web server")
 		}
 	}()
-}
-
-func doCleanup() {
-	test.Cleanup(constants.DumpFileFullPath(
-		config.ReadConfig().DebugConfig.ServerDumpFilename),
-		constants.TestTempDirectory)
 }
 
 func formatURL(path string) string {
@@ -203,7 +198,10 @@ func TestQueryServerAddr(t *testing.T) {
 	if len(w2.Body.Bytes()) == 0 {
 		t.Errorf("queryServerAddr handler body should not be empty")
 	}
+}
 
-	// run cleanup in last test
-	doCleanup()
+func doCleanup() {
+	test.Cleanup(constants.DumpFileFullPath(
+		config.ReadConfig().DebugConfig.ServerDumpFilename),
+		constants.TestTempDirectory)
 }

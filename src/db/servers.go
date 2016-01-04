@@ -111,7 +111,7 @@ func OpenServerDB() (*sql.DB, error) {
 		// will panic if not verified
 		return nil, logger.LogAppError(err)
 	}
-	db, err := sql.Open("sqlite3", constants.ServerDbFilePath)
+	db, err := sql.Open("sqlite3", constants.GetServerDBPath())
 	if err != nil {
 		return nil, logger.LogAppError(err)
 	}
@@ -163,7 +163,7 @@ func AddServersToDB(db *sql.DB, hostsgames map[string]string) {
 	}
 }
 
-// GetIDsForServerList Retrieves the server ID numbers for a given set of hosts,
+// GetIDsForServerList retrieves the server ID numbers for a given set of hosts,
 // from the server database file, in response to a request to build the master
 // server detail list or the list of server details in response to a request
 // coming in over the API. It sends its results over a map channel consisting of

@@ -9,11 +9,18 @@ const (
 	TestTempDirectory = "test_temp"
 	// TestConfigFilename specifies the name of the test configuration file.
 	TestConfigFilename = "test.conf"
+	// TestServerDbFilename specifies the name of the server database file used in
+	// tests.
+	TestServerDbFilename = "servers_test.sqlite"
 )
 
 var (
 	// TestConfigFilePath represents the OS-independent full path to the config file.
 	TestConfigFilePath = path.Join(TestTempDirectory, TestConfigFilename)
+	// TestServerDbFilePath represents the OS-independent full path to the server
+	// database file used in tests.
+	TestServerDbFilePath = path.Join(TestTempDirectory, TestServerDbFilename)
+
 	// TestServerDumpJSON is the JSON used for the server dump when performing
 	// tests.
 	TestServerDumpJSON = []byte(`

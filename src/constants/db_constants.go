@@ -19,3 +19,14 @@ var (
 	// ServerDbFilePath represents the OS-independent full path to the server DB file.
 	ServerDbFilePath = path.Join(DbDirectory, ServerDbFilename)
 )
+
+// GetServerDBPath returns the full OS-independent path to the server DB file.
+func GetServerDBPath() string {
+	if IsTest {
+		return path.Join(TestTempDirectory, TestServerDbFilename)
+	}
+	if IsDebug {
+		return path.Join(DbDirectory, ServerDbFilename)
+	}
+	return path.Join(DbDirectory, ServerDbFilename)
+}

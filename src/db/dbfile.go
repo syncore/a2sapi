@@ -15,7 +15,7 @@ func verifyServerDbPath() error {
 		panic(fmt.Sprintf("Unable to create database directory %s: %s",
 			constants.DbDirectory, err))
 	}
-	if err := createServerDB(constants.ServerDbFilePath); err != nil {
+	if err := createServerDB(constants.GetServerDBPath()); err != nil {
 		logger.LogAppErrorf("Unable to verify database path: %s", err)
 		panic("Unable to verify database path")
 	}
