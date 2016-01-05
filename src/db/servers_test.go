@@ -3,7 +3,6 @@ package db
 import (
 	"steamtest/src/constants"
 	"steamtest/src/models"
-	"steamtest/src/test"
 	"strings"
 	"testing"
 
@@ -101,8 +100,4 @@ func TestGetHostsAndGameFromIDAPIQuery(t *testing.T) {
 	if !strings.EqualFold(result["172.16.0.1"], "QuakeLive") {
 		t.Fatalf("Expected result QuakeLive, got: %v", result["1172.16.0.1"])
 	}
-}
-
-func doCleanup() {
-	test.Cleanup(constants.TestTempDirectory)
 }

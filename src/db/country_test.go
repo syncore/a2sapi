@@ -1,24 +1,14 @@
 package db
 
 import (
-	"os"
-	"steamtest/src/config"
-	"steamtest/src/constants"
 	"steamtest/src/models"
+	"steamtest/src/test"
 	"strings"
 	"testing"
 )
 
 func init() {
-	// need base directory for config and other files
-	err := os.Chdir("../..")
-	if err != nil {
-		panic("Unable to change directory for tests")
-	}
-	doCleanup()
-	// use testing configuration
-	config.CreateTestConfig()
-	constants.IsTest = true
+	test.SetupEnvironment()
 }
 
 func TestOpenCountryDB(t *testing.T) {

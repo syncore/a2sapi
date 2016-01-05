@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"steamtest/src/config"
 	"steamtest/src/constants"
@@ -30,15 +29,7 @@ type ResponseRecoder struct {
 }
 
 func init() {
-	// need base directory for config and other files
-	err := os.Chdir("../..")
-	if err != nil {
-		panic("Unable to change directory for tests")
-	}
-	doCleanup()
-	// use testing configuration
-	config.CreateTestConfig()
-	constants.IsTest = true
+	test.SetupEnvironment()
 	cfg := config.ReadConfig()
 	testURLBase = fmt.Sprintf("http://:%d", cfg.WebConfig.APIWebPort)
 
@@ -198,10 +189,4 @@ func TestQueryServerAddr(t *testing.T) {
 	if len(w2.Body.Bytes()) == 0 {
 		t.Errorf("queryServerAddr handler body should not be empty")
 	}
-}
-
-func doCleanup() {
-	test.Cleanup(constants.DumpFileFullPath(
-		config.ReadConfig().DebugConfig.ServerDumpFilename),
-		constants.TestTempDirectory)
 }
