@@ -3,12 +3,12 @@ package web
 // router.go - request router
 
 import (
+	"a2sapi/src/config"
 	"net/http"
-	"steamtest/src/config"
 	"strings"
 	"time"
 
-	"steamtest/src/logger"
+	"a2sapi/src/logger"
 
 	"github.com/gorilla/mux"
 )

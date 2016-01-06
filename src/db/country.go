@@ -3,11 +3,12 @@ package db
 // country.go - Country geolocation database lookup.
 
 import (
+	"a2sapi/src/constants"
+	"a2sapi/src/logger"
+	"a2sapi/src/models"
 	"fmt"
 	"net"
-	"steamtest/src/constants"
-	"steamtest/src/logger"
-	"steamtest/src/models"
+	"runtime"
 
 	"github.com/oschwald/maxminddb-golang"
 )
@@ -42,8 +43,18 @@ func OpenCountryDB() (*maxminddb.Reader, error) {
 	// Note: the caller of this function needs to handle db.Close()
 	db, err := maxminddb.Open(constants.CountryDbFilePath)
 	if err != nil {
+		dir := "build_nix"
+		if runtime.GOOS == "windows" {
+			dir = "build_win"
+		}
 		logger.LogAppError(err)
-		panic(fmt.Sprintf("Unable to open country database: %s", err))
+		panic(
+			fmt.Sprintf(
+				`Unable to open country database! Use the get_countrydb script in the %s
+directory to get the country DB file, or download it from:
+http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz and
+extract the "GeoLite2-City.mmdb" file into a directory called "db" in the same
+directory as the a2sapi executable. Error: %s`, dir, err))
 	}
 	return db, nil
 }

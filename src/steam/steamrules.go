@@ -3,11 +3,11 @@ package steam
 // steamrules.go - steam server query for server information (A2S_RULES)
 
 import (
+	"a2sapi/src/logger"
 	"bytes"
 	"encoding/binary"
 	"net"
 	"sort"
-	"steamtest/src/logger"
 	"strings"
 	"sync"
 	"time"

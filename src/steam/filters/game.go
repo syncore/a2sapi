@@ -3,12 +3,12 @@ package filters
 // game.go - Steam game-to-appid operations, A2S ignore mappings, and game list.
 
 import (
+	"a2sapi/src/constants"
+	"a2sapi/src/util"
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
-	"steamtest/src/constants"
-	"steamtest/src/util"
 	"strings"
 )
 

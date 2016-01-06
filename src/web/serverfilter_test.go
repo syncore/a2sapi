@@ -3,9 +3,9 @@ package web
 // Tests for server filtering for getServers API endpoint
 
 import (
+	"a2sapi/src/constants"
+	"a2sapi/src/models"
 	"encoding/json"
-	"steamtest/src/constants"
-	"steamtest/src/models"
 	"strings"
 	"testing"
 )

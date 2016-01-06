@@ -5,11 +5,11 @@ package steam
 // or in response to a user's specific query from the API.
 
 import (
+	"a2sapi/src/db"
+	"a2sapi/src/logger"
+	"a2sapi/src/models"
 	"database/sql"
 	"net"
-	"steamtest/src/db"
-	"steamtest/src/logger"
-	"steamtest/src/models"
 	"strconv"
 	"time"
 )

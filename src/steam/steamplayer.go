@@ -3,12 +3,12 @@ package steam
 // steamplayer.go - steam server query for players (A2S_PLAYER)
 
 import (
+	"a2sapi/src/logger"
+	"a2sapi/src/models"
 	"bytes"
 	"encoding/binary"
 	"math"
 	"net"
-	"steamtest/src/logger"
-	"steamtest/src/models"
 	"sync"
 	"time"
 )

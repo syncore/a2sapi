@@ -3,14 +3,14 @@ package config
 // config.go - configuration operations
 
 import (
+	"a2sapi/src/constants"
+	"a2sapi/src/steam/filters"
+	"a2sapi/src/util"
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
 	"runtime"
-	"steamtest/src/constants"
-	"steamtest/src/steam/filters"
-	"steamtest/src/util"
 
 	"github.com/fatih/color"
 )
@@ -117,7 +117,8 @@ default value.
 
 	// Web API configuration
 	// Direct queries: whether users can query any host (not just those with IDs)
-	cfg.WebConfig.AllowDirectUserQueries = configureDirectQueries(reader)
+	cfg.WebConfig.AllowDirectUserQueries = configureDirectQueries(reader,
+		cfg.SteamConfig.AutoQueryMaster)
 	// Maximum number of servers to allow users to query via API
 	cfg.WebConfig.MaximumHostsPerAPIQuery = configureMaxHostsPerAPIQuery(reader)
 	// Time in seconds before HTTP requests time out

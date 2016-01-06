@@ -22,16 +22,20 @@ type CfgWeb struct {
 	MaximumHostsPerAPIQuery int  `json:"maxHostsPerAPIQuery"`
 }
 
-func configureDirectQueries(reader *bufio.Reader) bool {
+func configureDirectQueries(reader *bufio.Reader, timedEnabled bool) bool {
 	valid, val := false, false
+	note := ""
+	if !timedEnabled {
+		note = `
+Note: you disabled timed master queries in the previous option, so
+if you do not enable this option then there will be no way for users to make
+queries (if your server ID database is empty.)`
+	}
 	prompt := fmt.Sprintf(`
 Allow users to directly query *any* IP address, not just those in the serverID
-database? This is mainly for testing and may have some issues for some games. It
-also may have abuse implications since your server could query unknown, user-
-specified IP addresses. Note: if you have timed master queries disabled & your
-server ID database is empty, then without this option there will be no way for
-users to make queries.
-%s`, promptColor("> 'yes' or 'no' [default: %s]: ",
+database? This may have some issues for some games and it also may have abuse
+implications since your server could query unknown, user-specified IP addresses.%s
+%s`, note, promptColor("> 'yes' or 'no' [default: %s]: ",
 		getBoolString(defaultAllowDirectUserQueries)))
 
 	input := func(r *bufio.Reader) (bool, error) {

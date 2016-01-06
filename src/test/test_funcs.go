@@ -1,10 +1,10 @@
 package test
 
 import (
+	"a2sapi/src/config"
+	"a2sapi/src/constants"
 	"fmt"
 	"os"
-	"steamtest/src/config"
-	"steamtest/src/constants"
 )
 
 // SetupEnvironment sets up the environment for tests. This should only be

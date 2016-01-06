@@ -3,16 +3,16 @@ package web
 // Tests for handler functions for API
 
 import (
+	"a2sapi/src/config"
+	"a2sapi/src/constants"
+	"a2sapi/src/models"
+	"a2sapi/src/test"
+	"a2sapi/src/util"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	"steamtest/src/config"
-	"steamtest/src/constants"
-	"steamtest/src/models"
-	"steamtest/src/test"
-	"steamtest/src/util"
 	"testing"
 	"time"
 

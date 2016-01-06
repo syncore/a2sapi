@@ -3,12 +3,12 @@ package steam
 // steammaster.go - testing steam master server query
 
 import (
+	"a2sapi/src/config"
+	"a2sapi/src/logger"
+	"a2sapi/src/steam/filters"
 	"bytes"
 	"fmt"
 	"net"
-	"steamtest/src/config"
-	"steamtest/src/logger"
-	"steamtest/src/steam/filters"
 	"time"
 )
 

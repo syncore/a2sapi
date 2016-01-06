@@ -3,12 +3,12 @@ package steam
 // steaminfo.go - steam server query for info (A2S_INFO)
 
 import (
+	"a2sapi/src/logger"
+	"a2sapi/src/models"
+	"a2sapi/src/util"
 	"bytes"
 	"encoding/binary"
 	"net"
-	"steamtest/src/logger"
-	"steamtest/src/models"
-	"steamtest/src/util"
 	"sync"
 	"time"
 )

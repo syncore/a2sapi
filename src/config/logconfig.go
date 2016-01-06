@@ -1,19 +1,19 @@
 package config
 
 import (
+	"a2sapi/src/constants"
 	"bufio"
 	"fmt"
-	"steamtest/src/constants"
 	"strconv"
 	"strings"
 )
 
 const (
-	defaultEnableAppLogging   = true
+	defaultEnableAppLogging   = false
 	defaultEnableSteamLogging = false
-	defaultEnableWebLogging   = true
+	defaultEnableWebLogging   = false
 	defaultMaxLogSize         = 5120
-	defaultMaxLogCount        = 6
+	defaultMaxLogCount        = 5
 )
 
 // CfgLog represents logging-related configuration options.

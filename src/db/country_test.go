@@ -1,8 +1,8 @@
 package db
 
 import (
-	"steamtest/src/models"
-	"steamtest/src/test"
+	"a2sapi/src/models"
+	"a2sapi/src/test"
 	"strings"
 	"testing"
 )

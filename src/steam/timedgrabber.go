@@ -3,14 +3,14 @@ package steam
 // timedgrabber.go - Timed retrieval of servers from the Steam Master server.
 
 import (
+	"a2sapi/src/config"
+	"a2sapi/src/constants"
+	"a2sapi/src/logger"
+	"a2sapi/src/models"
+	"a2sapi/src/steam/filters"
+	"a2sapi/src/util"
 	"encoding/json"
 	"fmt"
-	"steamtest/src/config"
-	"steamtest/src/constants"
-	"steamtest/src/logger"
-	"steamtest/src/models"
-	"steamtest/src/steam/filters"
-	"steamtest/src/util"
 	"time"
 )
 

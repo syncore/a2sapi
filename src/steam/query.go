@@ -4,9 +4,9 @@ package steam
 // for building a list to return to the API
 
 import (
-	"steamtest/src/logger"
-	"steamtest/src/models"
-	"steamtest/src/steam/filters"
+	"a2sapi/src/logger"
+	"a2sapi/src/models"
+	"a2sapi/src/steam/filters"
 	"sync"
 )
 

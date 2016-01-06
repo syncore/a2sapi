@@ -3,12 +3,12 @@ package web
 // retrievers.go - Bridge between http requests and database (and potentially other) layers
 
 import (
+	"a2sapi/src/db"
+	"a2sapi/src/logger"
+	"a2sapi/src/models"
+	"a2sapi/src/steam"
 	"encoding/json"
 	"net/http"
-	"steamtest/src/db"
-	"steamtest/src/logger"
-	"steamtest/src/models"
-	"steamtest/src/steam"
 )
 
 func getServerIDRetriever(w http.ResponseWriter, hosts []string) {

@@ -4,7 +4,7 @@ package web
 // string data.
 
 import (
-	"steamtest/src/models"
+	"a2sapi/src/models"
 	"strings"
 )
 

@@ -1,15 +1,16 @@
 package main
 
 import (
+	"a2sapi/src/config"
+	"a2sapi/src/constants"
+	"a2sapi/src/db"
+	"a2sapi/src/steam"
+	"a2sapi/src/steam/filters"
+	"a2sapi/src/util"
+	"a2sapi/src/web"
 	"flag"
 	"fmt"
 	"os"
-	"steamtest/src/config"
-	"steamtest/src/constants"
-	"steamtest/src/steam"
-	"steamtest/src/steam/filters"
-	"steamtest/src/util"
-	"steamtest/src/web"
 )
 
 var (
@@ -64,8 +65,13 @@ func launch(isDebug bool) {
 			os.Exit(1)
 		}
 	}
-
 	cfg := config.ReadConfig()
+
+	// Verify that geolocation DB can be read (will panic if it cannot)
+	_, err := db.OpenCountryDB()
+	if err != nil {
+		os.Exit(1)
+	}
 
 	if !runSilent {
 		printStartInfo(cfg)
@@ -95,7 +101,7 @@ func launch(isDebug bool) {
 }
 
 func printStartInfo(cfg *config.Config) {
-	fmt.Printf("Launching %s\n", constants.AppInfo)
+	fmt.Printf("%s\n", constants.AppInfo)
 	if useDebugConfig {
 		fmt.Println("NOTE: We're currently using debug the configuration!")
 	}

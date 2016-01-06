@@ -1,6 +1,9 @@
 package logger
 
 import (
+	"a2sapi/src/config"
+	"a2sapi/src/constants"
+	"a2sapi/src/util"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -8,9 +11,6 @@ import (
 	"os"
 	"path"
 	"regexp"
-	"steamtest/src/config"
-	"steamtest/src/constants"
-	"steamtest/src/util"
 	"strconv"
 	"strings"
 	"time"

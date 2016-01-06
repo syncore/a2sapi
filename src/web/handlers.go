@@ -3,16 +3,16 @@ package web
 // handlers.go - Handler functions for API
 
 import (
+	"a2sapi/src/config"
+	"a2sapi/src/constants"
+	"a2sapi/src/logger"
+	"a2sapi/src/models"
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
-	"steamtest/src/config"
-	"steamtest/src/constants"
-	"steamtest/src/logger"
-	"steamtest/src/models"
 )
 
 func useDumpFileAsMasterList(dumppath string) *models.APIServerList {

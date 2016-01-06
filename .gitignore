@@ -28,13 +28,13 @@ _testmain.go
 #sublime text stuff
 *.sublime-workspace
 
-# steamtest specific
+# a2sapi specific
 conf
 *.user
 servers.sqlite
 servers.json
-steamtest.exe
-steamtest
+a2sapi.exe
+a2sapi
 logs
 *.mmdb
 *servers-*.json

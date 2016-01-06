@@ -25,5 +25,5 @@ var (
 	// Version is the version number of the application.
 	Version = "0.1"
 	// AppInfo contains the application information.
-	AppInfo = fmt.Sprintf("steamtest v%s by syncore <syncore@syncore.org>", Version)
+	AppInfo = fmt.Sprintf("a2sapi v%s by syncore <syncore@syncore.org>", Version)
 )

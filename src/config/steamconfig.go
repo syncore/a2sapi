@@ -1,17 +1,17 @@
 package config
 
 import (
+	"a2sapi/src/constants"
+	"a2sapi/src/steam/filters"
 	"bufio"
 	"fmt"
-	"steamtest/src/constants"
-	"steamtest/src/steam/filters"
 	"strconv"
 	"strings"
 )
 
 const (
 	defaultMaxHostsToReceive        = 4000
-	defaultAutoQueryMaster          = false
+	defaultAutoQueryMaster          = true
 	defaultTimeBetweenMasterQueries = 90
 	// defaultTimeForHighServerCount: not used in JSON, only in the config dialog
 	defaultTimeForHighServerCount = 120
@@ -31,10 +31,11 @@ func configureTimedMasterQuery(reader *bufio.Reader) bool {
 Perform a timed automatic retrieval of game servers from the Steam
 master server? This is necessary if you want the API to maintain a
 filterable list of game servers and allow users to query a server
-by ID, however info can still be queried by address even without this.
-Please note the reliability of retrieving all servers generally decreases
-as the total number of servers increases. Also note: Valve will throttle
-your requests if more than 6930 servers are returned per minute.
+by ID, however info can still be queried by address even without this, if
+you enable it in the next option. Please note the reliability of retrieving
+all servers generally decreases as the total number of servers increases.
+Also note: Valve will throttle your requests if more than 6930 servers are
+returned per minute.
 %s`, promptColor("> 'yes' or 'no' [default: %s]: ",
 		getBoolString(defaultAutoQueryMaster)))
 
