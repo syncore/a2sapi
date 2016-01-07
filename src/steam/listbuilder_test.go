@@ -1,9 +1,9 @@
 package steam
 
 import (
-	"steamtest/src/models"
-	"steamtest/src/steam/filters"
-	"steamtest/src/test"
+	"a2sapi/src/models"
+	"a2sapi/src/steam/filters"
+	"a2sapi/src/test"
 	"strings"
 	"testing"
 )

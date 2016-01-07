@@ -46,6 +46,8 @@ const (
 	qsGetServersGameDir = "gameDir"
 	// ?game=
 	qsGetServersGame = "game"
+	// gametype=
+	qsGetServersGameType = "gametype"
 	// ?serverType=
 	qsGetServersType = "serverType"
 	// ?serverOS=
@@ -112,6 +114,9 @@ var getServersQueryStrings = []querystring{
 	},
 	querystring{
 		name: qsGetServersGame,
+	},
+	querystring{
+		name: qsGetServersGameType,
 	},
 	querystring{
 		name: qsGetServersType,

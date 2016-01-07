@@ -82,6 +82,9 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 				Rules:           rules,
 				Info:            info,
 			}
+			// Hack for gametype support, which can be found in rules, info, or not
+			// at all depending on the game
+			srv.Info.GameTypeShort, srv.Info.GameTypeFull = getGameType(game, srv)
 
 			ip, port, serr := net.SplitHostPort(host)
 			if serr == nil {

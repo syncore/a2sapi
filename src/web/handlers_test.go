@@ -34,7 +34,7 @@ func init() {
 	testURLBase = fmt.Sprintf("http://:%d", cfg.WebConfig.APIWebPort)
 
 	// create dump server file
-	err = util.CreateDirectory(constants.DumpDirectory)
+	err := util.CreateDirectory(constants.DumpDirectory)
 	if err != nil {
 		panic("Unable to create dump directory used in tests")
 	}

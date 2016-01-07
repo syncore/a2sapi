@@ -13,7 +13,7 @@ import (
 func SetupEnvironment() {
 	fmt.Println("Setting up test environment...")
 	// Need base directory for config and other files
-	err := os.Chdir("../..")
+	err := os.Chdir("../../bin")
 	if err != nil {
 		panic("Unable to change directory for tests")
 	}
