@@ -49,7 +49,7 @@ func init() {
 		r := mux.NewRouter().StrictSlash(true)
 		for _, ar := range apiRoutes {
 			var handler http.Handler
-			handler = ar.handlerFunc
+			handler = compressGzip(ar.handlerFunc, cfg.WebConfig.CompressResponses)
 
 			r.Methods(ar.method).
 				MatcherFunc(pathQStrToLowerMatcherFunc(r, ar.path, ar.queryStrings,

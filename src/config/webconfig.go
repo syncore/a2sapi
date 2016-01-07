@@ -12,6 +12,7 @@ const (
 	defaultMaxHostsPerAPIQuery    = 12
 	defaultAPIWebTimeout          = 7
 	defaultAPIWebPort             = 40080
+	defaultCompressResponses      = true
 )
 
 // CfgWeb represents web-related API configuration options.
@@ -19,6 +20,7 @@ type CfgWeb struct {
 	AllowDirectUserQueries  bool `json:"allowDirectUserQueries"`
 	APIWebPort              int  `json:"apiWebPort"`
 	APIWebTimeout           int  `json:"apiWebTimeout"`
+	CompressResponses       bool `json:"compressResponses"`
 	MaximumHostsPerAPIQuery int  `json:"maxHostsPerAPIQuery"`
 }
 
@@ -178,6 +180,48 @@ to the user.
 				fmt.Errorf("[ERROR] API timeout cannot be less than 5 seconds")
 		}
 		return response, nil
+	}
+	var err error
+	for !valid {
+		fmt.Print(prompt)
+		val, err = input(reader)
+		if err != nil {
+			errorColor(err)
+		} else {
+			valid = true
+		}
+	}
+	return val
+}
+
+func configureResponseCompression(reader *bufio.Reader) bool {
+	valid, val := false, false
+	prompt := fmt.Sprintf(`
+Should HTTP responses be compressed (with gzip)? You should disable this if you
+have a reverse proxy such as nginx or another server in front of the API that
+already handles compression for you.
+%s`, promptColor("> 'yes' or 'no' [default: %s]: ",
+		getBoolString(defaultCompressResponses)))
+
+	input := func(r *bufio.Reader) (bool, error) {
+		enable, rserr := r.ReadString('\n')
+		if rserr != nil {
+			return defaultCompressResponses,
+				fmt.Errorf("Unable to read respone: %s", rserr)
+		}
+		if enable == newline {
+			return defaultCompressResponses, nil
+		}
+		response := strings.Trim(enable, newline)
+		if strings.EqualFold(response, "y") || strings.EqualFold(response, "yes") {
+			return true, nil
+		} else if strings.EqualFold(response, "n") || strings.EqualFold(response,
+			"no") {
+			return false, nil
+		} else {
+			return defaultCompressResponses,
+				fmt.Errorf("[ERROR] Invalid response. Valid responses: y, yes, n, no")
+		}
 	}
 	var err error
 	for !valid {

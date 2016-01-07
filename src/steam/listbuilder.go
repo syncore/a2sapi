@@ -131,7 +131,7 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 	return sl, nil
 }
 
-// removeBuggedPlayers filters the players to removes "bugged" or stuck players
+// removeBuggedPlayers filters the players to remove "bugged" or stuck players
 // from the player list in games like Quake Live where certain servers do not
 // correctly send the Steam de-auth message, causing "ghost" or phantom players
 // to exist on servers.

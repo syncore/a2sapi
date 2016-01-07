@@ -125,6 +125,8 @@ default value.
 	cfg.WebConfig.APIWebTimeout = configureWebTimeout(reader)
 	// Port that API's web server will listen on
 	cfg.WebConfig.APIWebPort = configureWebServerPort(reader)
+	// Enable or disable gzip compression of responses
+	cfg.WebConfig.CompressResponses = configureResponseCompression(reader)
 
 	// Debug configuration (not user-selectable. for debug/development purposes)
 	// Print a few "debug" messages to stdout
@@ -158,6 +160,7 @@ func CreateDebugConfig() {
 	cfg.WebConfig.AllowDirectUserQueries = true
 	cfg.WebConfig.APIWebPort = defaultAPIWebPort
 	cfg.WebConfig.APIWebTimeout = defaultAPIWebTimeout
+	cfg.WebConfig.CompressResponses = defaultCompressResponses
 	cfg.WebConfig.MaximumHostsPerAPIQuery = defaultMaxHostsPerAPIQuery
 	cfg.DebugConfig.EnableDebugMessages = true
 	cfg.DebugConfig.EnableServerDump = true
@@ -183,6 +186,7 @@ func CreateTestConfig() {
 	cfg.WebConfig.AllowDirectUserQueries = true
 	cfg.WebConfig.APIWebPort = 40081
 	cfg.WebConfig.APIWebTimeout = defaultAPIWebTimeout
+	cfg.WebConfig.CompressResponses = defaultCompressResponses
 	cfg.WebConfig.MaximumHostsPerAPIQuery = defaultMaxHostsPerAPIQuery
 	cfg.DebugConfig.ServerDumpFileAsMasterList = true
 	cfg.DebugConfig.ServerDumpFilename = "test-api-servers.json"

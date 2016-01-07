@@ -17,7 +17,7 @@ func newRouter(cfg *config.Config) *mux.Router {
 	r := mux.NewRouter().StrictSlash(true)
 	for _, ar := range apiRoutes {
 		var handler http.Handler
-		handler = ar.handlerFunc
+		handler = compressGzip(ar.handlerFunc, cfg.WebConfig.CompressResponses)
 		handler = logger.LogWebRequest(handler, ar.name)
 
 		r.Methods(ar.method).

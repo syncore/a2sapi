@@ -15,6 +15,13 @@ import (
 	"os"
 )
 
+func compressGzip(hf http.HandlerFunc, shouldCompress bool) http.Handler {
+	if !shouldCompress {
+		return hf
+	}
+	return GzipHandler(hf)
+}
+
 func useDumpFileAsMasterList(dumppath string) *models.APIServerList {
 	f, err := os.Open(dumppath)
 	if err != nil {
@@ -33,9 +40,9 @@ func useDumpFileAsMasterList(dumppath string) *models.APIServerList {
 }
 
 func getServers(w http.ResponseWriter, r *http.Request) {
+	cfg := config.ReadConfig()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var asl *models.APIServerList
-	cfg := config.ReadConfig()
 
 	if cfg.DebugConfig.ServerDumpFileAsMasterList {
 		asl = useDumpFileAsMasterList(constants.DumpFileFullPath(

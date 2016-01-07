@@ -19,24 +19,28 @@ This back end service was written to provide information to a number of sites (f
   	- MaxMind updates this database on the first Tuesday of every month, so you can run the script again at that time, if you'd like.
   	- If you are on Windows, you will need [wget](http://nebm.ist.utl.pt/~glopes/wget/) and [gzip](http://www.gzip.org) to use the `get_countrydb` script. Or, alternatively, simply download the database [here](http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz), extract the `GeoLite2-City.mmdb` file into a directory called `db` in the same location as the `a2sapi` executable.
   - Change back to the directory where the `a2sapi` executable is located.
-  - Linux/OSX users, you must generate the configuration file with `./a2sapi --config`
-    - The configuration file will be stored in the `conf` directory.
+  - Linux/OSX users: you must generate the configuration file with `./a2sapi --config`
+  - Windows users: you must generate the configuration file with `a2sapi.exe --config`
+  - The configuration file will be stored in the `conf` directory.
+
   ### Launching
-  -  -  The application can then be launched with `./a2sapi`
-  		- You can pass the `--h` flag to the executable to see a few command-line options.
-  - Windows users: generate the configuration file with `a2sapi.exe --config` and then run the application with `a2sapi.exe`
+  - Linux/OSX: Launch with: `./a2sapi`
+  - Windows: Launch by running the `a2sapi.exe` executable.
+  - You can pass the `--h` flag to the executable to see a few command-line options.
+
 
 ### Installation: From Source
 
-- Alternatively, you can build from source. This assumes that you have a working Go environment, if not, check out the [Golang Getting Started guide](https://golang.org/doc/install) to configure your environment.
+- Alternatively, you can build from source. This assumes that you have a working Go environment. If not, check out the [Golang Getting Started guide](https://golang.org/doc/install).
 - Extract the archive.
-- Change directory to `build/nix` if you're on Linux/OSX or `build\win` if you're on Windows and launch the appropriate `build.sh` or `build.bat`script.
+- Change directory to `build/nix` if you're on Linux/OSX or `build\win` if you're on Windows and launch the appropriate `build.sh` or `build.bat` script.
 - Change back to the root directory, then change directory to `getfiles` and run the appropriate `get_countrydb` script to get the geolocation database file, which is the GeoLite2 City free database [provided by MaxMind](http://dev.maxmind.com/geoip/geoip2/geolite2/).
-	- Note: if you're on Windows you'll need `wget` and `gzip` see the discussion above for the binary installation.
+	- Note: if you're on Windows you'll need `wget` and `gzip`. For more info, see the discussion above for the binary installation.
 	- Updates for this geolocation database are provided by MaxMind on the first Tuesday of every month, so you can run the script again at that time to get the updates.
 
 ### Launching
-- The resulting executable will be located in the `bin` directory. On first run, you will need to generate the configuration file by passing the `--config` flag to the executable.
+- The resulting executable will be located in the `bin` directory.
+- On first run, you will need to generate the configuration file by passing the `--config` flag to the executable.
   - The configuration file will be stored in the `conf` directory.
 - After generating the configuration file, launch the application by running the `a2sapi` executable in the `bin` directory.
 	- If you'd like to see a few command-line options, then pass the `--h` flag to the executable.
