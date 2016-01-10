@@ -48,8 +48,6 @@ func findMatches(sqf slQueryFilter,
 		case qsGetServersMap:
 			useContains = true
 			ssearch = srv.Info.Map
-		case qsGetServersGameDir:
-			ssearch = srv.Info.Folder
 		case qsGetServersGame:
 			ssearch = srv.Info.Game
 		case qsGetServersGameType:

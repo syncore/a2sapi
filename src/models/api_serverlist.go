@@ -19,7 +19,7 @@ type APIServerList struct {
 // APIServer represents an individual game server's information, including its
 // A2S information as well as its geographical data. if available.
 type APIServer struct {
-	ID              int64               `json:"serverId"`
+	ID              int64               `json:"serverID"`
 	Host            string              `json:"address"`
 	Game            string              `json:"-"`
 	IP              string              `json:"ip"`

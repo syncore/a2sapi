@@ -24,7 +24,6 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 	}
 	successcount := 0
 	var success bool
-	var sdb *sql.DB
 	var sdbhosts map[string]string
 	sl := &models.APIServerList{
 		Servers:       make([]*models.APIServer, 0),
@@ -114,11 +113,10 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 	sl.FailedCount = len(sl.FailedServers)
 
 	if addtoServerDB {
-		sdb, err = db.OpenServerDB()
+		sdb, err := db.OpenServerDB()
 		if err != nil {
 			return nil, logger.LogAppError(err)
 		}
-		defer sdb.Close()
 		go db.AddServersToDB(sdb, sdbhosts)
 		sl = setServerIDForList(sdb, sl)
 	}

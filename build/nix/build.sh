@@ -1,4 +1,4 @@
-mkdir ../../bin/
+mkdir -p ../../bin/
 rm -rf ../../bin/a2sapi
 go get github.com/fatih/color
 go get github.com/gorilla/mux

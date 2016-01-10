@@ -69,7 +69,8 @@ func serverExists(db *sql.DB, host string, game string) (bool, error) {
 		host, game)
 	if err != nil {
 		return false, logger.LogAppErrorf(
-			"Error querying database for host %s and game %s: %s", host, game, err)
+			"serverExists: Error querying database for host %s and game %s: %s",
+			host, game, err)
 	}
 
 	defer rows.Close()
@@ -77,7 +78,7 @@ func serverExists(db *sql.DB, host string, game string) (bool, error) {
 	for rows.Next() {
 		if err := rows.Scan(&h, &g); err != nil {
 			return false, logger.LogAppErrorf(
-				"Error querying database for host %s and game %s: %s",
+				"serverExists: Error querying database for host %s and game %s: %s",
 				host, game, err)
 		}
 	}
@@ -91,14 +92,16 @@ func getHostAndGame(db *sql.DB, id string) (host, game string, err error) {
 	rows, err := db.Query("SELECT host, game FROM servers WHERE server_id =? LIMIT 1",
 		id)
 	if err != nil {
-		return host, game, logger.LogAppErrorf("Error querying database for id %s: %s",
-			id, err)
+		return host, game,
+			logger.LogAppErrorf("getHostAndGame: Error querying database for id %s: %s",
+				id, err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		if err := rows.Scan(&host, &game); err != nil {
-			return host, game, logger.LogAppErrorf("Error querying database for id %s: %s",
-				id, err)
+			return host, game,
+				logger.LogAppErrorf("getHostAndGame: Error querying database for id %s: %s",
+					id, err)
 		}
 	}
 	return host, game, nil
@@ -177,7 +180,7 @@ func GetIDsForServerList(result chan map[string]int64, db *sql.DB,
 			host, game)
 		if err != nil {
 			logger.LogAppErrorf(
-				"Error querying database to retrieve ID for host %s and game %s: %s",
+				"GetIDsForServerList: Error querying database to retrieve ID for host %s and game %s: %s",
 				host, game, err)
 			return
 		}
@@ -185,7 +188,8 @@ func GetIDsForServerList(result chan map[string]int64, db *sql.DB,
 		var id int64
 		for rows.Next() {
 			if err := rows.Scan(&id); err != nil {
-				logger.LogAppErrorf("Error querying database to retrieve ID for host %s: %s",
+				logger.LogAppErrorf(
+					"GetIDsForServerList: Error querying database to retrieve ID for host %s: %s",
 					host, err)
 				return
 			}
@@ -207,7 +211,8 @@ func GetIDsAPIQuery(result chan *models.DbServerID, db *sql.DB, hosts []string) 
 			"SELECT server_id, host, game FROM servers WHERE host LIKE ?",
 			fmt.Sprintf("%%%s%%", h))
 		if err != nil {
-			logger.LogAppErrorf("Error querying database to retrieve ID for host %s: %s",
+			logger.LogAppErrorf(
+				"GetIDsAPIQuery: Error querying database to retrieve ID for host %s: %s",
 				h, err)
 			return
 		}
@@ -218,7 +223,8 @@ func GetIDsAPIQuery(result chan *models.DbServerID, db *sql.DB, hosts []string) 
 		for rows.Next() {
 			sid := &models.DbServer{}
 			if err := rows.Scan(&id, &host, &game); err != nil {
-				logger.LogAppErrorf("Error querying database to retrieve ID for host %s: %s",
+				logger.LogAppErrorf(
+					"GetIDsAPIQuery: Error querying database to retrieve ID for host %s: %s",
 					h, err)
 				return
 			}

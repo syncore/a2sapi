@@ -26,7 +26,7 @@ func newRouter(cfg *config.Config) *mux.Router {
 			Name(ar.name).
 			Handler(http.TimeoutHandler(handler,
 			time.Duration(cfg.WebConfig.APIWebTimeout)*time.Second,
-			`{"error":"Timeout"}`))
+			`{"error": {"code": 503,"message": "Request timeout."}}`))
 	}
 	return r
 }

@@ -18,42 +18,40 @@ type slQueryFilter struct {
 
 // query string names
 const (
-	// getServerID:
-	// ?address=
-	qsGetServerID = "address"
+	// serverIDs:
+	// ?hosts=
+	qsGetServerIDs = "hosts"
 
-	// queryServerID:
-	// ?id=
-	qsQueryServerID = "id"
+	// query - based on IDs:
+	// ?ids=
+	qsQueryServerIDs = "ids"
 
-	// /queryServerAddr:
-	// ?address
-	qsQueryServerAddr = "address"
+	// /query - based on hosts:
+	// ?hosts
+	qsQueryServerAddrs = "hosts"
 
 	// getServers:
 	// ?country=
-	qsGetServersCountry = "country"
+	qsGetServersCountry = "countries"
 	// ?region=
-	qsGetServersRegion = "region"
+	qsGetServersRegion = "regions"
 	// ?state=
-	qsGetServersState = "state"
+	qsGetServersState = "states"
 	// info filtering
 	// ?serverName=
-	qsGetServersName = "serverName"
+	qsGetServersName = "serverNames"
 	// ?map=
-	qsGetServersMap = "map"
-	// ?gamedir=
-	qsGetServersGameDir = "gameDir"
+	qsGetServersMap = "maps"
 	// ?game=
-	qsGetServersGame = "game"
+	qsGetServersGame = "games"
 	// gametype=
-	qsGetServersGameType = "gametype"
+	qsGetServersGameType = "gametypes"
 	// ?serverType=
-	qsGetServersType = "serverType"
+	qsGetServersType = "serverTypes"
 	// ?serverOS=
 	qsGetServersOS = "serverOS"
 	// ?serverVersion=
-	qsGetServersVersion = "serverVersion"
+	qsGetServersVersion = "serverVersions"
 	// ?serverKeywords=
 	qsGetServersKeywords = "serverKeywords"
 	// ?hasPlayers= (bool)
@@ -68,10 +66,10 @@ const (
 	qsGetServersIsNotFull = "isNotFull"
 )
 
-// getServerID query strings
-var getServerIDQueryStrings = []querystring{
+// getServerIDs query strings
+var getServerIDsQueryStrings = []querystring{
 	querystring{
-		name:     qsGetServerID,
+		name:     qsGetServerIDs,
 		required: true,
 	},
 }
@@ -79,7 +77,7 @@ var getServerIDQueryStrings = []querystring{
 // queryServerID query strings
 var queryServerIDQueryStrings = []querystring{
 	querystring{
-		name:     qsQueryServerID,
+		name:     qsQueryServerIDs,
 		required: true,
 	},
 }
@@ -87,7 +85,7 @@ var queryServerIDQueryStrings = []querystring{
 // queryServerAddr query strings
 var queryServerAddrQueryStrings = []querystring{
 	querystring{
-		name:     qsQueryServerAddr,
+		name:     qsQueryServerAddrs,
 		required: true,
 	},
 }
@@ -108,9 +106,6 @@ var getServersQueryStrings = []querystring{
 	},
 	querystring{
 		name: qsGetServersMap,
-	},
-	querystring{
-		name: qsGetServersGameDir,
 	},
 	querystring{
 		name: qsGetServersGame,

@@ -28,9 +28,9 @@ type SteamServerInfo struct {
 // by a direct A2S_INFO query of a given host.
 type SteamExtraData struct {
 	Port         int16  `json:"gamePort"`
-	SteamID      uint64 `json:"serverSteamId"`
+	SteamID      uint64 `json:"serverSteamID"`
 	SourceTVPort int16  `json:"sourceTvProxyPort"`
 	SourceTVName string `json:"sourceTvProxyName"`
 	Keywords     string `json:"keywords"`
-	GameID       uint64 `json:"steamAppId"`
+	GameID       uint64 `json:"steamAppID"`
 }

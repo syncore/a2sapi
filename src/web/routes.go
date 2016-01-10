@@ -13,36 +13,36 @@ type route struct {
 }
 
 var apiRoutes = []route{
-	// getServers
+	// servers
 	route{
 		name:         "GetServers",
 		method:       "GET",
-		path:         "/getServers",
+		path:         "/servers",
 		queryStrings: getServersQueryStrings,
 		handlerFunc:  getServers,
 	},
-	// getServerID
+	// serverID
 	route{
-		name:         "GetServerID",
+		name:         "GetServerIDs",
 		method:       "GET",
-		path:         "/getServerID",
-		queryStrings: getServerIDQueryStrings,
-		handlerFunc:  getServerID,
+		path:         "/serverIDs",
+		queryStrings: getServerIDsQueryStrings,
+		handlerFunc:  getServerIDs,
 	},
-	// queryServerID
+	// query - by ID
 	route{
 		name:         "QueryServerID",
 		method:       "GET",
-		path:         "/queryServerID",
+		path:         "/query",
 		queryStrings: queryServerIDQueryStrings,
-		handlerFunc:  queryServerID,
+		handlerFunc:  queryServerIDs,
 	},
-	// queryServerAddr
+	// query - by address
 	route{
 		name:         "QueryServerAddr",
 		method:       "GET",
-		path:         "/queryServerAddr",
+		path:         "/query",
 		queryStrings: queryServerAddrQueryStrings,
-		handlerFunc:  queryServerAddr,
+		handlerFunc:  queryServerAddrs,
 	},
 }

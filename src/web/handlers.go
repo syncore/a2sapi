@@ -61,10 +61,10 @@ func getServers(w http.ResponseWriter, r *http.Request) {
 	writeJSONResponse(w, list)
 }
 
-func getServerID(w http.ResponseWriter, r *http.Request) {
+func getServerIDs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	hosts := getQStringValues(r.URL.Query(), qsGetServerID)
+	hosts := getQStringValues(r.URL.Query(), qsGetServerIDs)
 	for _, v := range hosts {
 		logger.WriteDebug("host slice values: %s", v)
 		// basically require at least 2 octets
@@ -77,9 +77,9 @@ func getServerID(w http.ResponseWriter, r *http.Request) {
 	getServerIDRetriever(w, hosts)
 }
 
-func queryServerID(w http.ResponseWriter, r *http.Request) {
+func queryServerIDs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	ids := getQStringValues(r.URL.Query(), qsQueryServerID)
+	ids := getQStringValues(r.URL.Query(), qsQueryServerIDs)
 	logger.WriteDebug("queryServerID: ids length: %d", len(ids))
 	logger.WriteDebug("queryServerID: ids are: %s", ids)
 
@@ -98,16 +98,18 @@ func queryServerID(w http.ResponseWriter, r *http.Request) {
 	queryServerIDRetriever(w, ids)
 }
 
-func queryServerAddr(w http.ResponseWriter, r *http.Request) {
+func queryServerAddrs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	cfg := config.ReadConfig()
 	if !cfg.WebConfig.AllowDirectUserQueries {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, `{"error":"Not allowed"}`)
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w,
+			`{"error": {"code": 400,"message": "Direct server queries are disabled. Use the %s parameter."}}`,
+			qsQueryServerIDs)
 		return
 	}
-	addresses := getQStringValues(r.URL.Query(), qsQueryServerAddr)
+	addresses := getQStringValues(r.URL.Query(), qsQueryServerAddrs)
 	logger.WriteDebug("addresses length: %d", len(addresses))
 	logger.WriteDebug("addresses are: %s", addresses)
 
@@ -160,5 +162,5 @@ func setNotFoundAndLog(w http.ResponseWriter, err error) {
 // of 404 not found, and logs an error related to unsuccessful JSON encoding.
 func writeJSONEncodeError(w http.ResponseWriter, err error) {
 	setNotFoundAndLog(w, err)
-	fmt.Fprintf(w, `{"error":"An error occurred."}`)
+	fmt.Fprintf(w, `{"error": {"code": 400,"message": "JSON encoding error."}}`)
 }

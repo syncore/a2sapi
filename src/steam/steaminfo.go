@@ -134,11 +134,17 @@ func parseServerInfo(serverinfo []byte) (*models.SteamServerInfo, error) {
 	if environment == "w" {
 		environment = "Windows"
 	}
+	if environment == "m" || environment == "o" {
+		environment = "Mac"
+	}
 	if servertype == "d" {
 		servertype = "dedicated"
 	}
 	if servertype == "l" {
 		servertype = "listen"
+	}
+	if servertype == "p" {
+		servertype = "sourcetv"
 	}
 
 	return &models.SteamServerInfo{
