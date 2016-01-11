@@ -75,10 +75,11 @@ returned per minute.
 func configureTimedQueryGame(reader *bufio.Reader) string {
 	valid := false
 	var val string
-	games := strings.Join(filters.GetGameNames(), ", ")
+	games := strings.Join(filters.GetGameNames(), "\n")
 	prompt := fmt.Sprintf(`
 Choose the game you would like to automatically retrieve servers for at timed
-intervals. Possible choices are: %s
+intervals. Possible choices are:
+%s
 More games can be added via the %s file.
 %s`, games, constants.GameFileFullPath, promptColor("> [default: NONE]: "))
 
@@ -88,7 +89,7 @@ More games can be added via the %s file.
 			return "", fmt.Errorf("Unable to read respone: %s", rserr)
 		}
 		if gameval == newline {
-			return "", fmt.Errorf("[ERROR] Invalid response. Valid responses: %s", games)
+			return "", fmt.Errorf("[ERROR] Invalid response. Valid responses:\n%s", games)
 		}
 		response := strings.Trim(gameval, newline)
 		if filters.IsValidGame(response) {

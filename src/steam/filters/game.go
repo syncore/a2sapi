@@ -31,11 +31,83 @@ type GameList struct {
 
 // A few default games, additional games can be added from https://steamdb.info/apps/
 var (
+	// GameAlienSwarm Alien Swarm
+	GameAlienSwarm = &Game{
+		Name:          "AlienSwarm",
+		AppID:         630,
+		IgnoreRules:   false,
+		IgnorePlayers: false,
+		IgnoreInfo:    false,
+	}
+	// GameARMA3 ARMA 3
+	GameARMA3 = &Game{
+		Name:          "ARMA3",
+		AppID:         107410,
+		IgnoreRules:   false,
+		IgnorePlayers: false,
+		IgnoreInfo:    false,
+	}
+	// GameARKSurvivalEvolved ARK: Survival Evolved
+	GameARKSurvivalEvolved = &Game{
+		Name:          "ARKSurvivalEvolved",
+		AppID:         346110,
+		IgnoreRules:   false,
+		IgnorePlayers: false,
+		IgnoreInfo:    false,
+	}
 	// GameCsGo Counter-Strike: GO
 	GameCsGo = &Game{
 		Name:          "CSGO",
 		AppID:         730,
 		IgnoreRules:   true, // CSGO no longer sends rules as of 1.32.3.0 (02/21/14)
+		IgnorePlayers: false,
+		IgnoreInfo:    false,
+	}
+	// GameCSSource Counter-Strike: Source
+	GameCSSource = &Game{
+		Name:          "CSSource",
+		AppID:         240,
+		IgnoreRules:   false,
+		IgnorePlayers: false,
+		IgnoreInfo:    false,
+	}
+	// GameDayZ DayZ
+	GameDayZ = &Game{
+		Name:          "DayZ",
+		AppID:         221100,
+		IgnoreRules:   false,
+		IgnorePlayers: false,
+		IgnoreInfo:    false,
+	}
+	// GameGarrysMod Garry's Mod
+	GameGarrysMod = &Game{
+		Name:          "GarrysMod",
+		AppID:         4000,
+		IgnoreRules:   false,
+		IgnorePlayers: false,
+		IgnoreInfo:    false,
+	}
+	// GameHL2DM Half-Life 2: Deathmatch
+	GameHL2DM = &Game{
+		Name:          "HL2DM",
+		AppID:         320,
+		IgnoreRules:   false,
+		IgnorePlayers: false,
+		IgnoreInfo:    false,
+	}
+	// GameL4D2 Left 4 Dead 2
+	GameL4D2 = &Game{
+		Name:          "L4D2",
+		AppID:         550,
+		IgnoreRules:   false,
+		IgnorePlayers: false,
+		IgnoreInfo:    false,
+	}
+	// GameOpposingForce Half-Life: Opposing Force
+	GameOpposingForce = &Game{
+		Name:          "OpposingForce",
+		AppID:         50,
+		IgnoreRules:   false,
 		IgnorePlayers: false,
 		IgnoreInfo:    false,
 	}
@@ -52,6 +124,14 @@ var (
 		Name:          "Reflex",
 		AppID:         328070,
 		IgnoreRules:   true, // Reflex does not implement A2S_RULES
+		IgnorePlayers: false,
+		IgnoreInfo:    false,
+	}
+	// GameRust Rust
+	GameRust = &Game{
+		Name:          "Rust",
+		AppID:         252490,
+		IgnoreRules:   false,
 		IgnorePlayers: false,
 		IgnoreInfo:    false,
 	}
@@ -77,9 +157,19 @@ var (
 
 	defaultGames = GameList{
 		Games: []*Game{
+			GameAlienSwarm,
+			GameARMA3,
+			GameARKSurvivalEvolved,
 			GameCsGo,
+			GameCSSource,
+			GameDayZ,
+			GameGarrysMod,
+			GameHL2DM,
+			GameL4D2,
+			GameOpposingForce,
 			GameQuakeLive,
 			GameReflex,
+			GameRust,
 			GameTF2,
 		},
 	}
