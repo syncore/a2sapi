@@ -129,7 +129,7 @@ func handleMultiPacketResponse(c net.Conn, firstReceived []byte) ([]byte,
 	// sort packet keys
 	pnums := make(u32slice, len(packets))
 	for key := range packets {
-		pnums = append(pnums, key)
+		pnums[key] = key
 	}
 	pnums.Sort()
 
@@ -212,12 +212,10 @@ func GetRulesForServer(host string, timeout int) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	rules, err := parseRuleInfo(ri)
 	if err != nil {
 		return nil, err
 	}
-
 	return rules, nil
 }
 
