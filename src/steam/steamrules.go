@@ -127,9 +127,9 @@ func handleMultiPacketResponse(c net.Conn, firstReceived []byte) ([]byte,
 
 	}
 	// sort packet keys
-	pnums := make(u32slice, len(packets))
+	var pnums u32slice
 	for key := range packets {
-		pnums[key] = key
+		pnums = append(pnums, key)
 	}
 	pnums.Sort()
 

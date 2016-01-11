@@ -50,7 +50,7 @@ The configuration is handled interactively by passing the `--config` flag to the
 
 
 # Usage
-:book: For interactive documentation and more detail, see the a2sapi Swagger UI documentation: *here* (TODO)
+:book: For interactive documentation and more detail, see the a2sapi Swagger UI documentation in use [on one of my pages that uses this API](http://reflex.syncore.org/apidoc/) or you can use the included a2sapi-swagger files with Swagger UI/Editor.
 
 The API ships with three endpoints:
 - /servers
