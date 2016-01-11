@@ -90,7 +90,7 @@ func (r *ResponseRecoder) ExpectJSON(model, expect interface{}) ([]byte, bool) {
 
 // TestGetServers tests the GetServers HTTP handler
 func TestGetServers(t *testing.T) {
-	r, _ := http.NewRequest("GET", formatURL("getServers"), nil)
+	r, _ := http.NewRequest("GET", formatURL("servers"), nil)
 	w := newRecorder()
 	getServers(w, r)
 	// body json test
@@ -109,11 +109,11 @@ func TestGetServers(t *testing.T) {
 }
 
 // TestGetServerID tests the GetServerID HTTP handler
-func TestGetServerID(t *testing.T) {
-	r, _ := http.NewRequest("GET", formatURL("getServerID?addr=127.0.0.1:65534"),
+func TestGetServerIDs(t *testing.T) {
+	r, _ := http.NewRequest("GET", formatURL("serverIDs?hosts=127.0.0.1:65534"),
 		nil)
 	w := newRecorder()
-	getServerID(w, r)
+	getServerIDs(w, r)
 	// body json test
 	m := &models.DbServerID{}
 	_, modelMatches := w.ExpectJSON(m, m)
@@ -132,10 +132,10 @@ func TestGetServerID(t *testing.T) {
 
 // TestQueryServerID tests the QueryServerID HTTP handler
 func TestQueryServerID(t *testing.T) {
-	r, _ := http.NewRequest("GET", formatURL("queryServerID?id=788593993848"),
+	r, _ := http.NewRequest("GET", formatURL("query?ids=788593993848"),
 		nil)
 	w := newRecorder()
-	queryServerID(w, r)
+	queryServerIDs(w, r)
 	// body json test
 	m := &models.APIServerList{}
 	_, modelMatches := w.ExpectJSON(m, m)
@@ -155,9 +155,9 @@ func TestQueryServerID(t *testing.T) {
 // TestQueryServerAddr tests the QueryServerAddr handler
 func TestQueryServerAddr(t *testing.T) {
 	r1, _ := http.NewRequest("GET",
-		formatURL("queryServerAddr?address=127.0.0.1:65534"), nil)
+		formatURL("query?hosts=127.0.0.1:65534"), nil)
 	w1 := newRecorder()
-	queryServerAddr(w1, r1)
+	queryServerAddrs(w1, r1)
 	// 200 - default server list
 	if w1.Code != http.StatusOK {
 		t.Errorf("Expected status code %v for queryServerAddr handler; got: %v",
@@ -173,9 +173,9 @@ func TestQueryServerAddr(t *testing.T) {
 		t.Errorf("queryServerAddr: expected and actual models do not match.")
 	}
 	// 404 - no addreses specified
-	r2, _ := http.NewRequest("GET", formatURL("queryServerAddr?address="), nil)
+	r2, _ := http.NewRequest("GET", formatURL("query?hosts="), nil)
 	w2 := newRecorder()
-	queryServerAddr(w2, r2)
+	queryServerAddrs(w2, r2)
 	// body 2 json test
 	m2 := &models.APIServerList{}
 	_, modelMatches2 := w2.ExpectJSON(m2, m2)

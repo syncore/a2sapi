@@ -11,10 +11,10 @@ import (
 // function.
 func TestGetQStringValues(t *testing.T) {
 	getsrvid := make(map[string][]string, 1)
-	getsrvid["address"] = []string{
+	getsrvid["hosts"] = []string{
 		"127.0.0.1,172.16.0.1,%2010.0.0.1",
 	}
-	result := getQStringValues(getsrvid, qsGetServerID)
+	result := getQStringValues(getsrvid, qsGetServerIDs)
 	if len(result) != 3 {
 		t.Fatalf("Expected 3 address strings in result, got: %d", len(result))
 	}
@@ -32,7 +32,7 @@ func TestGetQStringValues(t *testing.T) {
 	}
 
 	getsrvcountry := make(map[string][]string, 1)
-	getsrvcountry["country"] = []string{"US"}
+	getsrvcountry["countries"] = []string{"US"}
 	result = getQStringValues(getsrvcountry, qsGetServersCountry)
 	if len(result) != 1 {
 		t.Fatalf("Expected 1 country string in result, got: %d", len(result))

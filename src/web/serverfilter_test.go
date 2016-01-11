@@ -12,8 +12,8 @@ import (
 
 func TestGetSrvFilterFromQString(t *testing.T) {
 	query := make(map[string][]string, 3)
-	query["region"] = []string{"North America,Europe"}
-	query["serverVersion"] = []string{
+	query["regions"] = []string{"North America,Europe"}
+	query["serverVersions"] = []string{
 		"1066",
 	}
 	query["hasPlayers"] = []string{

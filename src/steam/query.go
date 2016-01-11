@@ -159,7 +159,7 @@ func DirectQuery(hosts []string) (*models.APIServerList, error) {
 		Rules:      batchRuleQuery(needsRules),
 		Players:    batchPlayerQuery(needsPlayers),
 	}
-	sl, err := buildServerList(data, false)
+	sl, err := buildServerList(data, true)
 	if err != nil {
 		return models.GetDefaultServerList(), logger.LogAppError(err)
 	}

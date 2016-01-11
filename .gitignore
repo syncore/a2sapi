@@ -29,6 +29,7 @@ _testmain.go
 *.sublime-workspace
 
 # a2sapi specific
+bin
 conf
 *.user
 servers.sqlite

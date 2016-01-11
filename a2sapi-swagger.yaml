@@ -1,0 +1,444 @@
+swagger: '2.0'
+info:
+  title: a2sapi
+  description: a2sapi - Steam A2S information for Source games
+  version: 0.0.1
+host: 'localhost:40080'
+schemes:
+  - http
+basePath: /
+produces:
+  - application/json
+paths:
+  /servers:
+    get:
+      summary: Server list
+      description: |
+        The **servers** endpoint provides a list of the most recent servers
+        returned from the Valve master server. Data from this endpoint is only available
+        if the application has been configured to retrieve servers from Valve's
+        master server. This list can be filtered by specifying one or more parameters
+        below. Separate multiple parameter values with commas.
+      parameters:
+        - name: countries
+          in: query
+          description: Filter by 2-letter ISO 3166-1 country code. Separate multiple
+            values with commas.
+          required: false
+          type: string
+        - name: regions
+          in: query
+          description: Filter by region. Possible regions are Africa, Antarctica, Asia,
+              Europe, Oceania, North America, South America. Separate multiple values
+              with commas.
+          required: false
+          type: string
+        - name: states
+          in: query
+          description: Filter by 2-letter US state. United States of America only.
+            Separate multiple values with commas.
+          required: false
+          type: string
+        - name: serverNames
+          in: query
+          description: Filter by server name. Results are loosely matched. Separate
+            multiple values with commas.
+          required: false
+          type: string
+        - name: maps
+          in: query
+          description: Filter by map. Results are loosely matched. Separate multiple
+            values with commas.
+          required: false
+          type: string
+        - name: games
+          in: query
+          description: Filter by game. Separate multiple values with commas.
+          required: false
+          type: string
+        - name: gametypes
+          in: query
+          description: Filter by gametype. Separate multiple values with commas.
+          required: false
+          type: string
+        - name: serverTypes
+          in: query
+          description: Filter by server types. Separate multiple values with commas.
+          required: false
+          type: string
+        - name: serverOS
+          in: query
+          description: Filter by server operating system. Separate multiple values with commas.
+          required: false
+          type: string
+        - name: serverVersions
+          in: query
+          description: Filter by server version. Separate multiple values with commas.
+          required: false
+          type: string
+        - name: serverKeywords
+          in: query
+          description: Filter by server keywords. Results are loosely matched.
+            Separate multiple values with commas.
+          required: false
+          type: string
+        - name: hasPlayers
+          in: query
+          description: Filter by whether server has players (true) or is empty (false).
+          required: false
+          type: boolean
+        - name: hasBots
+          in: query
+          description: Filter by whether server has bots (true) or not (false).
+          required: false
+          type: boolean
+        - name: hasPassword
+          in: query
+          description: Filter by whether server has a password (true) or not (false).
+          required: false
+          type: boolean
+        - name: hasAntiCheat
+          in: query
+          description: Filter by whether server is secured by anti-cheat (true) or not (false).
+          required: false
+          type: boolean
+        - name: isNotFull
+          in: query
+          description: Filter by whether server is full (true) or not (false).
+          required: false
+          type: boolean
+      tags:
+        - Servers
+      responses:
+        '200':
+          description: An object containing the servers.
+          schema:
+              $ref: '#/definitions/ServerList'
+        '404':
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          description: Timeout
+          schema:
+            $ref: '#/definitions/Error'
+
+  /serverIDs:
+    get:
+      summary: Specific server ID
+      description: |
+        The **serverIDs** endpoint retrieves servers' internal ID numbers. The ID
+        number(s) will be used with the *ids* parameter of the **query** endpoint to
+        retrieve a server's real-time information. Separate multiple parameter values
+        with commas.
+      parameters:
+        - name: hosts
+          in: query
+          description: The host in the format of IP:port to retrieve the ID for.
+            Multiple IP:ports can separated with commas.
+          required: true
+          type: string
+      tags:
+        - ID
+      responses:
+        '200':
+          description: An object containing server ID information.
+          schema:
+            $ref: '#/definitions/ServerID'
+        '400':
+          description: Invalid request.
+          schema:
+            $ref: '#/definitions/ServerID'
+        '404':
+          description: Not found or unexpected error.
+          schema:
+            $ref: '#/definitions/ServerID'
+        '503':
+          description: Timeout
+          schema:
+            $ref: '#/definitions/Error'
+  /query:
+    get:
+      summary: Query server for real-time information.
+      description: |
+        The **query** endpoint retrieves servers' real-time information. Depending
+        on how the application is configured, this can be done via server ID numbers
+        (retrieved via the *serverIDs* endpoint) and/or directly from IP addresses
+        and ports. Separate multiple parameter values with commas.
+      parameters:
+        - name: ids
+          in: query
+          description: The server ID whose information should be retrieved.
+            Separate multiple values with commas.
+          required: true
+          type: number
+          format: int64
+        - name: hosts
+          in: query
+          description: |
+            The host in the format of IP:port whose information should be retrieved.
+            Separate multiple IP:ports with commas. *Note*, address queries might
+            be disabled, depending on the application configuration.
+          required: false
+          type: string
+      tags:
+        - Query
+      responses:
+        '200':
+          description: An object containing the servers.
+          schema:
+              $ref: '#/definitions/ServerList'
+        '400':
+          description: Address queries are disabled.
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Not found or unexpected error.
+          schema:
+              $ref: '#/definitions/ServerList'
+        '503':
+          description: Timeout
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  ServerList:
+    type: object
+    properties:
+      retrievalDate:
+        type: string
+        description: "The date and time at which the server list was last retrieved from Valve's master server."
+      timestamp:
+        type: integer
+        format: int64
+        description: The timestamp as a Unix time (the number of seconds elapsed since
+          Jan 1, 1970 UTC), when the server list was last retrieved from Valve's
+          master server.
+      serverCount:
+        type: integer
+        format: int32
+        description: The number of servers in the list.
+      servers:
+        type: array
+        items:
+          description: An individual server object.
+          type: object
+          properties:
+            serverID:
+              type: integer
+              format: int32
+              description: "The server's ID number."
+            address:
+              type: string
+              description: The IP and port of the server.
+            ip:
+              type: string
+              description: "The server's IP address."
+            port:
+              type: string
+              description: The server's Steam query port. For many games this is
+                the same as the actual gameserver connection port.
+            location:
+              description: The server's location information object.
+              type: object
+              properties:
+                countryName:
+                  type: string
+                  description: The full name of the country in which the server is located.
+                countryCode:
+                  type: string
+                  description: The 2-letter ISO 3166-1 country code in which the server is located.
+                state:
+                  type: string
+                  description: The state in which the server is located (United States only)
+            info:
+              description: The server's A2S_INFO object.
+              type: object
+              properties:
+                protocol:
+                  type: integer
+                  format: int32
+                  description: The protocol version used by the server.
+                serverName:
+                  type: string
+                  description: The name of the server.
+                map:
+                  type: string
+                  description: The map currently loaded on the server.
+                gameDir:
+                  type: string
+                  description: The name of the directory containing the game files.
+                game:
+                  type: string
+                  description: The full name of the game.
+                gameTypeShort:
+                  type: string
+                  description: The abbreviated short name of the game type currently
+                    being played on the server, for select games (Reflex, Quake Live)
+                gameTypeFull:
+                  type: string
+                  description: The long form name of the game type currently
+                    being played on the server, for select games (Reflex, Quake Live)
+                steamApp:
+                  type: number
+                  format: short
+                  description: The Steam Application ID of the game. Typically a
+                    16-bit value that is unused. See the *extra* object for the
+                    actual appID.
+                players:
+                  type: number
+                  format: short
+                  description: The total number of players currently on the server.
+                maxPlayers:
+                  type: number
+                  format: short
+                  description: The maximum number of players supported by the server.
+                bots:
+                  type: number
+                  format: short
+                  description: The total number of bots currently on the server.
+                serverType:
+                  type: string
+                  description: The type of server.
+                serverOS:
+                  type: string
+                  description: The server's operating system.
+                private:
+                  type: number
+                  format: short
+                  description: Indicates whether the server requires a password.
+                    (0 no 1 yes).
+                antiCheat:
+                  type: number
+                  format: short
+                  description: Indicates whether the server is running anti-cheat
+                    protection, typically VAC, Valve Anti Cheat (0 no 1 yes).
+                serverVersion:
+                  type: string
+                  description: The version of the game installed on the server.
+                extra:
+                  description: The A2S_INFO extra data object. May not be present for
+                    all games.
+                  type: object
+                  properties:
+                    gamePort:
+                      type: number
+                      format: short
+                      description: The port used to connect the game client to the server.
+                    steamServerID:
+                      type: number
+                      format: int64
+                      description: The server's SteamID.
+                    sourceTvProxyPort:
+                      type: number
+                      format: short
+                      description: Spectator port number for SourceTV.
+                    sourceTvProxyName:
+                      type: string
+                      description: Name of the spectator server for SourceTV.
+                    keywords:
+                      type: string
+                      description: Tags that describe the game according to the server.
+                    steamAppID:
+                      type: number
+                      format: int64
+                      description: The server's 64-bit GameID (Steam AppID)
+
+            players:
+                  type: array
+                  items:
+                      $ref: '#/definitions/Player'
+            filteredPlayers:
+                  description: |
+                    filteredPlayers is an object used to filter out phantom or ghost
+                    players that get "stuck" in the player list (server-side) on buggy
+                    games such as Quake Live.
+                  type: object
+                  properties:
+                    count:
+                      type: number
+                      format: short
+                      description: The number of players that are estimated to be
+                        active, that have passed the ghost filter.
+                    players:
+                      type: array
+                      items:
+                        $ref: '#/definitions/Player'
+            rules:
+                  description: The server's A2S_RULES information. Not all games
+                    (such as Reflex and CSGO) have A2S_RULES.
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                      description: The rule key. This will vary from game to game and
+                        sometimes from server to server. For example, the key might be
+                        sv_hostname to describe the server's hostname.
+                    value:
+                      type: string
+                      description: The rule value. This will vary from game to game and
+                        sometimes from server to server. For example, the value might be
+                        My Server Name to match the sv_hostname key above.
+      failedCount:
+        type: number
+        format: short
+        description: The number of servers that failed to fully respond to
+          the query request.
+      failedServers:
+        type: array
+        items:
+          type: string
+          description: The IP and port of the server that failed to fully respond
+            to the query request.
+
+  Player:
+    description: An individual A2S_PLAYER object.
+    type: object
+    properties:
+      name:
+        type: string
+        description: The player's name.
+      score:
+        type: number
+        format: int32
+        description: The player's score.
+      secsConnected:
+        type: number
+        format: float
+        description: Time, in seconds, that the player has been
+          connected to the server.
+      totalConnected:
+        type: string
+        description: Time that the player has been connected to
+          the server in a human-readable format.
+  ServerID:
+    type: object
+    properties:
+      serverCount:
+        type: number
+        format: short
+        description: The number of servers for which IDs were retrieved.
+      servers:
+        type: array
+        items:
+            type: object
+            properties:
+              serverID:
+                type: number
+                format: int64
+                description: The server ID number.
+              game:
+                type: string
+                description: The name of the game.
+              host:
+                type: string
+                description: The server's IP:port.
+  Error:
+    type: object
+    properties:
+      code:
+        description: The HTTP status code representing the error.
+        type: integer
+        format: int32
+      message:
+        description: A brief description of the error, if applicable.
+        type: string

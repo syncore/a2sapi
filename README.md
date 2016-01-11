@@ -45,7 +45,8 @@ The configuration is handled interactively by passing the `--config` flag to the
 - After building, the resulting executable will be located in the `bin` directory.
 - On first run, you will need to generate the configuration file by passing the `--config` flag to the executable.
 - After generating the configuration file, launch the application by running the `a2sapi` executable in the `bin` directory. If you'd like to see a few command-line options, then pass the `--h` flag to the executable.
-----------
+
+
 
 
 # Usage
@@ -53,7 +54,7 @@ The configuration is handled interactively by passing the `--config` flag to the
 
 The API ships with three endpoints:
 - /servers
-- / serverIDs
+- /serverIDs
 - /query
 
 
@@ -113,7 +114,7 @@ The `servers` endpoint provides a list of the most recent servers returned from 
   - `/servers?isNotFull=true`
 
 ### `GET: /serverIDs`
-The `serverIDs` endpoint retrieves servers' internal ID numbers. The ID number(s) will be used with the `ids` parameter of the `query` endpoint to retrieve a server's real-time information. The `serverIDs` endpoint may not return an ID if the application is not configured to do so. Separate multiple parameter values with commas.
+The `serverIDs` endpoint retrieves servers' internal ID numbers. The ID number(s) will be used with the `ids` parameter of the `query` endpoint to retrieve a server's real-time information. Separate multiple parameter values with commas.
 
 ### Parameters:
 - ***hosts***
@@ -134,7 +135,7 @@ The `query` endpoint retrieves servers' real-time information. Depending on how 
   - The host in the format of IP:port whose information should be retrieved. :warning: Note, address queries might be disabled, depending on the application configuration.
   - `/query?hosts=54.93.46.254:25801,46.101.8.188:27960`
 
-----------
+
 # Quick Examples
 **`/servers` endpoint:**
 
@@ -167,7 +168,7 @@ These examples for the `/servers` endpoint will assume that a2api is configured 
 
 
 
-----------
+
 
 # Issues
 

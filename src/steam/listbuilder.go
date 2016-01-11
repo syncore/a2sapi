@@ -8,9 +8,11 @@ import (
 	"a2sapi/src/db"
 	"a2sapi/src/logger"
 	"a2sapi/src/models"
+	"a2sapi/src/steam/filters"
 	"database/sql"
 	"net"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -24,14 +26,10 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 	}
 	successcount := 0
 	var success bool
-	var sdbhosts map[string]string
+	srvDBhosts := make(map[string]string, len(data.HostsGames))
 	sl := &models.APIServerList{
 		Servers:       make([]*models.APIServer, 0),
 		FailedServers: make([]string, 0),
-	}
-
-	if addtoServerDB {
-		sdbhosts = make(map[string]string, len(data.HostsGames))
 	}
 
 	cdb, err := db.OpenCountryDB()
@@ -93,8 +91,8 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 				if perr == nil {
 					srv.Port = p
 				}
-				if addtoServerDB {
-					sdbhosts[host] = game.Name
+				if !strings.EqualFold(game.Name, filters.GameUnspecified.String()) {
+					srvDBhosts[host] = game.Name
 				}
 				loc := make(chan *models.DbCountry, 1)
 				go db.GetCountryInfo(loc, cdb, ip)
@@ -112,12 +110,12 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 	sl.ServerCount = len(sl.Servers)
 	sl.FailedCount = len(sl.FailedServers)
 
-	if addtoServerDB {
+	if len(srvDBhosts) != 0 {
 		sdb, err := db.OpenServerDB()
 		if err != nil {
 			return nil, logger.LogAppError(err)
 		}
-		go db.AddServersToDB(sdb, sdbhosts)
+		go db.AddServersToDB(sdb, srvDBhosts)
 		sl = setServerIDForList(sdb, sl)
 	}
 
