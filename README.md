@@ -6,9 +6,6 @@ This back end service was written to provide information to a number of sites (f
 
 *Please note, this is the first project that I have written in the Go programming language.* :scream: Pull requests are welcome!
 
-
-----------
-
 # Installation
 
 ### Installation: Binaries
@@ -177,7 +174,7 @@ Alternatively, I usually can be found under the name "syncore" on QuakeNet IRC -
 
 
 # License
-----
+
 See [LICENSE.md]
 
 [LICENSE.md]:https://github.com/syncore/a2sapi/blob/master/LICENSE.md

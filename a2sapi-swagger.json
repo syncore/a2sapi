@@ -5,11 +5,11 @@
         "description": "a2sapi - Steam A2S information for Source games",
         "version": "0.0.1"
     },
-    "host": "localhost:40080",
+    "host": "reflex.syncore.org",
     "schemes": [
-        "http"
+        "https"
     ],
-    "basePath": "/",
+    "basePath": "/api",
     "produces": [
         "application/json"
     ],
@@ -286,6 +286,10 @@
                             "address": {
                                 "type": "string",
                                 "description": "The IP and port of the server."
+                            },
+                            "game": {
+                                "type": "string",
+                                "description": "The game from the API's internal game definitions."
                             },
                             "ip": {
                                 "type": "string",

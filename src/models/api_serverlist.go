@@ -21,7 +21,7 @@ type APIServerList struct {
 type APIServer struct {
 	ID              int64               `json:"serverID"`
 	Host            string              `json:"address"`
-	Game            string              `json:"-"`
+	Game            string              `json:"game"`
 	IP              string              `json:"ip"`
 	Port            int                 `json:"port"`
 	CountryInfo     *DbCountry          `json:"location"`

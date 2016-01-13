@@ -177,6 +177,7 @@ var (
 		Games: []*Game{
 			GameCsGo,
 			GameTF2,
+			GameGarrysMod,
 		},
 	}
 )

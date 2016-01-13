@@ -20,13 +20,11 @@ type MasterQuery struct {
 const masterServerHost = "hl2master.steampowered.com:27011"
 
 func getServers(filter *filters.Filter) ([]string, error) {
-
-	cfg := config.ReadConfig()
+	maxHosts := config.ReadConfig().SteamConfig.MaximumHostsToReceive
 	var serverlist []string
 	var c net.Conn
 	var err error
-	retrieved, count := 0, 0
-	complete := false
+	retrieved := 0
 	addr := "0.0.0.0:0"
 
 	c, err = net.DialTimeout("udp", masterServerHost,
@@ -39,10 +37,13 @@ func getServers(filter *filters.Filter) ([]string, error) {
 	defer c.Close()
 	c.SetDeadline(time.Now().Add(time.Duration(QueryTimeout) * time.Second))
 
-	for !complete {
+	for {
 		s, err := queryMasterServer(c, addr, filter)
 		if err != nil {
-			return nil, err
+			// usually timeout - Valve throttles >30 UDP packets (>6930 servers) per min
+			logger.WriteDebug("Master query error, likely due to Valve throttle/timeout :%s",
+				err)
+			break
 		}
 		// get hosts:ports beginning after header (0xFF, 0xFF, 0xFF, 0xFF, 0x66, 0x0A)
 		ips, total, err := extractHosts(s[6:])
@@ -51,25 +52,26 @@ func getServers(filter *filters.Filter) ([]string, error) {
 				err)
 		}
 		retrieved = retrieved + total
+		if retrieved >= maxHosts {
+			logger.LogSteamInfo("Max host limit of %d reached!", maxHosts)
+			logger.WriteDebug("Max host limit of %d reached!", maxHosts)
+			break
+		}
 		logger.LogSteamInfo("%d hosts retrieved so far from master.", retrieved)
+		logger.WriteDebug("%d hosts retrieved so far from master.", retrieved)
 		for _, ip := range ips {
-			if count >= cfg.SteamConfig.MaximumHostsToReceive {
-				logger.LogSteamInfo("Max host limit of %d reached!",
-					cfg.SteamConfig.MaximumHostsToReceive)
-				complete = true
-				break
-			}
 			serverlist = append(serverlist, ip)
-			count++
 		}
 
 		if (serverlist[len(serverlist)-1]) != "0.0.0.0:0" {
 			logger.LogSteamInfo("More hosts need to be retrieved. Last IP was: %s",
 				serverlist[len(serverlist)-1])
+			logger.WriteDebug("More hosts need to be retrieved. Last IP was: %s",
+				serverlist[len(serverlist)-1])
 			addr = serverlist[len(serverlist)-1]
 		} else {
 			logger.LogSteamInfo("IP retrieval complete!")
-			complete = true
+			logger.WriteDebug("IP retrieval complete!")
 			break
 		}
 	}
