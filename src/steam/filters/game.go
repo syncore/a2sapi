@@ -175,9 +175,12 @@ var (
 	}
 	highServerCountGames = GameList{
 		Games: []*Game{
+			GameARKSurvivalEvolved,
+			GameARMA3,
 			GameCsGo,
-			GameTF2,
 			GameGarrysMod,
+			GameL4D2,
+			GameTF2,
 		},
 	}
 )
