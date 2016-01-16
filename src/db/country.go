@@ -69,6 +69,10 @@ func GetCountryInfo(ch chan<- *models.DbCountry, db *maxminddb.Reader, ipstr str
 		ch <- getDefaultCountryData()
 		return
 	}
+	if c.Country.Names["en"] == "" || c.Country.IsoCode == "" {
+		ch <- getDefaultCountryData()
+		return
+	}
 
 	countrydata := &models.DbCountry{
 		CountryName: c.Country.Names["en"],
