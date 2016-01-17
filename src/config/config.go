@@ -18,9 +18,10 @@ import (
 var promptColor = color.New(color.FgHiGreen).SprintfFunc()
 var errorColor = color.New(color.FgHiRed).PrintlnFunc()
 var newline = getNewLineForOS()
+var Config *Cfg
 
-// Config represents logging, steam-related, and API-related options.
-type Config struct {
+// Cfg represents logging, steam-related, and API-related options.
+type Cfg struct {
 	LogConfig   CfgLog   `json:"logConfig"`
 	SteamConfig CfgSteam `json:"steamConfig"`
 	WebConfig   CfgWeb   `json:"webConfig"`
@@ -34,10 +35,15 @@ func getNewLineForOS() string {
 	return "\n"
 }
 
-// ReadConfig reads the configuration file from disk and returns a pointer to
+// InitConfig reads the configuration file from disk and returns a pointer to
 // a struct that contains the various configuration values if successful, otherwise
 // panics.
-func ReadConfig() *Config {
+func InitConfig() {
+	if Config != nil {
+		fmt.Println("Config already initialized!")
+		return
+	}
+
 	f, err := os.Open(constants.GetCfgPath())
 	if err != nil {
 		panic(fmt.Sprintf(`
@@ -47,13 +53,14 @@ the --config switch. Error: %s`, err))
 	defer f.Close()
 	r := bufio.NewReader(f)
 	d := json.NewDecoder(r)
-	cfg := &Config{}
+	cfg := &Cfg{}
 	if err := d.Decode(cfg); err != nil {
 		panic(fmt.Sprintf(`
 "Error decoding config file. You might need to recreate it by using
 the --config switch. Error: %s`, err))
 	}
-	return cfg
+	// Set the configuration which will live throughout the application's lifetime
+	Config = cfg
 }
 
 func getBoolString(b bool) string {
@@ -68,7 +75,7 @@ func getBoolString(b bool) string {
 // to disk if successful, otherwise panics.
 func CreateConfig() {
 	reader := bufio.NewReader(os.Stdin)
-	cfg := &Config{
+	cfg := &Cfg{
 		LogConfig:   CfgLog{},
 		SteamConfig: CfgSteam{},
 		WebConfig:   CfgWeb{},
@@ -147,7 +154,7 @@ default value.
 // CreateDebugConfig creates the configuration file that is used when running the
 // applciation in debug mode.
 func CreateDebugConfig() {
-	cfg := &Config{}
+	cfg := &Cfg{}
 	cfg.LogConfig.EnableAppLogging = true
 	cfg.LogConfig.EnableSteamLogging = false // even in debug mode; disable
 	cfg.LogConfig.EnableWebLogging = true
@@ -170,6 +177,8 @@ func CreateDebugConfig() {
 		constants.DebugConfigFilePath); err != nil {
 		panic(err)
 	}
+	// Set the configuration which will live throughout the application's lifetime
+	Config = cfg
 }
 
 // CreateTestConfig creates the configuration that is used when running automated
@@ -177,7 +186,7 @@ func CreateDebugConfig() {
 func CreateTestConfig() {
 	// boolean values intentionally default to false and are omitted unless
 	// otherwise specified, which is different from the normal configuration
-	cfg := &Config{}
+	cfg := &Cfg{}
 	cfg.LogConfig.MaximumLogCount = defaultMaxLogCount
 	cfg.LogConfig.MaximumLogSize = defaultMaxLogSize
 	cfg.SteamConfig.AutoQueryGame = "QuakeLive"
@@ -194,4 +203,6 @@ func CreateTestConfig() {
 		constants.TestConfigFilePath); err != nil {
 		panic(err)
 	}
+	// Set the configuration which will live throughout the application's lifetime
+	Config = cfg
 }

@@ -13,11 +13,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func newRouter(cfg *config.Config) *mux.Router {
+func newRouter() *mux.Router {
 	r := mux.NewRouter().StrictSlash(true)
 	for _, ar := range apiRoutes {
 		var handler http.Handler
-		handler = compressGzip(ar.handlerFunc, cfg.WebConfig.CompressResponses)
+		handler = compressGzip(ar.handlerFunc, config.Config.WebConfig.CompressResponses)
 		handler = logger.LogWebRequest(handler, ar.name)
 
 		r.Methods(ar.method).
@@ -25,7 +25,7 @@ func newRouter(cfg *config.Config) *mux.Router {
 			getRequiredQryStringCount(ar.queryStrings))).
 			Name(ar.name).
 			Handler(http.TimeoutHandler(handler,
-			time.Duration(cfg.WebConfig.APIWebTimeout)*time.Second,
+			time.Duration(config.Config.WebConfig.APIWebTimeout)*time.Second,
 			`{"error": {"code": 503,"message": "Request timeout."}}`))
 	}
 	return r

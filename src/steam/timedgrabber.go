@@ -52,7 +52,7 @@ func retrieve(filter *filters.Filter) (*models.APIServerList, error) {
 		return nil, logger.LogAppError(err)
 	}
 
-	if config.ReadConfig().DebugConfig.EnableServerDump {
+	if config.Config.DebugConfig.EnableServerDump {
 		if err := dumpServersToDisk(filter.Game.Name, serverlist); err != nil {
 			logger.LogAppError(err)
 		}

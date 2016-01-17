@@ -65,7 +65,8 @@ func launch(isDebug bool) {
 			os.Exit(1)
 		}
 	}
-	cfg := config.ReadConfig()
+	// Initialize the application-wide configuration
+	config.InitConfig()
 
 	// Verify that geolocation DB can be read (will panic if it cannot)
 	_, err := db.OpenCountryDB()
@@ -74,12 +75,12 @@ func launch(isDebug bool) {
 	}
 
 	if !runSilent {
-		printStartInfo(cfg)
+		printStartInfo()
 	}
 
-	if cfg.SteamConfig.AutoQueryMaster {
+	if config.Config.SteamConfig.AutoQueryMaster {
 		autoQueryGame := filters.GetGameByName(
-			cfg.SteamConfig.AutoQueryGame)
+			config.Config.SteamConfig.AutoQueryGame)
 		if autoQueryGame == filters.GameUnspecified {
 			fmt.Println("Invalid game specified for automatic timed query!")
 			fmt.Printf(
@@ -92,7 +93,7 @@ func launch(isDebug bool) {
 		filter := filters.NewFilter(autoQueryGame, filters.SrAll, nil)
 		stop := make(chan bool, 1)
 		go steam.StartMasterRetrieval(stop, filter, 7,
-			cfg.SteamConfig.TimeBetweenMasterQueries)
+			config.Config.SteamConfig.TimeBetweenMasterQueries)
 		<-stop
 	} else {
 		// HTTP server + API standalone
@@ -100,19 +101,19 @@ func launch(isDebug bool) {
 	}
 }
 
-func printStartInfo(cfg *config.Config) {
+func printStartInfo() {
 	fmt.Printf("%s\n", constants.AppInfo)
 	if useDebugConfig {
 		fmt.Println("NOTE: We're currently using debug the configuration!")
 	}
-	if cfg.SteamConfig.AutoQueryMaster {
+	if config.Config.SteamConfig.AutoQueryMaster {
 		fmt.Println("Automatic timed master server queries: enabled")
 		fmt.Printf("Automatic timed master server queries every %d seconds\n",
-			cfg.SteamConfig.TimeBetweenMasterQueries)
+			config.Config.SteamConfig.TimeBetweenMasterQueries)
 		fmt.Printf("Automatic timed master server query game: %s\n",
-			cfg.SteamConfig.AutoQueryGame)
+			config.Config.SteamConfig.AutoQueryGame)
 		fmt.Printf("Automatic timed master server query max hosts to receive: %d\n",
-			cfg.SteamConfig.MaximumHostsToReceive)
+			config.Config.SteamConfig.MaximumHostsToReceive)
 	} else {
 		fmt.Println("Automatic timed master server queries: disabled")
 	}

@@ -12,36 +12,38 @@ import (
 // Start listening for and responding to HTTP requests via the web server. Panics
 // if unable to start.
 func Start(runSilent bool) {
-	cfg := config.ReadConfig()
-	r := newRouter(cfg)
+	r := newRouter()
 
 	if !runSilent {
-		printStartInfo(cfg)
+		printStartInfo()
 	}
 
-	logger.LogAppInfo("Starting HTTP server on port %d", cfg.WebConfig.APIWebPort)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.WebConfig.APIWebPort), r)
+	logger.LogAppInfo("Starting HTTP server on port %d",
+		config.Config.WebConfig.APIWebPort)
+	err := http.ListenAndServe(fmt.Sprintf(":%d",
+		config.Config.WebConfig.APIWebPort), r)
 	if err != nil {
 		logger.LogAppError(err)
 		panic(fmt.Sprintf("Unable to start HTTP server, error: %s\n", err))
 	}
 }
 
-func printStartInfo(cfg *config.Config) {
+func printStartInfo() {
 	endpoints := make([]string, len(apiRoutes))
 	for _, e := range apiRoutes {
 		endpoints = append(endpoints, fmt.Sprintf("%s  ", e.path))
 	}
-	fmt.Printf("Starting HTTP server on port %d\n", cfg.WebConfig.APIWebPort)
+	fmt.Printf("Starting HTTP server on port %d\n", config.Config.WebConfig.APIWebPort)
 	fmt.Printf("Available endpoints: %s\n", endpoints)
 
-	if cfg.WebConfig.AllowDirectUserQueries {
+	if config.Config.WebConfig.AllowDirectUserQueries {
 		fmt.Println("Direct (non-ID based) server API queries: enabled")
 	} else {
 		fmt.Println("Direct (non-ID based) server API queries: disabled")
 	}
 
-	fmt.Printf("HTTP request timeout: %d seconds\n", cfg.WebConfig.APIWebTimeout)
+	fmt.Printf("HTTP request timeout: %d seconds\n",
+		config.Config.WebConfig.APIWebTimeout)
 	fmt.Printf("Maximum servers allowed per user API call: %d servers\n",
-		cfg.WebConfig.MaximumHostsPerAPIQuery)
+		config.Config.WebConfig.MaximumHostsPerAPIQuery)
 }

@@ -40,13 +40,12 @@ func useDumpFileAsMasterList(dumppath string) *models.APIServerList {
 }
 
 func getServers(w http.ResponseWriter, r *http.Request) {
-	cfg := config.ReadConfig()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var asl *models.APIServerList
 
-	if cfg.DebugConfig.ServerDumpFileAsMasterList {
+	if config.Config.DebugConfig.ServerDumpFileAsMasterList {
 		asl = useDumpFileAsMasterList(constants.DumpFileFullPath(
-			cfg.DebugConfig.ServerDumpFilename))
+			config.Config.DebugConfig.ServerDumpFilename))
 	} else {
 		asl = models.MasterList
 	}
@@ -89,10 +88,9 @@ func queryServerIDs(w http.ResponseWriter, r *http.Request) {
 		writeJSONResponse(w, models.GetDefaultServerList())
 		return
 	}
-	cfg := config.ReadConfig()
-	if len(ids) > cfg.WebConfig.MaximumHostsPerAPIQuery {
+	if len(ids) > config.Config.WebConfig.MaximumHostsPerAPIQuery {
 		logger.WriteDebug("Maximum number of allowed API query hosts exceeded, truncating")
-		ids = ids[:cfg.WebConfig.MaximumHostsPerAPIQuery]
+		ids = ids[:config.Config.WebConfig.MaximumHostsPerAPIQuery]
 	}
 
 	queryServerIDRetriever(w, ids)
@@ -101,8 +99,7 @@ func queryServerIDs(w http.ResponseWriter, r *http.Request) {
 func queryServerAddrs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	cfg := config.ReadConfig()
-	if !cfg.WebConfig.AllowDirectUserQueries {
+	if !config.Config.WebConfig.AllowDirectUserQueries {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w,
 			`{"error": {"code": 400,"message": "Direct server queries are disabled. Use the %s parameter."}}`,
@@ -136,9 +133,9 @@ func queryServerAddrs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(parsedaddresses) > cfg.WebConfig.MaximumHostsPerAPIQuery {
+	if len(parsedaddresses) > config.Config.WebConfig.MaximumHostsPerAPIQuery {
 		logger.WriteDebug("Maximum number of allowed API query hosts exceeded, truncating")
-		parsedaddresses = parsedaddresses[:cfg.WebConfig.MaximumHostsPerAPIQuery]
+		parsedaddresses = parsedaddresses[:config.Config.WebConfig.MaximumHostsPerAPIQuery]
 	}
 	queryServerAddrRetriever(w, parsedaddresses)
 }

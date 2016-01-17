@@ -30,8 +30,7 @@ type ResponseRecoder struct {
 
 func init() {
 	test.SetupEnvironment()
-	cfg := config.ReadConfig()
-	testURLBase = fmt.Sprintf("http://:%d", cfg.WebConfig.APIWebPort)
+	testURLBase = fmt.Sprintf("http://:%d", config.Config.WebConfig.APIWebPort)
 
 	// create dump server file
 	err := util.CreateDirectory(constants.DumpDirectory)
@@ -39,7 +38,7 @@ func init() {
 		panic("Unable to create dump directory used in tests")
 	}
 	err = util.CreateByteFile(constants.TestServerDumpJSON, constants.DumpFileFullPath(
-		cfg.DebugConfig.ServerDumpFilename), true)
+		config.Config.DebugConfig.ServerDumpFilename), true)
 	if err != nil {
 		panic(fmt.Sprintf("Test dump file creation error: %s", err))
 	}
@@ -49,17 +48,17 @@ func init() {
 		r := mux.NewRouter().StrictSlash(true)
 		for _, ar := range apiRoutes {
 			var handler http.Handler
-			handler = compressGzip(ar.handlerFunc, cfg.WebConfig.CompressResponses)
+			handler = compressGzip(ar.handlerFunc, config.Config.WebConfig.CompressResponses)
 
 			r.Methods(ar.method).
 				MatcherFunc(pathQStrToLowerMatcherFunc(r, ar.path, ar.queryStrings,
 				getRequiredQryStringCount(ar.queryStrings))).
 				Name(ar.name).
 				Handler(http.TimeoutHandler(handler,
-				time.Duration(cfg.WebConfig.APIWebTimeout)*time.Second,
+				time.Duration(config.Config.WebConfig.APIWebTimeout)*time.Second,
 				`{"error":"Timeout"}`))
 		}
-		err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.WebConfig.APIWebPort), r)
+		err := http.ListenAndServe(fmt.Sprintf(":%d", config.Config.WebConfig.APIWebPort), r)
 		if err != nil {
 			panic("Unable to start web server")
 		}

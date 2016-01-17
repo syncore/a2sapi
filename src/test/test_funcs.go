@@ -18,13 +18,15 @@ func SetupEnvironment() {
 		panic("Unable to change directory for tests")
 	}
 	// Remove old test files
-	deleteFiles(constants.TestTempDirectory,
-		constants.DumpFileFullPath(
-			config.ReadConfig().DebugConfig.ServerDumpFilename))
+	deleteFiles(constants.TestTempDirectory)
 
-	// use testing configuration
+	// Use testing configuration
 	config.CreateTestConfig()
 	constants.IsTest = true
+
+	// Dump is not in test directory and needs config access
+	deleteFiles(constants.DumpFileFullPath(
+		config.Config.DebugConfig.ServerDumpFilename))
 }
 
 func deleteFiles(filepaths ...string) {

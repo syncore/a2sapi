@@ -63,15 +63,15 @@ func deleteLogs(lt constants.LogType) error {
 	return nil
 }
 
-func isMaxLogSizeExceeded(lt constants.LogType, cfg *config.Config) bool {
+func isMaxLogSizeExceeded(lt constants.LogType) bool {
 	f, err := os.Stat(getLogPath(lt))
 	if err != nil {
 		return false
 	}
-	return f.Size() > cfg.LogConfig.MaximumLogSize*1024
+	return f.Size() > config.Config.LogConfig.MaximumLogSize*1024
 }
 
-func logDirNeedsCleaning(lt constants.LogType, cfg *config.Config) bool {
+func logDirNeedsCleaning(lt constants.LogType) bool {
 	files, err := ioutil.ReadDir(constants.LogDirectory)
 	if err != nil {
 		return false
@@ -89,7 +89,7 @@ func logDirNeedsCleaning(lt constants.LogType, cfg *config.Config) bool {
 		}
 		logCount++
 	}
-	return logCount > cfg.LogConfig.MaximumLogCount
+	return logCount > config.Config.LogConfig.MaximumLogCount
 }
 
 func getLogFiles(lt constants.LogType) ([]string, error) {
@@ -178,9 +178,9 @@ func verifyLogPaths(lt constants.LogType) error {
 	return nil
 }
 
-func verifyLogSettings(lt constants.LogType, cfg *config.Config) error {
+func verifyLogSettings(lt constants.LogType) error {
 	// too many stale logs
-	if logDirNeedsCleaning(lt, cfg) {
+	if logDirNeedsCleaning(lt) {
 		// delete stale logs
 		if err := deleteLogs(lt); err != nil {
 			return fmt.Errorf("verifyLogSettings error: %s\n", err)
@@ -191,7 +191,7 @@ func verifyLogSettings(lt constants.LogType, cfg *config.Config) error {
 		}
 	}
 	// log file to be written to is too large
-	if isMaxLogSizeExceeded(lt, cfg) {
+	if isMaxLogSizeExceeded(lt) {
 		latestlog, _, err := getLatestAndEarliestLog(lt)
 		if err != nil {
 			return fmt.Errorf("verifyLogSettings error: %s\n", err)
@@ -228,15 +228,13 @@ func verifyLogSettings(lt constants.LogType, cfg *config.Config) error {
 
 func writeLogEntry(lt constants.LogType, loglevel logLevel, msg string,
 	text ...interface{}) error {
-	cfg := config.ReadConfig()
-
-	if lt == constants.LTypeApp && !cfg.LogConfig.EnableAppLogging {
+	if lt == constants.LTypeApp && !config.Config.LogConfig.EnableAppLogging {
 		return nil
-	} else if lt == constants.LTypeDebug && !cfg.DebugConfig.EnableDebugMessages {
+	} else if lt == constants.LTypeDebug && !config.Config.DebugConfig.EnableDebugMessages {
 		return nil
-	} else if lt == constants.LTypeSteam && !cfg.LogConfig.EnableSteamLogging {
+	} else if lt == constants.LTypeSteam && !config.Config.LogConfig.EnableSteamLogging {
 		return nil
-	} else if lt == constants.LTypeWeb && !cfg.LogConfig.EnableWebLogging {
+	} else if lt == constants.LTypeWeb && !config.Config.LogConfig.EnableWebLogging {
 		return nil
 	}
 
@@ -250,7 +248,7 @@ func writeLogEntry(lt constants.LogType, loglevel logLevel, msg string,
 	if err := verifyLogPaths(lt); err != nil {
 		return err
 	}
-	if err := verifyLogSettings(lt, cfg); err != nil {
+	if err := verifyLogSettings(lt); err != nil {
 		return err
 	}
 	f, err := os.OpenFile(getLogPath(lt), os.O_RDWR|os.O_APPEND, 0666)

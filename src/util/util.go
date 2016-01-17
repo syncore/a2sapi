@@ -96,13 +96,12 @@ func WriteJSONConfig(cfg interface{}, directory, fullpath string) error {
 // ReadTillNul takes a slice of bytes b and reads up until it encounters the
 // first null terminator, returning the bytes read up until that point as a string.
 func ReadTillNul(b []byte) string {
-	var s []byte
-	for i := range b {
-		if b[i] != '\x00' {
-			s = append(s, b[i])
-		} else {
+	end := 0
+	for i := 0; i < len(b); i++ {
+		if b[i] == 0 {
+			end = i
 			break
 		}
 	}
-	return string(s)
+	return string(b[:end])
 }

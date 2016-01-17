@@ -20,7 +20,7 @@ type MasterQuery struct {
 const masterServerHost = "hl2master.steampowered.com:27011"
 
 func getServers(filter *filters.Filter) ([]string, error) {
-	maxHosts := config.ReadConfig().SteamConfig.MaximumHostsToReceive
+	maxHosts := config.Config.SteamConfig.MaximumHostsToReceive
 	var serverlist []string
 	var c net.Conn
 	var err error
