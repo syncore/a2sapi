@@ -45,10 +45,10 @@ func getServerInfo(host string, timeout int) ([]byte, error) {
 	return serverInfo, nil
 }
 
-func parseServerInfo(serverinfo []byte) (*models.SteamServerInfo, error) {
+func parseServerInfo(serverinfo []byte) (models.SteamServerInfo, error) {
 	if !bytes.HasPrefix(serverinfo, expectedInfoRespHeader) {
 		logger.LogSteamError(ErrPacketHeader)
-		return nil, ErrPacketHeader
+		return models.SteamServerInfo{}, ErrPacketHeader
 	}
 
 	serverinfo = bytes.TrimLeft(serverinfo, headerStr)
@@ -56,7 +56,7 @@ func parseServerInfo(serverinfo []byte) (*models.SteamServerInfo, error) {
 	// no info (should usually not happen)
 	if len(serverinfo) <= 1 {
 		logger.LogSteamError(ErrNoInfo)
-		return nil, ErrNoInfo
+		return models.SteamServerInfo{}, ErrNoInfo
 	}
 
 	serverinfo = serverinfo[1:] // 0x49
@@ -74,7 +74,8 @@ func parseServerInfo(serverinfo []byte) (*models.SteamServerInfo, error) {
 	id := int16(binary.LittleEndian.Uint16(serverinfo[:2]))
 	serverinfo = serverinfo[2:]
 	if id >= 2400 && id <= 2412 {
-		return nil, logger.LogSteamErrorf("The Ship servers are not supported")
+		return models.SteamServerInfo{},
+			logger.LogSteamErrorf("The Ship servers are not supported")
 	}
 	players := int16(serverinfo[0])
 	serverinfo = serverinfo[1:]
@@ -147,7 +148,7 @@ func parseServerInfo(serverinfo []byte) (*models.SteamServerInfo, error) {
 		servertype = "sourcetv"
 	}
 
-	return &models.SteamServerInfo{
+	return models.SteamServerInfo{
 		Protocol:    protocol,
 		Name:        name,
 		Map:         mapname,
@@ -162,7 +163,7 @@ func parseServerInfo(serverinfo []byte) (*models.SteamServerInfo, error) {
 		Visibility:  visibility,
 		VAC:         vac,
 		Version:     version,
-		ExtraData: &models.SteamExtraData{
+		ExtraData: models.SteamExtraData{
 			Port:         port,
 			SteamID:      steamid,
 			SourceTVPort: sourcetvport,
@@ -177,8 +178,8 @@ func parseServerInfo(serverinfo []byte) (*models.SteamServerInfo, error) {
 // failed hosts for a total of retrycount times, returning a host to A2S_INFO
 // mapping for any hosts that were successfully retried.
 func RetryFailedInfoReq(failed []string,
-	retrycount int) map[string]*models.SteamServerInfo {
-	m := make(map[string]*models.SteamServerInfo)
+	retrycount int) map[string]models.SteamServerInfo {
+	m := make(map[string]models.SteamServerInfo)
 	var f []string
 	var wg sync.WaitGroup
 	var mut sync.Mutex
@@ -208,18 +209,18 @@ func RetryFailedInfoReq(failed []string,
 }
 
 // GetInfoForServer requests A2S_INFO for a given host within timeout seconds.
-func GetInfoForServer(host string, timeout int) (*models.SteamServerInfo, error) {
+func GetInfoForServer(host string, timeout int) (models.SteamServerInfo, error) {
 	// Caller will log. Return err instead of wrapped logger.LogSteamError so as not
 	// to interfere with custom error types that need to be analyzed when
 	// determining if retry needs to be done.
 	si, err := getServerInfo(host, timeout)
 	if err != nil {
-		return nil, err
+		return models.SteamServerInfo{}, err
 	}
 
 	serverinfo, err := parseServerInfo(si)
 	if err != nil {
-		return nil, err
+		return models.SteamServerInfo{}, err
 	}
 	return serverinfo, nil
 }

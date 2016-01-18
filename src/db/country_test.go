@@ -26,9 +26,9 @@ func TestGetCountryInfo(t *testing.T) {
 		t.Fatalf("Error opening country database: %s", err)
 	}
 	defer cdb.Close()
-	c := make(chan *models.DbCountry, 1)
+	c := make(chan models.DbCountry, 1)
 	ip := "192.211.62.11"
-	cinfo := &models.DbCountry{}
+	cinfo := models.DbCountry{}
 	go GetCountryInfo(c, cdb, ip)
 	cinfo = <-c
 	if !strings.EqualFold(cinfo.CountryCode, "US") {
@@ -36,7 +36,7 @@ func TestGetCountryInfo(t *testing.T) {
 			ip, cinfo.CountryCode)
 	}
 	ip = "89.20.244.197"
-	cinfo = &models.DbCountry{}
+	cinfo = models.DbCountry{}
 	go GetCountryInfo(c, cdb, ip)
 	cinfo = <-c
 	if !strings.EqualFold(cinfo.CountryCode, "NO") {

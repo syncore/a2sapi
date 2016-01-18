@@ -18,6 +18,8 @@ import (
 var promptColor = color.New(color.FgHiGreen).SprintfFunc()
 var errorColor = color.New(color.FgHiRed).PrintlnFunc()
 var newline = getNewLineForOS()
+
+// Config represents the application-wide configuration.
 var Config *Cfg
 
 // Cfg represents logging, steam-related, and API-related options.
@@ -35,12 +37,10 @@ func getNewLineForOS() string {
 	return "\n"
 }
 
-// InitConfig reads the configuration file from disk and returns a pointer to
-// a struct that contains the various configuration values if successful, otherwise
-// panics.
+// InitConfig reads the configuration file from disk and if successful, sets the
+// application wide-configuration. Otherwise, it will panic.
 func InitConfig() {
 	if Config != nil {
-		fmt.Println("Config already initialized!")
 		return
 	}
 

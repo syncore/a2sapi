@@ -8,16 +8,16 @@ import (
 	"testing"
 )
 
-var testData *a2sData
+var testData a2sData
 
 func init() {
 	test.SetupEnvironment()
-	hostsgames := make(map[string]*filters.Game, 2)
+	hostsgames := make(map[string]filters.Game, 2)
 	hostsgames["54.172.5.67:25801"] = filters.GameReflex
 	hostsgames["192.211.62.11:27960"] = filters.GameQuakeLive
 
-	info := make(map[string]*models.SteamServerInfo, 2)
-	info["54.172.5.67:25801"] = &models.SteamServerInfo{
+	info := make(map[string]models.SteamServerInfo, 2)
+	info["54.172.5.67:25801"] = models.SteamServerInfo{
 		Protocol:    17,
 		Name:        "TurboPixel Appreciation Society (Official) #1",
 		Map:         "xfdm2",
@@ -30,7 +30,7 @@ func init() {
 		Environment: "Windows",
 		VAC:         1,
 		Version:     "0.38.2",
-		ExtraData: &models.SteamExtraData{
+		ExtraData: models.SteamExtraData{
 			Port:         25800,
 			SteamID:      90098615517053960,
 			SourceTVPort: 0,
@@ -39,7 +39,7 @@ func init() {
 			GameID:       328070,
 		},
 	}
-	info["192.211.62.11:27960"] = &models.SteamServerInfo{
+	info["192.211.62.11:27960"] = models.SteamServerInfo{
 		Protocol:    17,
 		Name:        "exile.syncore.org | US-Central #1 | Competitive",
 		Map:         "overkill",
@@ -52,7 +52,7 @@ func init() {
 		Environment: "Linux",
 		VAC:         1,
 		Version:     "1066",
-		ExtraData: &models.SteamExtraData{
+		ExtraData: models.SteamExtraData{
 			Port:         27960,
 			SteamID:      90098677041473542,
 			SourceTVPort: 0,
@@ -107,39 +107,39 @@ func init() {
 	r["version"] = "1066 linux-x64 Dec 17 2015 15:36:49"
 	rules["192.211.62.11:27960"] = r
 
-	players := make(map[string][]*models.SteamPlayerInfo, 2)
-	players["54.172.5.67:25801"] = []*models.SteamPlayerInfo{
-		&models.SteamPlayerInfo{
+	players := make(map[string][]models.SteamPlayerInfo, 2)
+	players["54.172.5.67:25801"] = []models.SteamPlayerInfo{
+		models.SteamPlayerInfo{
 			Name:              "KovaaK",
 			Score:             92,
 			TimeConnectedSecs: 4317.216,
 			TimeConnectedTot:  "1h11m57s",
 		},
-		&models.SteamPlayerInfo{
+		models.SteamPlayerInfo{
 			Name:              "Sharqosity",
 			Score:             42,
 			TimeConnectedSecs: 3428.6987,
 			TimeConnectedTot:  "57m8s",
 		},
-		&models.SteamPlayerInfo{
+		models.SteamPlayerInfo{
 			Name:              "dhaK",
 			Score:             42,
 			TimeConnectedSecs: 1730.0668,
 			TimeConnectedTot:  "28m50s",
 		},
-		&models.SteamPlayerInfo{
+		models.SteamPlayerInfo{
 			Name:              "yoo",
 			Score:             45,
 			TimeConnectedSecs: 467.6571,
 			TimeConnectedTot:  "7m47s",
 		},
-		&models.SteamPlayerInfo{
+		models.SteamPlayerInfo{
 			Name:              "twitch.tv/liveanton - SANE",
 			Score:             75,
 			TimeConnectedSecs: 452.20792,
 			TimeConnectedTot:  "7m32s",
 		},
-		&models.SteamPlayerInfo{
+		models.SteamPlayerInfo{
 			Name:              "ObviouslyBuggedPlayer",
 			Score:             0,
 			TimeConnectedSecs: 24120.2000,
@@ -147,7 +147,7 @@ func init() {
 		},
 	}
 	players["192.211.62.11:27960"] = nil
-	testData = &a2sData{
+	testData = a2sData{
 		HostsGames: hostsgames,
 		Info:       info,
 		Rules:      rules,
@@ -164,8 +164,8 @@ func TestBuildServerList(t *testing.T) {
 		t.Fatalf("Expected 2 servers, got: %d", len(asl.Servers))
 	}
 	// Slice not guaranteed to be in order
-	var reflexServer *models.APIServer
-	var qlServer *models.APIServer
+	var reflexServer models.APIServer
+	var qlServer models.APIServer
 	if asl.Servers[0].Info.ExtraData.GameID == 282440 {
 		qlServer = asl.Servers[0]
 		reflexServer = asl.Servers[1]

@@ -162,8 +162,8 @@ func queryMasterServer(conn net.Conn, startaddress string,
 }
 
 // NewMasterQuery initiates a new Steam Master server query for a given filter,
-// returning a pointer to a MasterQuery struct containing the hosts retrieved in
-// the event of success or an error in the event of failure.
+// returning a MasterQuery struct containing the hosts retrieved in the event of
+// success or an empty struct and an error in the event of failure.
 func NewMasterQuery(filter filters.Filter) (MasterQuery, error) {
 	sl, err := getServers(filter)
 	if err != nil {

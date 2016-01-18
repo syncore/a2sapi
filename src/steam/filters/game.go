@@ -198,8 +198,8 @@ func GetGameNames() []string {
 	return names
 }
 
-// GetGameByName searches the list of pre-defined games and returns a pointer to
-// a Game struct based on the name of the game.
+// GetGameByName searches the list of pre-defined games and returns a a Game
+// struct based on the name of the game.
 func GetGameByName(name string) Game {
 	for _, g := range ReadGames() {
 		if strings.EqualFold(name, g.Name) {
@@ -209,8 +209,8 @@ func GetGameByName(name string) Game {
 	return GameUnspecified
 }
 
-// GetGameByAppID searches the list of pre-defined games and returns a pointer to
-// a Game struct based on the AppID of the game.
+// GetGameByAppID searches the list of pre-defined games and returns a Game struct
+// based on the AppID of the game.
 func GetGameByAppID(appid uint64) Game {
 	for _, g := range ReadGames() {
 		if appid == g.AppID {

@@ -40,9 +40,6 @@ func buildServerList(data a2sData, addtoServerDB bool) (*models.APIServerList,
 
 	for host, game := range data.HostsGames {
 		info, iok := data.Info[host]
-		if info == nil {
-			info = &models.SteamServerInfo{}
-		}
 		players, pok := data.Players[host]
 		if players == nil {
 			// return empty array instead of nil pointers (null) in json

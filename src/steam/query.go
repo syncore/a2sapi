@@ -12,13 +12,13 @@ import (
 
 type a2sData struct {
 	HostsGames map[string]filters.Game
-	Info       map[string]*models.SteamServerInfo
+	Info       map[string]models.SteamServerInfo
 	Rules      map[string]map[string]string
 	Players    map[string][]models.SteamPlayerInfo
 }
 
-func batchInfoQuery(servers []string) map[string]*models.SteamServerInfo {
-	m := make(map[string]*models.SteamServerInfo)
+func batchInfoQuery(servers []string) map[string]models.SteamServerInfo {
+	m := make(map[string]models.SteamServerInfo)
 	var wg sync.WaitGroup
 	var mut sync.Mutex
 	var failed []string
@@ -134,8 +134,8 @@ func DirectQuery(hosts []string) (*models.APIServerList, error) {
 
 	for _, h := range hosts {
 		logger.WriteDebug("direct query for %s. will try to figure out needed queries", h)
-		if info[h] != nil {
-			logger.WriteDebug("A2S_INFO not nil. got gameid: %d", info[h].ExtraData.GameID)
+		if (info[h] != models.SteamServerInfo{}) {
+			logger.WriteDebug("A2S_INFO not empty. got gameid: %d", info[h].ExtraData.GameID)
 			fg := filters.GetGameByAppID(info[h].ExtraData.GameID)
 			hg[h] = fg
 			if !fg.IgnoreRules {

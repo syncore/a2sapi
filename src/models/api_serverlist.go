@@ -25,7 +25,7 @@ type APIServer struct {
 	IP              string             `json:"ip"`
 	Port            int                `json:"port"`
 	CountryInfo     DbCountry          `json:"location"`
-	Info            *SteamServerInfo   `json:"info"`
+	Info            SteamServerInfo    `json:"info"`
 	Players         []SteamPlayerInfo  `json:"players"`
 	FilteredPlayers FilteredPlayerInfo `json:"filteredPlayers"`
 	Rules           map[string]string  `json:"rules"`
