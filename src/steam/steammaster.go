@@ -76,8 +76,10 @@ func getServers(filter filters.Filter) ([]string, error) {
 		}
 	}
 	// remove 0.0.0.0:0
-	if serverlist[len(serverlist)-1] == "0.0.0.0:0" {
-		serverlist = serverlist[:len(serverlist)-1]
+	if len(serverlist) != 0 {
+		if serverlist[len(serverlist)-1] == "0.0.0.0:0" {
+			serverlist = serverlist[:len(serverlist)-1]
+		}
 	}
 	return serverlist, nil
 }
