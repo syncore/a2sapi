@@ -37,7 +37,7 @@ var reflexGameTypes = map[string]gtype{
 	"tdm":  {"tdm", "Team Deathmatch"},
 }
 
-func getGameType(game *filters.Game, server *models.APIServer) (shortname,
+func getGameType(game filters.Game, server models.APIServer) (shortname,
 	longname string) {
 	// Quake Live
 	if strings.EqualFold(game.Name, filters.GameQuakeLive.Name) {

@@ -19,7 +19,7 @@ type MasterQuery struct {
 
 const masterServerHost = "hl2master.steampowered.com:27011"
 
-func getServers(filter *filters.Filter) ([]string, error) {
+func getServers(filter filters.Filter) ([]string, error) {
 	maxHosts := config.Config.SteamConfig.MaximumHostsToReceive
 	var serverlist []string
 	var c net.Conn
@@ -119,7 +119,7 @@ func parseIP(k []byte) (string, error) {
 }
 
 func queryMasterServer(conn net.Conn, startaddress string,
-	filter *filters.Filter) ([]byte, error) {
+	filter filters.Filter) ([]byte, error) {
 	// Note: the connection is closed by the caller, do not close here, otherwise
 	// Steam will continue to send the first batch of IPs and won't progress to the next batch
 	startaddress = fmt.Sprintf("%s\x00", startaddress)
@@ -164,12 +164,12 @@ func queryMasterServer(conn net.Conn, startaddress string,
 // NewMasterQuery initiates a new Steam Master server query for a given filter,
 // returning a pointer to a MasterQuery struct containing the hosts retrieved in
 // the event of success or an error in the event of failure.
-func NewMasterQuery(filter *filters.Filter) (*MasterQuery, error) {
+func NewMasterQuery(filter filters.Filter) (MasterQuery, error) {
 	sl, err := getServers(filter)
 	if err != nil {
-		return nil, err
+		return MasterQuery{}, err
 	}
 	logger.LogSteamInfo("*** Retrieved %d %s servers.", len(sl), filter.Game.Name)
 
-	return &MasterQuery{Servers: sl}, nil
+	return MasterQuery{Servers: sl}, nil
 }

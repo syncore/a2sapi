@@ -26,13 +26,13 @@ type Game struct {
 
 // GameList represents the list of games.
 type GameList struct {
-	Games []*Game `json:"games"`
+	Games []Game `json:"games"`
 }
 
 // A few default games, additional games can be added from https://steamdb.info/apps/
 var (
 	// GameAlienSwarm Alien Swarm
-	GameAlienSwarm = &Game{
+	GameAlienSwarm = Game{
 		Name:          "AlienSwarm",
 		AppID:         630,
 		IgnoreRules:   false,
@@ -40,7 +40,7 @@ var (
 		IgnoreInfo:    false,
 	}
 	// GameARMA3 ARMA 3
-	GameARMA3 = &Game{
+	GameARMA3 = Game{
 		Name:          "ARMA3",
 		AppID:         107410,
 		IgnoreRules:   false,
@@ -48,7 +48,7 @@ var (
 		IgnoreInfo:    false,
 	}
 	// GameARKSurvivalEvolved ARK: Survival Evolved
-	GameARKSurvivalEvolved = &Game{
+	GameARKSurvivalEvolved = Game{
 		Name:          "ARKSurvivalEvolved",
 		AppID:         346110,
 		IgnoreRules:   false,
@@ -56,7 +56,7 @@ var (
 		IgnoreInfo:    false,
 	}
 	// GameCsGo Counter-Strike: GO
-	GameCsGo = &Game{
+	GameCsGo = Game{
 		Name:          "CSGO",
 		AppID:         730,
 		IgnoreRules:   true, // CSGO no longer sends rules as of 1.32.3.0 (02/21/14)
@@ -64,7 +64,7 @@ var (
 		IgnoreInfo:    false,
 	}
 	// GameCSSource Counter-Strike: Source
-	GameCSSource = &Game{
+	GameCSSource = Game{
 		Name:          "CSSource",
 		AppID:         240,
 		IgnoreRules:   false,
@@ -72,7 +72,7 @@ var (
 		IgnoreInfo:    false,
 	}
 	// GameDayZ DayZ
-	GameDayZ = &Game{
+	GameDayZ = Game{
 		Name:          "DayZ",
 		AppID:         221100,
 		IgnoreRules:   false,
@@ -80,7 +80,7 @@ var (
 		IgnoreInfo:    false,
 	}
 	// GameGarrysMod Garry's Mod
-	GameGarrysMod = &Game{
+	GameGarrysMod = Game{
 		Name:          "GarrysMod",
 		AppID:         4000,
 		IgnoreRules:   false,
@@ -88,7 +88,7 @@ var (
 		IgnoreInfo:    false,
 	}
 	// GameHL2DM Half-Life 2: Deathmatch
-	GameHL2DM = &Game{
+	GameHL2DM = Game{
 		Name:          "HL2DM",
 		AppID:         320,
 		IgnoreRules:   false,
@@ -96,7 +96,7 @@ var (
 		IgnoreInfo:    false,
 	}
 	// GameL4D2 Left 4 Dead 2
-	GameL4D2 = &Game{
+	GameL4D2 = Game{
 		Name:          "L4D2",
 		AppID:         550,
 		IgnoreRules:   false,
@@ -104,7 +104,7 @@ var (
 		IgnoreInfo:    false,
 	}
 	// GameOpposingForce Half-Life: Opposing Force
-	GameOpposingForce = &Game{
+	GameOpposingForce = Game{
 		Name:          "OpposingForce",
 		AppID:         50,
 		IgnoreRules:   false,
@@ -112,7 +112,7 @@ var (
 		IgnoreInfo:    false,
 	}
 	// GameQuakeLive Quake Live
-	GameQuakeLive = &Game{
+	GameQuakeLive = Game{
 		Name:          "QuakeLive",
 		AppID:         282440,
 		IgnoreRules:   false,
@@ -120,7 +120,7 @@ var (
 		IgnoreInfo:    false,
 	}
 	// GameReflex Reflex
-	GameReflex = &Game{
+	GameReflex = Game{
 		Name:          "Reflex",
 		AppID:         328070,
 		IgnoreRules:   true, // Reflex does not implement A2S_RULES
@@ -128,7 +128,7 @@ var (
 		IgnoreInfo:    false,
 	}
 	// GameRust Rust
-	GameRust = &Game{
+	GameRust = Game{
 		Name:          "Rust",
 		AppID:         252490,
 		IgnoreRules:   false,
@@ -136,7 +136,7 @@ var (
 		IgnoreInfo:    false,
 	}
 	// GameTF2 Team Fortress 2
-	GameTF2 = &Game{
+	GameTF2 = Game{
 		Name:          "TF2",
 		AppID:         440,
 		IgnoreRules:   false,
@@ -147,7 +147,7 @@ var (
 	// if unspecified games actually ignore some A2S requests there will be issues.
 	// This is intentionally left out of the defaultGames GameList struct so it
 	//is not user-selectable in the configuration creation.
-	GameUnspecified = &Game{
+	GameUnspecified = Game{
 		Name:          "Unspecified",
 		AppID:         0,
 		IgnoreRules:   false,
@@ -156,7 +156,7 @@ var (
 	}
 
 	defaultGames = GameList{
-		Games: []*Game{
+		Games: []Game{
 			GameAlienSwarm,
 			GameARMA3,
 			GameARKSurvivalEvolved,
@@ -174,7 +174,7 @@ var (
 		},
 	}
 	highServerCountGames = GameList{
-		Games: []*Game{
+		Games: []Game{
 			GameARKSurvivalEvolved,
 			GameARMA3,
 			GameCsGo,
@@ -200,7 +200,7 @@ func GetGameNames() []string {
 
 // GetGameByName searches the list of pre-defined games and returns a pointer to
 // a Game struct based on the name of the game.
-func GetGameByName(name string) *Game {
+func GetGameByName(name string) Game {
 	for _, g := range ReadGames() {
 		if strings.EqualFold(name, g.Name) {
 			return g
@@ -211,7 +211,7 @@ func GetGameByName(name string) *Game {
 
 // GetGameByAppID searches the list of pre-defined games and returns a pointer to
 // a Game struct based on the AppID of the game.
-func GetGameByAppID(appid uint64) *Game {
+func GetGameByAppID(appid uint64) Game {
 	for _, g := range ReadGames() {
 		if appid == g.AppID {
 			return g
@@ -224,8 +224,8 @@ func GetGameByAppID(appid uint64) *Game {
 // whether A2S_RULES, A2S_PLAYERS, and/or AS2_INFO requests should be ignored
 // when performing a query.
 func NewGame(name string, appid uint64, ignoreRules, ignorePlayers,
-	ignoreInfo bool) *Game {
-	return &Game{
+	ignoreInfo bool) Game {
+	return Game{
 		Name:          name,
 		AppID:         appid,
 		IgnoreRules:   ignoreRules,
@@ -236,7 +236,7 @@ func NewGame(name string, appid uint64, ignoreRules, ignorePlayers,
 
 // ReadGames reads the game file from disk and returns a slice to a pointer of
 // Game structs if successful, otherwise panics.
-func ReadGames() []*Game {
+func ReadGames() []Game {
 	var f *os.File
 	var err error
 	f, err = os.Open(constants.GameFileFullPath)
@@ -252,8 +252,8 @@ func ReadGames() []*Game {
 	defer f.Close()
 	r := bufio.NewReader(f)
 	d := json.NewDecoder(r)
-	games := &GameList{}
-	if err := d.Decode(games); err != nil {
+	games := GameList{}
+	if err := d.Decode(&games); err != nil {
 		panic(fmt.Sprintf("Error decoding games file file: %s\n", err))
 	}
 	return games.Games

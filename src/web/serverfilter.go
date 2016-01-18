@@ -27,8 +27,8 @@ func getSrvFilterFromQString(m map[string][]string, qs []querystring) []slQueryF
 }
 
 func findMatches(sqf slQueryFilter,
-	servers []*models.APIServer) []*models.APIServer {
-	var matched []*models.APIServer
+	servers []models.APIServer) []models.APIServer {
+	var matched []models.APIServer
 	var ssearch string
 	bsearcht, bsearchf, useContains := false, false, false
 
@@ -123,7 +123,7 @@ func filterServers(sqf []slQueryFilter,
 	if a == nil {
 		return models.GetDefaultServerList()
 	}
-	filtered := make([]*models.APIServer, len(a.Servers))
+	filtered := make([]models.APIServer, len(a.Servers))
 	copy(filtered, a.Servers)
 
 	for _, s := range sqf {
@@ -131,7 +131,7 @@ func filterServers(sqf []slQueryFilter,
 	}
 	if filtered == nil {
 		// JSON empty array instead of null
-		filtered = make([]*models.APIServer, 0)
+		filtered = make([]models.APIServer, 0)
 	}
 	return &models.APIServerList{
 		RetrievedAt:        a.RetrievedAt,

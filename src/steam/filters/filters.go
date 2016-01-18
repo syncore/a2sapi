@@ -17,7 +17,7 @@ type SrvFilter []byte
 // Filter is our internal wrapper for a specified game, and its Master server
 // region code and Master server filters
 type Filter struct {
-	Game    *Game
+	Game    Game
 	Region  SrvRegion
 	Filters []SrvFilter
 }
@@ -118,7 +118,7 @@ var (
 // NewFilter creates a new filter for use with a master server query based on
 // a game to query, its region code, and any other additional master server filters
 // that should be sent with the request to the master server.
-func NewFilter(game *Game, region SrvRegion, filters []SrvFilter) *Filter {
+func NewFilter(game Game, region SrvRegion, filters []SrvFilter) Filter {
 	if filters != nil {
 		for i, f := range filters {
 			if bytes.HasPrefix(f, []byte("\\appid\\")) {
@@ -132,7 +132,7 @@ func NewFilter(game *Game, region SrvRegion, filters []SrvFilter) *Filter {
 	} else {
 		filters = append(filters, AppIDFilter(fmt.Sprintf("%d", game.AppID)))
 	}
-	return &Filter{
+	return Filter{
 		Game:    game,
 		Region:  region,
 		Filters: filters,

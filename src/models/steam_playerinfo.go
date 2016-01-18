@@ -14,6 +14,6 @@ type SteamPlayerInfo struct {
 // exist on the server and are not bugged or stuck due to the Steam de-auth
 // bug that exists in game servers for certain games (such as Quake Live)
 type FilteredPlayerInfo struct {
-	FilteredPlayerCount int                `json:"count"`
-	FilteredPlayers     []*SteamPlayerInfo `json:"players"`
+	FilteredPlayerCount int               `json:"count"`
+	FilteredPlayers     []SteamPlayerInfo `json:"players"`
 }

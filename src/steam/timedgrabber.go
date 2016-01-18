@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func retrieve(filter *filters.Filter) (*models.APIServerList, error) {
+func retrieve(filter filters.Filter) (*models.APIServerList, error) {
 	mq, err := NewMasterQuery(filter)
 	if err != nil {
 		return nil, logger.LogSteamErrorf("Master server error: %s", err)
@@ -24,8 +24,8 @@ func retrieve(filter *filters.Filter) (*models.APIServerList, error) {
 		return nil, logger.LogAppErrorf("Cannot ignore all three AS2 requests!")
 	}
 
-	data := &a2sData{}
-	hg := make(map[string]*filters.Game, len(mq.Servers))
+	data := a2sData{}
+	hg := make(map[string]filters.Game, len(mq.Servers))
 	for _, h := range mq.Servers {
 		hg[h] = filter.Game
 	}
@@ -86,7 +86,7 @@ func dumpServersToDisk(gamename string, sl *models.APIServerList) error {
 // filter from the Steam Master server after an initial delay of initialDelay
 // seconds. It retrieves the list every timeBetweenQueries seconds thereafter.
 // A bool can be sent to the stop channel to cancel all timed retrievals.
-func StartMasterRetrieval(stop chan bool, filter *filters.Filter,
+func StartMasterRetrieval(stop chan bool, filter filters.Filter,
 	initialDelay int, timeBetweenQueries int) {
 	retrticker := time.NewTicker(time.Duration(timeBetweenQueries) * time.Second)
 
@@ -109,7 +109,7 @@ func StartMasterRetrieval(stop chan bool, filter *filters.Filter,
 	for {
 		select {
 		case <-retrticker.C:
-			go func(*filters.Filter) {
+			go func(filters.Filter) {
 				logger.WriteDebug("%s: Starting %s master server query", time.Now().Format(
 					"Mon Jan 2 15:04:05 2006 EST"), filter.Game.Name)
 				logger.LogAppInfo("%s: Starting %s master server query", time.Now().Format(

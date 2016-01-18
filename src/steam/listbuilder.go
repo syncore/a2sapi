@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
+func buildServerList(data a2sData, addtoServerDB bool) (*models.APIServerList,
 	error) {
 	// Cannot ignore all three requests
 	for _, g := range data.HostsGames {
@@ -28,7 +28,7 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 	var success bool
 	srvDBhosts := make(map[string]string, len(data.HostsGames))
 	sl := &models.APIServerList{
-		Servers:       make([]*models.APIServer, 0),
+		Servers:       make([]models.APIServer, 0),
 		FailedServers: make([]string, 0),
 	}
 
@@ -46,7 +46,7 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 		players, pok := data.Players[host]
 		if players == nil {
 			// return empty array instead of nil pointers (null) in json
-			players = make([]*models.SteamPlayerInfo, 0)
+			players = make([]models.SteamPlayerInfo, 0)
 		}
 		rules, rok := data.Rules[host]
 		success = iok && rok && pok
@@ -72,7 +72,7 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 		}
 
 		if success {
-			srv := &models.APIServer{
+			srv := models.APIServer{
 				Game:            game.Name,
 				Players:         players,
 				FilteredPlayers: removeBuggedPlayers(players),
@@ -94,7 +94,7 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 				if !strings.EqualFold(game.Name, filters.GameUnspecified.String()) {
 					srvDBhosts[host] = game.Name
 				}
-				loc := make(chan *models.DbCountry, 1)
+				loc := make(chan models.DbCountry, 1)
 				go db.GetCountryInfo(loc, cdb, ip)
 				srv.CountryInfo = <-loc
 			}
@@ -131,12 +131,12 @@ func buildServerList(data *a2sData, addtoServerDB bool) (*models.APIServerList,
 // from the player list in games like Quake Live where certain servers do not
 // correctly send the Steam de-auth message, causing "ghost" or phantom players
 // to exist on servers.
-func removeBuggedPlayers(players []*models.SteamPlayerInfo) *models.FilteredPlayerInfo {
-	rpi := &models.FilteredPlayerInfo{
+func removeBuggedPlayers(players []models.SteamPlayerInfo) models.FilteredPlayerInfo {
+	rpi := models.FilteredPlayerInfo{
 		FilteredPlayerCount: len(players),
 		FilteredPlayers:     players,
 	}
-	var filtered []*models.SteamPlayerInfo
+	var filtered []models.SteamPlayerInfo
 	// 4 hour threshold with no score; also can leave bots intact in list
 	for _, p := range players {
 		if p.Score == 0 && int(p.TimeConnectedSecs) > (3600*4) {
@@ -147,7 +147,7 @@ func removeBuggedPlayers(players []*models.SteamPlayerInfo) *models.FilteredPlay
 	// Empty players (nil) displayed as empty array in JSON, not null
 	if len(filtered) == 0 {
 		rpi.FilteredPlayerCount = 0
-		rpi.FilteredPlayers = make([]*models.SteamPlayerInfo, 0)
+		rpi.FilteredPlayers = make([]models.SteamPlayerInfo, 0)
 	} else {
 		rpi.FilteredPlayerCount = len(filtered)
 		rpi.FilteredPlayers = filtered

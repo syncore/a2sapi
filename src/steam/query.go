@@ -11,10 +11,10 @@ import (
 )
 
 type a2sData struct {
-	HostsGames map[string]*filters.Game
+	HostsGames map[string]filters.Game
 	Info       map[string]*models.SteamServerInfo
 	Rules      map[string]map[string]string
-	Players    map[string][]*models.SteamPlayerInfo
+	Players    map[string][]models.SteamPlayerInfo
 }
 
 func batchInfoQuery(servers []string) map[string]*models.SteamServerInfo {
@@ -48,8 +48,8 @@ func batchInfoQuery(servers []string) map[string]*models.SteamServerInfo {
 	return m
 }
 
-func batchPlayerQuery(servers []string) map[string][]*models.SteamPlayerInfo {
-	m := make(map[string][]*models.SteamPlayerInfo)
+func batchPlayerQuery(servers []string) map[string][]models.SteamPlayerInfo {
+	m := make(map[string][]models.SteamPlayerInfo)
 	var wg sync.WaitGroup
 	var mut sync.Mutex
 	var failed []string
@@ -122,7 +122,7 @@ func batchRuleQuery(servers []string) map[string]map[string]string {
 // not true would cause games with incomplete support for all three A2S queries
 // (e.g. Reflex) to always fail. A production environment should use Query() instead.
 func DirectQuery(hosts []string) (*models.APIServerList, error) {
-	hg := make(map[string]*filters.Game, len(hosts))
+	hg := make(map[string]filters.Game, len(hosts))
 
 	// Try to account for the fact that we can't determine the game ahead of time
 	// for user-specified direct host queries -- a number of assumptions:
@@ -153,7 +153,7 @@ func DirectQuery(hosts []string) (*models.APIServerList, error) {
 			hg[h] = filters.GameUnspecified
 		}
 	}
-	data := &a2sData{
+	data := a2sData{
 		HostsGames: hg,
 		Info:       info,
 		Rules:      batchRuleQuery(needsRules),
@@ -170,7 +170,7 @@ func DirectQuery(hosts []string) (*models.APIServerList, error) {
 // and returns it in a format that is presented to the API. It takes a map consisting
 // of host(s) and their corresponding game names (i.e: k:127.0.0.1:27960, v:"QuakeLive")
 func Query(hostsgames map[string]string) (*models.APIServerList, error) {
-	hg := make(map[string]*filters.Game, len(hostsgames))
+	hg := make(map[string]filters.Game, len(hostsgames))
 	needsPlayers := make([]string, len(hostsgames))
 	needsRules := make([]string, len(hostsgames))
 	needsInfo := make([]string, len(hostsgames))
@@ -188,7 +188,7 @@ func Query(hostsgames map[string]string) (*models.APIServerList, error) {
 			needsInfo = append(needsInfo, host)
 		}
 	}
-	data := &a2sData{
+	data := a2sData{
 		HostsGames: hg,
 		Info:       batchInfoQuery(needsInfo),
 		Rules:      batchRuleQuery(needsRules),

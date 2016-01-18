@@ -221,7 +221,7 @@ func GetIDsAPIQuery(result chan *models.DbServerID, db *sql.DB, hosts []string) 
 		host, game := "", ""
 
 		for rows.Next() {
-			sid := &models.DbServer{}
+			sid := models.DbServer{}
 			if err := rows.Scan(&id, &host, &game); err != nil {
 				logger.LogAppErrorf(
 					"GetIDsAPIQuery: Error querying database to retrieve ID for host %s: %s",

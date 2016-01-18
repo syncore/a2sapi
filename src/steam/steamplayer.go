@@ -61,7 +61,7 @@ func getPlayerInfo(host string, timeout int) ([]byte, error) {
 	return pi, nil
 }
 
-func parsePlayerInfo(unparsed []byte) ([]*models.SteamPlayerInfo, error) {
+func parsePlayerInfo(unparsed []byte) ([]models.SteamPlayerInfo, error) {
 	if !bytes.HasPrefix(unparsed, expectedPlayerChunkHeader) {
 		logger.LogSteamError(ErrPacketHeader)
 		return nil, ErrPacketHeader
@@ -73,7 +73,7 @@ func parsePlayerInfo(unparsed []byte) ([]*models.SteamPlayerInfo, error) {
 		return nil, ErrNoPlayers
 	}
 
-	players := []*models.SteamPlayerInfo{}
+	players := []models.SteamPlayerInfo{}
 
 	// index 0 = '44' | 1 = 'numplayers' byte | 2 = player 1 separator byte '00'
 	// | 3 = start of player 1 name; additional player start indexes are player separator + 1
@@ -92,7 +92,7 @@ func parsePlayerInfo(unparsed []byte) ([]*models.SteamPlayerInfo, error) {
 		startidx = nul + 9
 
 		seconds, timeformatted := getDuration(duration)
-		players = append(players, &models.SteamPlayerInfo{
+		players = append(players, models.SteamPlayerInfo{
 			Name:              string(name),
 			Score:             int32(binary.LittleEndian.Uint32(score)),
 			TimeConnectedSecs: seconds,
@@ -114,9 +114,9 @@ func getDuration(bytes []byte) (float32, string) {
 // failed hosts for a total of retrycount times, returning a host to A2S_PLAYER
 // mapping for any hosts that were successfully retried.
 func RetryFailedPlayersReq(failed []string,
-	retrycount int) map[string][]*models.SteamPlayerInfo {
+	retrycount int) map[string][]models.SteamPlayerInfo {
 
-	m := make(map[string][]*models.SteamPlayerInfo)
+	m := make(map[string][]models.SteamPlayerInfo)
 	var f []string
 	var wg sync.WaitGroup
 	var mut sync.Mutex
@@ -146,7 +146,7 @@ func RetryFailedPlayersReq(failed []string,
 }
 
 // GetPlayersForServer requests A2S_PLAYER info for a given host within timeout seconds.
-func GetPlayersForServer(host string, timeout int) ([]*models.SteamPlayerInfo, error) {
+func GetPlayersForServer(host string, timeout int) ([]models.SteamPlayerInfo, error) {
 	// Caller will log. Return err instead of wrapped logger.LogSteamError so as not
 	// to interfere with custom error types that need to be analyzed when
 	// determining if retry needs to be done.

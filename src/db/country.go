@@ -27,8 +27,8 @@ type mmdbformat struct {
 	} `maxminddb:"subdivisions"`
 }
 
-func getDefaultCountryData() *models.DbCountry {
-	return &models.DbCountry{
+func getDefaultCountryData() models.DbCountry {
+	return models.DbCountry{
 		CountryName: "Unknown",
 		CountryCode: "Unknown",
 		Continent:   "Unknown",
@@ -61,7 +61,7 @@ directory as the a2sapi executable. Error: %s`, dir, err))
 
 // GetCountryInfo attempts to retrieve the country information for a given IP,
 // returning the result as a country model object over the corresponding result channel.
-func GetCountryInfo(ch chan<- *models.DbCountry, db *maxminddb.Reader, ipstr string) {
+func GetCountryInfo(ch chan<- models.DbCountry, db *maxminddb.Reader, ipstr string) {
 	ip := net.ParseIP(ipstr)
 	c := &mmdbformat{}
 	err := db.Lookup(ip, c)
@@ -74,7 +74,7 @@ func GetCountryInfo(ch chan<- *models.DbCountry, db *maxminddb.Reader, ipstr str
 		return
 	}
 
-	countrydata := &models.DbCountry{
+	countrydata := models.DbCountry{
 		CountryName: c.Country.Names["en"],
 		CountryCode: c.Country.IsoCode,
 		Continent:   c.Continent.Names["en"],
