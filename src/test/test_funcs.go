@@ -3,6 +3,7 @@ package test
 import (
 	"a2sapi/src/config"
 	"a2sapi/src/constants"
+	"a2sapi/src/db"
 	"fmt"
 	"os"
 )
@@ -27,6 +28,9 @@ func SetupEnvironment() {
 	// Dump is not in test directory and needs config access
 	deleteFiles(constants.DumpFileFullPath(
 		config.Config.DebugConfig.ServerDumpFilename))
+
+	// Initialize database connections
+	db.InitDBs()
 }
 
 func deleteFiles(filepaths ...string) {

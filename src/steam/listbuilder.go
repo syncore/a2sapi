@@ -9,7 +9,6 @@ import (
 	"a2sapi/src/logger"
 	"a2sapi/src/models"
 	"a2sapi/src/steam/filters"
-	"database/sql"
 	"net"
 	"strconv"
 	"strings"
@@ -31,12 +30,6 @@ func buildServerList(data a2sData, addtoServerDB bool) (*models.APIServerList,
 		Servers:       make([]models.APIServer, 0),
 		FailedServers: make([]string, 0),
 	}
-
-	cdb, err := db.OpenCountryDB()
-	if err != nil {
-		return nil, logger.LogAppError(err)
-	}
-	defer cdb.Close()
 
 	for host, game := range data.HostsGames {
 		info, iok := data.Info[host]
@@ -76,8 +69,8 @@ func buildServerList(data a2sData, addtoServerDB bool) (*models.APIServerList,
 				Rules:           rules,
 				Info:            info,
 			}
-			// Hack for gametype support, which can be found in rules, info, or not
-			// at all depending on the game
+			// Gametype support: gametype can be found in rules, info, or not
+			// at all depending on the game (currently just for QuakeLive & Reflex)
 			srv.Info.GameTypeShort, srv.Info.GameTypeFull = getGameType(game, srv)
 
 			ip, port, serr := net.SplitHostPort(host)
@@ -92,7 +85,7 @@ func buildServerList(data a2sData, addtoServerDB bool) (*models.APIServerList,
 					srvDBhosts[host] = game.Name
 				}
 				loc := make(chan models.DbCountry, 1)
-				go db.GetCountryInfo(loc, cdb, ip)
+				go db.CountryDB.GetCountryInfo(loc, ip)
 				srv.CountryInfo = <-loc
 			}
 			sl.Servers = append(sl.Servers, srv)
@@ -108,12 +101,8 @@ func buildServerList(data a2sData, addtoServerDB bool) (*models.APIServerList,
 	sl.FailedCount = len(sl.FailedServers)
 
 	if len(srvDBhosts) != 0 {
-		sdb, err := db.OpenServerDB()
-		if err != nil {
-			return nil, logger.LogAppError(err)
-		}
-		go db.AddServersToDB(sdb, srvDBhosts)
-		sl = setServerIDForList(sdb, sl)
+		go db.ServerDB.AddServersToDB(srvDBhosts)
+		sl = setServerIDForList(sl)
 	}
 
 	logger.LogAppInfo(
@@ -152,14 +141,13 @@ func removeBuggedPlayers(players []models.SteamPlayerInfo) models.FilteredPlayer
 	return rpi
 }
 
-func setServerIDForList(sdb *sql.DB,
-	sl *models.APIServerList) *models.APIServerList {
+func setServerIDForList(sl *models.APIServerList) *models.APIServerList {
 	toSet := make(map[string]string, len(sl.Servers))
 	for _, s := range sl.Servers {
 		toSet[s.Host] = s.Game
 	}
 	result := make(chan map[string]int64, 1)
-	go db.GetIDsForServerList(result, sdb, toSet)
+	go db.ServerDB.GetIDsForServerList(result, toSet)
 	m := <-result
 
 	for _, s := range sl.Servers {

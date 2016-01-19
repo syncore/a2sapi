@@ -17,8 +17,8 @@ func init() {
 	testData["172.16.0.1"] = "QuakeLive"
 }
 
-func TestCreateServerDB(t *testing.T) {
-	err := createServerDB(constants.TestServerDbFilePath)
+func TestCreateServerDBtable(t *testing.T) {
+	err := createServerDBtable(constants.TestServerDbFilePath)
 	if err != nil {
 		t.Fatalf("Unable to create test DB file: %s", err)
 	}
@@ -30,7 +30,7 @@ func TestAddServersToDB(t *testing.T) {
 		t.Fatalf("Unable to open test database: %s", err)
 	}
 	defer db.Close()
-	AddServersToDB(db, testData)
+	db.AddServersToDB(testData)
 }
 
 func TestGetIDsForServerList(t *testing.T) {
@@ -40,7 +40,7 @@ func TestGetIDsForServerList(t *testing.T) {
 		t.Fatalf("Unable to open test database: %s", err)
 	}
 	defer db.Close()
-	GetIDsForServerList(c, db, testData)
+	db.GetIDsForServerList(c, testData)
 	result := <-c
 	if len(result) != 2 {
 		t.Fatalf("Expected 2 results, got: %d", len(result))
@@ -63,7 +63,7 @@ func TestGetIDsAPIQuery(t *testing.T) {
 	defer db.Close()
 	h1 := []string{"10.0.0.10"}
 	h2 := []string{"172.16.0.1"}
-	GetIDsAPIQuery(c1, db, h1)
+	db.GetIDsAPIQuery(c1, h1)
 	r1 := <-c1
 	if len(r1.Servers) != 1 {
 		t.Fatalf("Expected 1 server, got: %d", len(r1.Servers))
@@ -71,7 +71,7 @@ func TestGetIDsAPIQuery(t *testing.T) {
 	if !strings.EqualFold(r1.Servers[0].Game, "Reflex") {
 		t.Fatalf("Expected result 1 to be Reflex, got: %v", r1.Servers[0].Game)
 	}
-	GetIDsAPIQuery(c2, db, h2)
+	db.GetIDsAPIQuery(c2, h2)
 	r2 := <-c2
 	if len(r2.Servers) != 1 {
 		t.Fatalf("Expected 1 server, got: %d", len(r2.Servers))
@@ -89,7 +89,7 @@ func TestGetHostsAndGameFromIDAPIQuery(t *testing.T) {
 	}
 	defer db.Close()
 	ids := []string{"1", "2"}
-	GetHostsAndGameFromIDAPIQuery(c, db, ids)
+	db.GetHostsAndGameFromIDAPIQuery(c, ids)
 	result := <-c
 	if len(result) != 2 {
 		t.Fatalf("Expected 2 results, got: %d", len(result))

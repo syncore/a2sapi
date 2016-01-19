@@ -29,7 +29,7 @@ func TestGetCountryInfo(t *testing.T) {
 	c := make(chan models.DbCountry, 1)
 	ip := "192.211.62.11"
 	cinfo := models.DbCountry{}
-	go GetCountryInfo(c, cdb, ip)
+	go cdb.GetCountryInfo(c, ip)
 	cinfo = <-c
 	if !strings.EqualFold(cinfo.CountryCode, "US") {
 		t.Fatalf("Expected country code to be US for IP: %s, got: %s",
@@ -37,7 +37,7 @@ func TestGetCountryInfo(t *testing.T) {
 	}
 	ip = "89.20.244.197"
 	cinfo = models.DbCountry{}
-	go GetCountryInfo(c, cdb, ip)
+	go cdb.GetCountryInfo(c, ip)
 	cinfo = <-c
 	if !strings.EqualFold(cinfo.CountryCode, "NO") {
 		t.Fatalf("Expected country code to be NO for IP: %s, got: %s",

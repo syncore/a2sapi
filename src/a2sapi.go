@@ -67,12 +67,8 @@ func launch(isDebug bool) {
 	}
 	// Initialize the application-wide configuration
 	config.InitConfig()
-
-	// Verify that geolocation DB can be read (will panic if it cannot)
-	_, err := db.OpenCountryDB()
-	if err != nil {
-		os.Exit(1)
-	}
+	// Initialize the application-wide database connections (panic on failure)
+	db.InitDBs()
 
 	if !runSilent {
 		printStartInfo()

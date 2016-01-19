@@ -14,7 +14,12 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func createServerDB(dbfile string) error {
+// SDB represents a database containing the server ID and game information.
+type SDB struct {
+	db *sql.DB
+}
+
+func createServerDBtable(dbfile string) error {
 	create := `CREATE TABLE servers (
 	server_id INTEGER NOT NULL,
 	host TEXT NOT NULL,
@@ -63,8 +68,8 @@ func createServerDB(dbfile string) error {
 	return nil
 }
 
-func serverExists(db *sql.DB, host string, game string) (bool, error) {
-	rows, err := db.Query(
+func (sdb *SDB) serverExists(host string, game string) (bool, error) {
+	rows, err := sdb.db.Query(
 		"SELECT host, game FROM servers WHERE host =? AND GAME =? LIMIT 1",
 		host, game)
 	if err != nil {
@@ -88,8 +93,8 @@ func serverExists(db *sql.DB, host string, game string) (bool, error) {
 	return false, nil
 }
 
-func getHostAndGame(db *sql.DB, id string) (host, game string, err error) {
-	rows, err := db.Query("SELECT host, game FROM servers WHERE server_id =? LIMIT 1",
+func (sdb *SDB) getHostAndGame(id string) (host, game string, err error) {
+	rows, err := sdb.db.Query("SELECT host, game FROM servers WHERE server_id =? LIMIT 1",
 		id)
 	if err != nil {
 		return host, game,
@@ -109,28 +114,36 @@ func getHostAndGame(db *sql.DB, id string) (host, game string, err error) {
 
 // OpenServerDB Opens a database connection to the server database file or if
 // that file does not exists, creates it and then opens a database connection to it.
-func OpenServerDB() (*sql.DB, error) {
+func OpenServerDB() (*SDB, error) {
 	if err := verifyServerDbPath(); err != nil {
 		// will panic if not verified
 		return nil, logger.LogAppError(err)
 	}
-	db, err := sql.Open("sqlite3", constants.GetServerDBPath())
+	conn, err := sql.Open("sqlite3", constants.GetServerDBPath())
 	if err != nil {
 		return nil, logger.LogAppError(err)
 	}
-	return db, nil
+	return &SDB{db: conn}, nil
+}
+
+// Close closes the server database's underlying connection.
+func (sdb *SDB) Close() {
+	err := sdb.db.Close()
+	if err != nil {
+		logger.LogAppErrorf("Error closing server DB: %s", err)
+	}
 }
 
 // AddServersToDB inserts a specified host and port with its game name into the
 // server database.
-func AddServersToDB(db *sql.DB, hostsgames map[string]string) {
+func (sdb *SDB) AddServersToDB(hostsgames map[string]string) {
 	toInsert := make(map[string]string, len(hostsgames))
 	for host, game := range hostsgames {
 		// If direct queries are enabled, don't add 'Unspecified' game to server DB
 		if game == filters.GameUnspecified.String() {
 			continue
 		}
-		exists, err := serverExists(db, host, game)
+		exists, err := sdb.serverExists(host, game)
 		if err != nil {
 			continue
 		}
@@ -139,7 +152,7 @@ func AddServersToDB(db *sql.DB, hostsgames map[string]string) {
 		}
 		toInsert[host] = game
 	}
-	tx, err := db.Begin()
+	tx, err := sdb.db.Begin()
 	if err != nil {
 		logger.LogAppErrorf("AddServersToDB error creating tx: %s", err)
 		return
@@ -171,11 +184,11 @@ func AddServersToDB(db *sql.DB, hostsgames map[string]string) {
 // server detail list or the list of server details in response to a request
 // coming in over the API. It sends its results over a map channel consisting of
 // a host to id mapping.
-func GetIDsForServerList(result chan map[string]int64, db *sql.DB,
+func (sdb *SDB) GetIDsForServerList(result chan map[string]int64,
 	hosts map[string]string) {
 	m := make(map[string]int64, len(hosts))
 	for host, game := range hosts {
-		rows, err := db.Query(
+		rows, err := sdb.db.Query(
 			"SELECT server_id FROM servers WHERE host =? AND game =? LIMIT 1",
 			host, game)
 		if err != nil {
@@ -203,11 +216,11 @@ func GetIDsForServerList(result chan map[string]int64, db *sql.DB,
 // set of hosts (represented by query string values) from the server database
 // file in response to a query from the API. Sends the results over a DbServerID
 // channel for consumption.
-func GetIDsAPIQuery(result chan *models.DbServerID, db *sql.DB, hosts []string) {
+func (sdb *SDB) GetIDsAPIQuery(result chan *models.DbServerID, hosts []string) {
 	m := &models.DbServerID{}
 	for _, h := range hosts {
 		logger.WriteDebug("DB: GetIDsAPIQuery, host: %s", h)
-		rows, err := db.Query(
+		rows, err := sdb.db.Query(
 			"SELECT server_id, host, game FROM servers WHERE host LIKE ?",
 			fmt.Sprintf("%%%s%%", h))
 		if err != nil {
@@ -242,11 +255,11 @@ func GetIDsAPIQuery(result chan *models.DbServerID, db *sql.DB, hosts []string) 
 // server database file in response to a user-specified API query for a given
 // set of server ID numbers. Sends the results over a channel consisting of a
 // host to game name string mapping.
-func GetHostsAndGameFromIDAPIQuery(result chan map[string]string, db *sql.DB,
+func (sdb *SDB) GetHostsAndGameFromIDAPIQuery(result chan map[string]string,
 	ids []string) {
 	hosts := make(map[string]string, len(ids))
 	for _, id := range ids {
-		host, game, err := getHostAndGame(db, id)
+		host, game, err := sdb.getHostAndGame(id)
 		if err != nil {
 			logger.LogAppErrorf("Error getting host from ID for API query: %s", err)
 			return

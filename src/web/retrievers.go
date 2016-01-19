@@ -13,17 +13,7 @@ import (
 
 func getServerIDRetriever(w http.ResponseWriter, hosts []string) {
 	m := make(chan *models.DbServerID, 1)
-	sdb, err := db.OpenServerDB()
-	if err != nil {
-		setNotFoundAndLog(w, err)
-		if err := json.NewEncoder(w).Encode(models.GetDefaultServerID()); err != nil {
-			writeJSONEncodeError(w, err)
-			return
-		}
-		return
-	}
-	defer sdb.Close()
-	go db.GetIDsAPIQuery(m, sdb, hosts)
+	go db.ServerDB.GetIDsAPIQuery(m, hosts)
 	ids := <-m
 	if len(ids.Servers) > 0 {
 		if err := json.NewEncoder(w).Encode(ids); err != nil {
@@ -41,16 +31,7 @@ func getServerIDRetriever(w http.ResponseWriter, hosts []string) {
 
 func queryServerIDRetriever(w http.ResponseWriter, ids []string) {
 	s := make(chan map[string]string, len(ids))
-	sdb, err := db.OpenServerDB()
-	if err != nil {
-		setNotFoundAndLog(w, err)
-		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
-			writeJSONEncodeError(w, err)
-		}
-		return
-	}
-	defer sdb.Close()
-	db.GetHostsAndGameFromIDAPIQuery(s, sdb, ids)
+	db.ServerDB.GetHostsAndGameFromIDAPIQuery(s, ids)
 	hostsgames := <-s
 	if len(hostsgames) == 0 {
 		w.WriteHeader(http.StatusNotFound)
