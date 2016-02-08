@@ -6,7 +6,6 @@ package web
 import (
 	"compress/gzip"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -22,7 +21,7 @@ const (
 type codings map[string]float64
 
 // DefaultQValue is the default qvalue to assign to an encoding if no explicit
-//qvalue is set. This is actually kind of ambiguous in RFC 2616, so hopefully
+// qvalue is set. This is actually kind of ambiguous in RFC 2616, so hopefully
 // it's correct. The examples seem to indicate that it is.
 const DefaultQValue = 1.0
 
@@ -34,13 +33,23 @@ var gzipWriterPool = sync.Pool{
 // bytes before writing them to the underlying response. This doesn't set the
 // Content-Encoding header, nor close the writers, so don't forget to do that.
 type GzipResponseWriter struct {
-	io.Writer
+	gw *gzip.Writer
 	http.ResponseWriter
 }
 
 // Write appends data to the gzip writer.
-func (gzw GzipResponseWriter) Write(b []byte) (int, error) {
-	return gzw.Writer.Write(b)
+func (w GzipResponseWriter) Write(b []byte) (int, error) {
+	return w.gw.Write(b)
+}
+
+// Flush flushes the underlying *gzip.Writer and then the underlying
+// http.ResponseWriter if it is an http.Flusher. This makes GzipResponseWriter
+// an http.Flusher.
+func (w GzipResponseWriter) Flush() {
+	w.gw.Flush()
+	if fw, ok := w.ResponseWriter.(http.Flusher); ok {
+		fw.Flush()
+	}
 }
 
 // GzipHandler wraps an HTTP handler, to transparently gzip the response body if
@@ -50,17 +59,15 @@ func GzipHandler(h http.Handler) http.Handler {
 		w.Header().Add(vary, acceptEncoding)
 
 		if acceptsGzip(r) {
-
 			// Bytes written during ServeHTTP are redirected to this gzip writer
 			// before being written to the underlying response.
 			gzw := gzipWriterPool.Get().(*gzip.Writer)
+			defer gzipWriterPool.Put(gzw)
 			gzw.Reset(w)
+			defer gzw.Close()
 
 			w.Header().Set(contentEncoding, "gzip")
 			h.ServeHTTP(GzipResponseWriter{gzw, w}, r)
-
-			gzw.Close()
-			gzipWriterPool.Put(gzw)
 		} else {
 			h.ServeHTTP(w, r)
 		}

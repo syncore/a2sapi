@@ -5,6 +5,7 @@ package web
 import (
 	"a2sapi/src/config"
 	"a2sapi/src/constants"
+	"a2sapi/src/db"
 	"a2sapi/src/models"
 	"a2sapi/src/test"
 	"a2sapi/src/util"
@@ -31,6 +32,7 @@ type ResponseRecoder struct {
 func init() {
 	test.SetupEnvironment()
 	testURLBase = fmt.Sprintf("http://:%d", config.Config.WebConfig.APIWebPort)
+	db.InitDBs()
 
 	// create dump server file
 	err := util.CreateDirectory(constants.DumpDirectory)

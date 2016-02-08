@@ -1,6 +1,7 @@
 package steam
 
 import (
+	"a2sapi/src/db"
 	"a2sapi/src/models"
 	"a2sapi/src/steam/filters"
 	"a2sapi/src/test"
@@ -12,6 +13,7 @@ var testData a2sData
 
 func init() {
 	test.SetupEnvironment()
+	db.InitDBs()
 	hostsgames := make(map[string]filters.Game, 2)
 	hostsgames["54.172.5.67:25801"] = filters.GameReflex
 	hostsgames["192.211.62.11:27960"] = filters.GameQuakeLive
