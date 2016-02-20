@@ -47,9 +47,9 @@ func OpenCountryDB() (*CDB, error) {
 	// Note: the caller of this function needs to handle .Close()
 	conn, err := maxminddb.Open(constants.CountryDbFilePath)
 	if err != nil {
-		dir := "build_nix"
+		dir := "build/nix"
 		if runtime.GOOS == "windows" {
-			dir = "build_win"
+			dir = "build\\win"
 		}
 		logger.LogAppError(err)
 		panic(

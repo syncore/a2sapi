@@ -43,8 +43,9 @@ The configuration is handled interactively by passing the `--config` flag to the
 - On first run, you will need to generate the configuration file by passing the `--config` flag to the executable.
 - After generating the configuration file, launch the application by running the `a2sapi` executable in the `bin` directory. If you'd like to see a few command-line options, then pass the `--h` flag to the executable.
 
-
-
+### Running Tests
+  - Linux/OSX: In the build/nix directory: `./run_tests.sh`
+  - Windows: In the build\win directory: `run_tests.bat`
 
 # Usage
 :book: For interactive documentation and more detail, see the a2sapi Swagger UI documentation in use [on one of my pages that uses this API](http://reflex.syncore.org/apidoc/) or you can use the included a2sapi-swagger files with Swagger UI/Editor.

@@ -54,11 +54,11 @@ func init() {
 
 			r.Methods(ar.method).
 				MatcherFunc(pathQStrToLowerMatcherFunc(r, ar.path, ar.queryStrings,
-				getRequiredQryStringCount(ar.queryStrings))).
+					getRequiredQryStringCount(ar.queryStrings))).
 				Name(ar.name).
 				Handler(http.TimeoutHandler(handler,
-				time.Duration(config.Config.WebConfig.APIWebTimeout)*time.Second,
-				`{"error":"Timeout"}`))
+					time.Duration(config.Config.WebConfig.APIWebTimeout)*time.Second,
+					`{"error":"Timeout"}`))
 		}
 		err := http.ListenAndServe(fmt.Sprintf(":%d", config.Config.WebConfig.APIWebPort), r)
 		if err != nil {
