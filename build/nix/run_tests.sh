@@ -5,4 +5,4 @@ go test
 cd ../../src/web
 go test
 rm -rf ../../bin/test_temp
-cd ../../build/osx
+cd ../../build/nix

@@ -130,7 +130,7 @@ The `query` endpoint retrieves servers' real-time information. Depending on how 
 
 ### Parameters for directly querying by address:
 - ***hosts***
-  - The host in the format of IP:port whose information should be retrieved. :warning: Note, address queries might be disabled, depending on the application configuration.
+  - The host in the format of IP:port whose information should be retrieved. :warning: Note, address queries might be disabled, depending on the application configuration. If so, you must use the server ID.
   - `/query?hosts=54.93.46.254:25801,46.101.8.188:27960`
 
 
