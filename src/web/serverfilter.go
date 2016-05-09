@@ -4,8 +4,9 @@ package web
 // string data.
 
 import (
-	"a2sapi/src/models"
 	"strings"
+
+	"github.com/syncore/a2sapi/src/models"
 )
 
 // getSrvFilterFromQString determines whether a query string has values and

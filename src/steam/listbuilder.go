@@ -5,14 +5,15 @@ package steam
 // or in response to a user's specific query from the API.
 
 import (
-	"a2sapi/src/db"
-	"a2sapi/src/logger"
-	"a2sapi/src/models"
-	"a2sapi/src/steam/filters"
 	"net"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/syncore/a2sapi/src/db"
+	"github.com/syncore/a2sapi/src/logger"
+	"github.com/syncore/a2sapi/src/models"
+	"github.com/syncore/a2sapi/src/steam/filters"
 )
 
 func buildServerList(data a2sData, addtoServerDB bool) (*models.APIServerList,

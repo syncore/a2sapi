@@ -3,12 +3,13 @@ package db
 // country.go - Country geolocation database lookup.
 
 import (
-	"a2sapi/src/constants"
-	"a2sapi/src/logger"
-	"a2sapi/src/models"
 	"fmt"
 	"net"
 	"runtime"
+
+	"github.com/syncore/a2sapi/src/constants"
+	"github.com/syncore/a2sapi/src/logger"
+	"github.com/syncore/a2sapi/src/models"
 
 	"github.com/oschwald/maxminddb-golang"
 )

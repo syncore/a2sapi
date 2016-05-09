@@ -1,12 +1,13 @@
 package steam
 
 import (
-	"a2sapi/src/db"
-	"a2sapi/src/models"
-	"a2sapi/src/steam/filters"
-	"a2sapi/src/test"
 	"strings"
 	"testing"
+
+	"github.com/syncore/a2sapi/src/db"
+	"github.com/syncore/a2sapi/src/models"
+	"github.com/syncore/a2sapi/src/steam/filters"
+	"github.com/syncore/a2sapi/src/test"
 )
 
 var testData a2sData

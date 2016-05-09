@@ -3,13 +3,14 @@ package filters
 // game.go - Steam game-to-appid operations, A2S ignore mappings, and game list.
 
 import (
-	"a2sapi/src/constants"
-	"a2sapi/src/util"
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/syncore/a2sapi/src/constants"
+	"github.com/syncore/a2sapi/src/util"
 )
 
 // Game represents a queryable Steam game, including its application ID

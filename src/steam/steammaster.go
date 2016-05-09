@@ -3,13 +3,14 @@ package steam
 // steammaster.go - testing steam master server query
 
 import (
-	"a2sapi/src/config"
-	"a2sapi/src/logger"
-	"a2sapi/src/steam/filters"
 	"bytes"
 	"fmt"
 	"net"
 	"time"
+
+	"github.com/syncore/a2sapi/src/config"
+	"github.com/syncore/a2sapi/src/logger"
+	"github.com/syncore/a2sapi/src/steam/filters"
 )
 
 // MasterQuery contains the servers returned by a query to the Steam master server.

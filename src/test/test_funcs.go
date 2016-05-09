@@ -1,10 +1,11 @@
 package test
 
 import (
-	"a2sapi/src/config"
-	"a2sapi/src/constants"
 	"fmt"
 	"os"
+
+	"github.com/syncore/a2sapi/src/config"
+	"github.com/syncore/a2sapi/src/constants"
 )
 
 // SetupEnvironment sets up the environment for tests. This should only be

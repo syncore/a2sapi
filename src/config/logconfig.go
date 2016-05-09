@@ -1,11 +1,12 @@
 package config
 
 import (
-	"a2sapi/src/constants"
 	"bufio"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/syncore/a2sapi/src/constants"
 )
 
 const (

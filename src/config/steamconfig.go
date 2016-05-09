@@ -1,12 +1,13 @@
 package config
 
 import (
-	"a2sapi/src/constants"
-	"a2sapi/src/steam/filters"
 	"bufio"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/syncore/a2sapi/src/constants"
+	"github.com/syncore/a2sapi/src/steam/filters"
 )
 
 const (

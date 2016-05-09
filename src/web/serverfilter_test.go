@@ -3,11 +3,12 @@ package web
 // Tests for server filtering for getServers API endpoint
 
 import (
-	"a2sapi/src/constants"
-	"a2sapi/src/models"
 	"encoding/json"
 	"strings"
 	"testing"
+
+	"github.com/syncore/a2sapi/src/constants"
+	"github.com/syncore/a2sapi/src/models"
 )
 
 func TestGetSrvFilterFromQString(t *testing.T) {

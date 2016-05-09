@@ -1,16 +1,17 @@
 package main
 
 import (
-	"a2sapi/src/config"
-	"a2sapi/src/constants"
-	"a2sapi/src/db"
-	"a2sapi/src/steam"
-	"a2sapi/src/steam/filters"
-	"a2sapi/src/util"
-	"a2sapi/src/web"
 	"flag"
 	"fmt"
 	"os"
+
+	"github.com/syncore/a2sapi/src/config"
+	"github.com/syncore/a2sapi/src/constants"
+	"github.com/syncore/a2sapi/src/db"
+	"github.com/syncore/a2sapi/src/steam"
+	"github.com/syncore/a2sapi/src/steam/filters"
+	"github.com/syncore/a2sapi/src/util"
+	"github.com/syncore/a2sapi/src/web"
 )
 
 var (

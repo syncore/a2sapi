@@ -3,16 +3,17 @@ package web
 // handlers.go - Handler functions for API
 
 import (
-	"a2sapi/src/config"
-	"a2sapi/src/constants"
-	"a2sapi/src/logger"
-	"a2sapi/src/models"
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
+
+	"github.com/syncore/a2sapi/src/config"
+	"github.com/syncore/a2sapi/src/constants"
+	"github.com/syncore/a2sapi/src/logger"
+	"github.com/syncore/a2sapi/src/models"
 )
 
 func compressGzip(hf http.HandlerFunc, shouldCompress bool) http.Handler {

@@ -3,14 +3,15 @@ package steam
 // steamplayer.go - steam server query for players (A2S_PLAYER)
 
 import (
-	"a2sapi/src/logger"
-	"a2sapi/src/models"
 	"bytes"
 	"encoding/binary"
 	"math"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/syncore/a2sapi/src/logger"
+	"github.com/syncore/a2sapi/src/models"
 )
 
 func getPlayerInfo(host string, timeout int) ([]byte, error) {

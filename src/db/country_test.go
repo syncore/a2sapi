@@ -1,10 +1,11 @@
 package db
 
 import (
-	"a2sapi/src/models"
-	"a2sapi/src/test"
 	"strings"
 	"testing"
+
+	"github.com/syncore/a2sapi/src/models"
+	"github.com/syncore/a2sapi/src/test"
 )
 
 func init() {

@@ -3,14 +3,15 @@ package steam
 // steaminfo.go - steam server query for info (A2S_INFO)
 
 import (
-	"a2sapi/src/logger"
-	"a2sapi/src/models"
-	"a2sapi/src/util"
 	"bytes"
 	"encoding/binary"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/syncore/a2sapi/src/logger"
+	"github.com/syncore/a2sapi/src/models"
+	"github.com/syncore/a2sapi/src/util"
 )
 
 func getServerInfo(host string, timeout int) ([]byte, error) {

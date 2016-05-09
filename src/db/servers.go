@@ -3,13 +3,14 @@ package db
 // servers.go - server identification database
 
 import (
-	"a2sapi/src/constants"
-	"a2sapi/src/logger"
-	"a2sapi/src/models"
-	"a2sapi/src/steam/filters"
-	"a2sapi/src/util"
 	"database/sql"
 	"fmt"
+
+	"github.com/syncore/a2sapi/src/constants"
+	"github.com/syncore/a2sapi/src/logger"
+	"github.com/syncore/a2sapi/src/models"
+	"github.com/syncore/a2sapi/src/steam/filters"
+	"github.com/syncore/a2sapi/src/util"
 	// blank import for sqlite3 driver
 	_ "github.com/mattn/go-sqlite3"
 )

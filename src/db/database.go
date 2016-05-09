@@ -3,10 +3,11 @@ package db
 // database.go - Database initilization.
 
 import (
-	"a2sapi/src/constants"
-	"a2sapi/src/logger"
-	"a2sapi/src/util"
 	"fmt"
+
+	"github.com/syncore/a2sapi/src/constants"
+	"github.com/syncore/a2sapi/src/logger"
+	"github.com/syncore/a2sapi/src/util"
 )
 
 // CountryDB is a package-level variable that contains a country

@@ -1,10 +1,11 @@
 package db
 
 import (
-	"a2sapi/src/constants"
-	"a2sapi/src/models"
 	"strings"
 	"testing"
+
+	"github.com/syncore/a2sapi/src/constants"
+	"github.com/syncore/a2sapi/src/models"
 
 	_ "github.com/mattn/go-sqlite3"
 )

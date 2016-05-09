@@ -3,12 +3,6 @@ package web
 // Tests for handler functions for API
 
 import (
-	"a2sapi/src/config"
-	"a2sapi/src/constants"
-	"a2sapi/src/db"
-	"a2sapi/src/models"
-	"a2sapi/src/test"
-	"a2sapi/src/util"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,6 +10,13 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/syncore/a2sapi/src/config"
+	"github.com/syncore/a2sapi/src/constants"
+	"github.com/syncore/a2sapi/src/db"
+	"github.com/syncore/a2sapi/src/models"
+	"github.com/syncore/a2sapi/src/test"
+	"github.com/syncore/a2sapi/src/util"
 
 	"github.com/gorilla/mux"
 )

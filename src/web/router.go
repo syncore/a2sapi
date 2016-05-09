@@ -3,12 +3,13 @@ package web
 // router.go - request router
 
 import (
-	"a2sapi/src/config"
 	"net/http"
 	"strings"
 	"time"
 
-	"a2sapi/src/logger"
+	"github.com/syncore/a2sapi/src/config"
+
+	"github.com/syncore/a2sapi/src/logger"
 
 	"github.com/gorilla/mux"
 )
@@ -16,17 +17,16 @@ import (
 func newRouter() *mux.Router {
 	r := mux.NewRouter().StrictSlash(true)
 	for _, ar := range apiRoutes {
-		var handler http.Handler
-		handler = compressGzip(ar.handlerFunc, config.Config.WebConfig.CompressResponses)
+		handler := http.TimeoutHandler(compressGzip(ar.handlerFunc, config.Config.WebConfig.CompressResponses),
+			time.Duration(config.Config.WebConfig.APIWebTimeout)*time.Second,
+			`{"error": {"code": 503,"message": "Request timeout."}}`)
 		handler = logger.LogWebRequest(handler, ar.name)
 
 		r.Methods(ar.method).
 			MatcherFunc(pathQStrToLowerMatcherFunc(r, ar.path, ar.queryStrings,
-			getRequiredQryStringCount(ar.queryStrings))).
+				getRequiredQryStringCount(ar.queryStrings))).
 			Name(ar.name).
-			Handler(http.TimeoutHandler(handler,
-			time.Duration(config.Config.WebConfig.APIWebTimeout)*time.Second,
-			`{"error": {"code": 503,"message": "Request timeout."}}`))
+			Handler(handler)
 	}
 	return r
 }

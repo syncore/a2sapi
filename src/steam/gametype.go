@@ -1,9 +1,10 @@
 package steam
 
 import (
-	"a2sapi/src/models"
-	"a2sapi/src/steam/filters"
 	"strings"
+
+	"github.com/syncore/a2sapi/src/models"
+	"github.com/syncore/a2sapi/src/steam/filters"
 )
 
 type gtype struct {

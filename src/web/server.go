@@ -3,10 +3,11 @@ package web
 // server.go - Web server for API
 
 import (
-	"a2sapi/src/config"
-	"a2sapi/src/logger"
 	"fmt"
 	"net/http"
+
+	"github.com/syncore/a2sapi/src/config"
+	"github.com/syncore/a2sapi/src/logger"
 )
 
 // Start listening for and responding to HTTP requests via the web server. Panics

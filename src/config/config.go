@@ -3,14 +3,15 @@ package config
 // config.go - configuration operations
 
 import (
-	"a2sapi/src/constants"
-	"a2sapi/src/steam/filters"
-	"a2sapi/src/util"
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
 	"runtime"
+
+	"github.com/syncore/a2sapi/src/constants"
+	"github.com/syncore/a2sapi/src/steam/filters"
+	"github.com/syncore/a2sapi/src/util"
 
 	"github.com/fatih/color"
 )

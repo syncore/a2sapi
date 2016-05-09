@@ -1,9 +1,6 @@
 package logger
 
 import (
-	"a2sapi/src/config"
-	"a2sapi/src/constants"
-	"a2sapi/src/util"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -14,6 +11,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/syncore/a2sapi/src/config"
+	"github.com/syncore/a2sapi/src/constants"
+	"github.com/syncore/a2sapi/src/util"
 )
 
 type logLevel int

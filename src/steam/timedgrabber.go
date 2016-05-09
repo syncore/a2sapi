@@ -3,15 +3,16 @@ package steam
 // timedgrabber.go - Timed retrieval of servers from the Steam Master server.
 
 import (
-	"a2sapi/src/config"
-	"a2sapi/src/constants"
-	"a2sapi/src/logger"
-	"a2sapi/src/models"
-	"a2sapi/src/steam/filters"
-	"a2sapi/src/util"
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/syncore/a2sapi/src/config"
+	"github.com/syncore/a2sapi/src/constants"
+	"github.com/syncore/a2sapi/src/logger"
+	"github.com/syncore/a2sapi/src/models"
+	"github.com/syncore/a2sapi/src/steam/filters"
+	"github.com/syncore/a2sapi/src/util"
 )
 
 func retrieve(filter filters.Filter) (*models.APIServerList, error) {

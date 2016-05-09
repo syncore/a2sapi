@@ -3,7 +3,6 @@ package steam
 // steamrules.go - steam server query for server information (A2S_RULES)
 
 import (
-	"a2sapi/src/logger"
 	"bytes"
 	"encoding/binary"
 	"net"
@@ -11,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/syncore/a2sapi/src/logger"
 )
 
 func getRulesInfo(host string, timeout int) ([]byte, error) {

@@ -4,10 +4,11 @@ package steam
 // for building a list to return to the API
 
 import (
-	"a2sapi/src/logger"
-	"a2sapi/src/models"
-	"a2sapi/src/steam/filters"
 	"sync"
+
+	"github.com/syncore/a2sapi/src/logger"
+	"github.com/syncore/a2sapi/src/models"
+	"github.com/syncore/a2sapi/src/steam/filters"
 )
 
 type a2sData struct {
