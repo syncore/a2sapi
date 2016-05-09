@@ -1,8 +1,8 @@
 # a2sapi
 
-a2sapi is a RESTful API for receiving [**master server information**](https://developer.valvesoftware.com/wiki/Master_Server_Query_Protocol) and for querying [**A2S information**](https://developer.valvesoftware.com/wiki/Server_queries) from servers running on the Steam (Source) platform.
+a2sapi is a RESTful API for receiving [**master server information**](https://developer.valvesoftware.com/wiki/Master_Server_Query_Protocol) and for querying [**A2S information**](https://developer.valvesoftware.com/wiki/Server_queries) from servers running on the Steam (Source) platform. It can be configured to query the master server at timed intervals and expose the data via an API endpoint.
 
-This back end service was written to provide information to a number of sites (for example, [here](http://reflex.syncore.org) and [here](http://ql.syncore.org) for which I needed this specific information.
+This back end service was written to provide information to a number of sites, for example: [here](https://ql.syncore.org) and [here](https://reflex.syncore.org) for which I needed this specific information.
 
 *Please note, this is the first project that I have written in the Go programming language.* :scream: Pull requests are welcome!
 
@@ -48,7 +48,7 @@ The configuration is handled interactively by passing the `--config` flag to the
   - Windows: In the build\win directory: `run_tests.bat`
 
 # Usage
-:book: For interactive documentation and more detail, see the a2sapi Swagger UI documentation in use [on one of my pages that uses this API](http://reflex.syncore.org/apidoc/) or you can use the included a2sapi-swagger files with Swagger UI/Editor.
+:book: For interactive documentation and more detail, see the a2sapi Swagger UI documentation in use [on one of my pages that uses this API](https://ql.syncore.org/apidoc/) or you can use the included a2sapi-swagger files with Swagger UI/Editor.
 
 The API ships with three endpoints:
 - /servers
@@ -165,9 +165,6 @@ These examples for the `/servers` endpoint will assume that a2api is configured 
 - :warning: The API administrator may have direct server address queries disabled, in which case this would not work!
 
 
-
-
-
 # Issues
 
 The preferable method of contact would be for you to open up an [issue on Github](https://github.com/syncore/a2sapi/issues).
@@ -179,4 +176,3 @@ Alternatively, I usually can be found under the name "syncore" on QuakeNet IRC -
 See [LICENSE.md]
 
 [LICENSE.md]:https://github.com/syncore/a2sapi/blob/master/LICENSE.md
-
