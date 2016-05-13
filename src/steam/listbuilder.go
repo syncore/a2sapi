@@ -103,7 +103,7 @@ func buildServerList(data a2sData, addtoServerDB bool) (*models.APIServerList,
 
 	if len(srvDBhosts) != 0 {
 		go db.ServerDB.AddServersToDB(srvDBhosts)
-		sl = setServerIDForList(sl)
+		sl.Servers = setServerIDsForList(sl.Servers)
 	}
 
 	logger.LogAppInfo(
@@ -142,19 +142,21 @@ func removeBuggedPlayers(players []models.SteamPlayerInfo) models.FilteredPlayer
 	return rpi
 }
 
-func setServerIDForList(sl *models.APIServerList) *models.APIServerList {
-	toSet := make(map[string]string, len(sl.Servers))
-	for _, s := range sl.Servers {
+func setServerIDsForList(servers []models.APIServer) []models.APIServer {
+	toSet := make(map[string]string, len(servers))
+	for _, s := range servers {
 		toSet[s.Host] = s.Game
 	}
 	result := make(chan map[string]int64, 1)
 	go db.ServerDB.GetIDsForServerList(result, toSet)
 	m := <-result
+	var srvswithids []models.APIServer
 
-	for _, s := range sl.Servers {
+	for _, s := range servers {
 		if m[s.Host] != 0 {
 			s.ID = m[s.Host]
 		}
+		srvswithids = append(srvswithids, s)
 	}
-	return sl
+	return srvswithids
 }
