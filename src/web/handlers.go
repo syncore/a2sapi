@@ -84,7 +84,7 @@ func queryServerIDs(w http.ResponseWriter, r *http.Request) {
 	logger.WriteDebug("queryServerID: ids are: %s", ids)
 
 	if ids == nil {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(http.StatusOK)
 		logger.WriteDebug("queryServerID: Got empty query. Ignoring.")
 		writeJSONResponse(w, models.GetDefaultServerList())
 		return
@@ -112,7 +112,7 @@ func queryServerAddrs(w http.ResponseWriter, r *http.Request) {
 	logger.WriteDebug("addresses are: %s", addresses)
 
 	if addresses == nil {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(http.StatusOK)
 		logger.WriteDebug("queryServerAddr: Got empty address query. Ignoring.")
 		writeJSONResponse(w, models.GetDefaultServerList())
 		return
@@ -128,7 +128,7 @@ func queryServerAddrs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(parsedaddresses) == 0 {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(http.StatusOK)
 		logger.WriteDebug("queryServerAddr: No valid addresses for query. Ignoring.")
 		writeJSONResponse(w, models.GetDefaultServerList())
 		return

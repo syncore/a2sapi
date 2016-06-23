@@ -22,7 +22,7 @@ func getServerIDRetriever(w http.ResponseWriter, hosts []string) {
 			return
 		}
 	} else {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerID()); err != nil {
 			writeJSONEncodeError(w, err)
 			return
@@ -35,7 +35,7 @@ func queryServerIDRetriever(w http.ResponseWriter, ids []string) {
 	db.ServerDB.GetHostsAndGameFromIDAPIQuery(s, ids)
 	hostsgames := <-s
 	if len(hostsgames) == 0 {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(models.GetDefaultServerList()); err != nil {
 			writeJSONEncodeError(w, err)
 		}
@@ -51,7 +51,7 @@ func queryServerIDRetriever(w http.ResponseWriter, ids []string) {
 		return
 	}
 	if err := json.NewEncoder(w).Encode(serverlist); err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		writeJSONEncodeError(w, err)
 		logger.LogWebError(err)
 	}
 }

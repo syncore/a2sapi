@@ -122,10 +122,9 @@ func TestGetServerIDs(t *testing.T) {
 	if !modelMatches {
 		t.Errorf("getServerID: expected and actual models do not match.")
 	}
-	// this actually should be 404
-	if w.Code != http.StatusNotFound {
+	if w.Code != http.StatusOK {
 		t.Errorf("Expected status code: %v for GetServerID handler; got: %v",
-			http.StatusNotFound, w.Code)
+			http.StatusOK, w.Code)
 	}
 	if len(w.Body.Bytes()) == 0 {
 		t.Errorf("GetServerID handler body should not be empty")
@@ -144,10 +143,9 @@ func TestQueryServerID(t *testing.T) {
 	if !modelMatches {
 		t.Errorf("queryServerID: expected and actual models do not match.")
 	}
-	// should be 404
-	if w.Code != http.StatusNotFound {
+	if w.Code != http.StatusOK {
 		t.Errorf("Expected status code %v for queryServerID handler; got: %v",
-			http.StatusNotFound, w.Code)
+			http.StatusOK, w.Code)
 	}
 	if len(w.Body.Bytes()) == 0 {
 		t.Errorf("queryServerID handler body should not be empty")
@@ -163,7 +161,7 @@ func TestQueryServerAddr(t *testing.T) {
 	// 200 - default server list
 	if w1.Code != http.StatusOK {
 		t.Errorf("Expected status code %v for queryServerAddr handler; got: %v",
-			http.StatusNotFound, w1.Code)
+			http.StatusOK, w1.Code)
 	}
 	if len(w1.Body.Bytes()) == 0 {
 		t.Errorf("queryServerAddr handler body should not be empty")
@@ -174,7 +172,7 @@ func TestQueryServerAddr(t *testing.T) {
 	if !modelMatches {
 		t.Errorf("queryServerAddr: expected and actual models do not match.")
 	}
-	// 404 - no addreses specified
+	// no address specified
 	r2, _ := http.NewRequest("GET", formatURL("query?hosts="), nil)
 	w2 := newRecorder()
 	queryServerAddrs(w2, r2)
@@ -184,9 +182,9 @@ func TestQueryServerAddr(t *testing.T) {
 	if !modelMatches2 {
 		t.Errorf("queryServerAddr: expected and actual models do not match.")
 	}
-	if w2.Code != http.StatusNotFound {
+	if w2.Code != http.StatusOK {
 		t.Errorf("Expected status code %v for queryServerAddr handler; got: %v",
-			http.StatusNotFound, w2.Code)
+			http.StatusOK, w2.Code)
 	}
 	if len(w2.Body.Bytes()) == 0 {
 		t.Errorf("queryServerAddr handler body should not be empty")
