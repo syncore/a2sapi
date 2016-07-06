@@ -5,6 +5,7 @@ package web
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/syncore/a2sapi/src/config"
 	"github.com/syncore/a2sapi/src/logger"
@@ -21,8 +22,15 @@ func Start(runSilent bool) {
 
 	logger.LogAppInfo("Starting HTTP server on port %d",
 		config.Config.WebConfig.APIWebPort)
-	err := http.ListenAndServe(fmt.Sprintf(":%d",
-		config.Config.WebConfig.APIWebPort), r)
+
+	srv := http.Server{
+		Addr:           fmt.Sprintf(":%d", config.Config.WebConfig.APIWebPort),
+		Handler:        r,
+		ReadTimeout:    30 * time.Second,
+		WriteTimeout:   30 * time.Second,
+		MaxHeaderBytes: 1 << 20}
+
+	err := srv.ListenAndServe()
 	if err != nil {
 		logger.LogAppError(err)
 		panic(fmt.Sprintf("Unable to start HTTP server, error: %s\n", err))
