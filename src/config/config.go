@@ -110,6 +110,10 @@ default value.
 	// Query the master server automatically at timed intervals
 	cfg.SteamConfig.AutoQueryMaster = configureTimedMasterQuery(reader)
 	if cfg.SteamConfig.AutoQueryMaster {
+		// The Steam WebAPI key to use to get the web server list
+		cfg.SteamConfig.SteamWebAPIKey = configureSteamWebAPIKey(reader)
+		// Use the Steam Web Server list since master server was shut down in November 2016
+		cfg.SteamConfig.UseWebServerList = defaultUseWebServerList
 		// The game to automatically query the master server for at timed intervals
 		cfg.SteamConfig.AutoQueryGame = configureTimedQueryGame(reader)
 		// Time between Steam Master server queries
@@ -162,6 +166,8 @@ func CreateDebugConfig() {
 	cfg.LogConfig.MaximumLogCount = defaultMaxLogCount
 	cfg.LogConfig.MaximumLogSize = defaultMaxLogSize
 	cfg.SteamConfig.AutoQueryMaster = false
+	cfg.SteamConfig.SteamWebAPIKey = "none"
+	cfg.SteamConfig.UseWebServerList = defaultUseWebServerList
 	cfg.SteamConfig.AutoQueryGame = "QuakeLive"
 	cfg.SteamConfig.TimeBetweenMasterQueries = defaultTimeBetweenMasterQueries
 	cfg.SteamConfig.MaximumHostsToReceive = defaultMaxHostsToReceive

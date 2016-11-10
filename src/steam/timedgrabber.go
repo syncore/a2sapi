@@ -16,7 +16,14 @@ import (
 )
 
 func retrieve(filter filters.Filter) (*models.APIServerList, error) {
-	mq, err := NewMasterQuery(filter)
+	var mq MasterQuery
+	var err error
+	if config.Config.SteamConfig.UseWebServerList {
+		mq, err = NewMasterWebQuery(filter)
+	} else {
+		mq, err = NewMasterQuery(filter)
+	}
+
 	if err != nil {
 		return nil, logger.LogSteamErrorf("Master server error: %s", err)
 	}

@@ -4,6 +4,9 @@ a2sapi is a RESTful API for receiving [**master server information**](https://de
 
 This back end service was written to provide information to a number of sites, for example: [here](https://ql.syncore.org) and [here](https://reflex.syncore.org) for which I needed this specific information.
 
+#### :boom: :fire: **Important update (November 8, 2016)** ####
+It appears that Valve has silently taken their master servers offline on November 8, 2016. a2sapi now retrieves the list of all servers using an undocumented Steam Web API endpoint. ***If you still wish to automatically query servers at timed intervals, you will need a free Steam Web API key, which can be generated at: https://steamcommunity.com/dev/apikey*** - This change does not affect the querying of individual servers (i.e. the a2sapi /query endpoint) only retrieval of all servers at timed intervals.
+
 *Please note, this is the first project that I have written in the Go programming language.* :scream: Pull requests are welcome!
 
 # Installation

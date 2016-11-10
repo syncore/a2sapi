@@ -14,6 +14,7 @@ const (
 	defaultMaxHostsToReceive        = 4000
 	defaultAutoQueryMaster          = true
 	defaultTimeBetweenMasterQueries = 90
+	defaultUseWebServerList         = true
 	// defaultTimeForHighServerCount: not used in JSON, only in the config dialog
 	defaultTimeForHighServerCount = 120
 )
@@ -21,6 +22,8 @@ const (
 // CfgSteam represents Steam-related configuration options.
 type CfgSteam struct {
 	AutoQueryMaster          bool   `json:"timedMasterServerQuery"`
+	SteamWebAPIKey           string `json:"steamWebAPIKey"`
+	UseWebServerList         bool   `json:"useWebServerList"`
 	AutoQueryGame            string `json:"gameForTimedMasterQuery"`
 	TimeBetweenMasterQueries int    `json:"timeBetweenMasterQueries"`
 	MaximumHostsToReceive    int    `json:"maxHostsToReceive"`
@@ -28,14 +31,18 @@ type CfgSteam struct {
 
 func configureTimedMasterQuery(reader *bufio.Reader) bool {
 	valid, val := false, false
+	retrievalMethodMsg := `Also note: Valve will throttle your requests if more than 30 UDP
+packets sent (game has ~6930 or more servers) within 60 seconds.`
+	if defaultUseWebServerList {
+		retrievalMethodMsg = ""
+	}
 	prompt := fmt.Sprintf(`
 Perform an automatic retrieval of game servers from the Steam master server at
 timed intervals? This is necessary if you want the API to maintain a
 filterable / searchable list of game servers. Please note the reliability
 of retrieving all servers generally decreases as the total number of servers
-increases. Also note: Valve will throttle your requests if more than 30 UDP
-packets sent (game has ~6930 or more servers) within 60 seconds.
-%s`, promptColor("> 'yes' or 'no' [default: %s]: ",
+increases. %s
+%s`, retrievalMethodMsg, promptColor("> 'yes' or 'no' [default: %s]: ",
 		getBoolString(defaultAutoQueryMaster)))
 
 	input := func(r *bufio.Reader) (bool, error) {
@@ -57,6 +64,39 @@ packets sent (game has ~6930 or more servers) within 60 seconds.
 			return defaultAutoQueryMaster,
 				fmt.Errorf("[ERROR] Invalid response. Valid responses: y, yes, n, no")
 		}
+	}
+	var err error
+	for !valid {
+		fmt.Print(prompt)
+		val, err = input(reader)
+		if err != nil {
+			errorColor(err)
+		} else {
+			valid = true
+		}
+	}
+	return val
+}
+
+func configureSteamWebAPIKey(reader *bufio.Reader) string {
+	valid := false
+	var val string
+	prompt := fmt.Sprintf(`
+Enter your Steam Web API key for querying Valve's server list. You can receive a Web
+API key from: http://steamcommunity.com/dev/apikey - This key is now required because
+Valve has apparently shut down their master servers in early November 2016.
+%s`, promptColor("> [default: NONE]: "))
+
+	input := func(r *bufio.Reader) (string, error) {
+		keyval, rserr := r.ReadString('\n')
+		if rserr != nil {
+			return "", fmt.Errorf("Unable to read respone: %s", rserr)
+		}
+		if keyval == newline {
+			return "", fmt.Errorf("[ERROR] Invalid response. Valid response is an API key")
+		}
+		response := strings.Trim(keyval, newline)
+		return response, nil
 	}
 	var err error
 	for !valid {
@@ -158,12 +198,16 @@ func configureTimeBetweenQueries(reader *bufio.Reader, game string) int {
 	if highServerCountGame {
 		defaultVal = defaultTimeForHighServerCount
 	}
+	retrievalMethodMsg := `Note: if the game returns more than 6930 servers/min,
+Valve will throttle future requests for 1 min.`
+	if defaultUseWebServerList {
+		retrievalMethodMsg = ""
+	}
 	prompt := fmt.Sprintf(`
 Enter the time, in seconds, between requests to grab all servers from the master
 server. For many games this needs to be at least 60. For some games this will
-need to be even higher. Note: if the game returns more than 6930 servers/min,
-Valve will throttle future requests for 1 min.
-%s `, promptColor("> [default: %d]: ", defaultVal))
+need to be even higher. %s
+%s `, retrievalMethodMsg, promptColor("> [default: %d]: ", defaultVal))
 
 	input := func(r *bufio.Reader) (int, error) {
 		timeval, rserr := r.ReadString('\n')
