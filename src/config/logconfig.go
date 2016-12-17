@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/syncore/a2sapi/src/constants"
 )
 
@@ -76,7 +77,7 @@ logged to disk?
 	}
 	var err error
 	for !valid {
-		fmt.Print(prompt)
+		fmt.Fprintf(color.Output, prompt)
 		val, err = input(reader, logt)
 		if err != nil {
 			errorColor(err)
@@ -117,7 +118,7 @@ By default this is %d, or %d megabyte(s).
 	}
 	var err error
 	for !valid {
-		fmt.Print(prompt)
+		fmt.Fprintf(color.Output, prompt)
 		val, err = input(reader)
 		if err != nil {
 			errorColor(err)
@@ -156,7 +157,7 @@ Enter the maximum number of log files to keep.
 	}
 	var err error
 	for !valid {
-		fmt.Print(prompt)
+		fmt.Fprintf(color.Output, prompt)
 		val, err = input(reader)
 		if err != nil {
 			errorColor(err)

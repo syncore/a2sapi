@@ -107,13 +107,15 @@ default value.
 	}
 
 	// Steam configuration
-	// Query the master server automatically at timed intervals
+	// Query the master server (master server or server list from steam api) automatically at timed intervals
 	cfg.SteamConfig.AutoQueryMaster = configureTimedMasterQuery(reader)
 	if cfg.SteamConfig.AutoQueryMaster {
-		// The Steam WebAPI key to use to get the web server list
-		cfg.SteamConfig.SteamWebAPIKey = configureSteamWebAPIKey(reader)
-		// Use the Steam Web Server list since master server was shut down in November 2016
-		cfg.SteamConfig.UseWebServerList = defaultUseWebServerList
+		// Use the server list provided by Steam Web API (MUCH faster) instead of master server queries
+		cfg.SteamConfig.UseWebServerList = configureUseSteamWebAPIList(reader)
+		if cfg.SteamConfig.UseWebServerList {
+			// The Steam WebAPI key to use to get the web server list
+			cfg.SteamConfig.SteamWebAPIKey = configureSteamWebAPIKey(reader)
+		}
 		// The game to automatically query the master server for at timed intervals
 		cfg.SteamConfig.AutoQueryGame = configureTimedQueryGame(reader)
 		// Time between Steam Master server queries

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 const (
@@ -62,7 +64,7 @@ implications since your server could query unknown, user-specified IP addresses.
 	}
 	var err error
 	for !valid {
-		fmt.Print(prompt)
+		fmt.Fprintf(color.Output, prompt)
 		val, err = input(reader)
 		if err != nil {
 			errorColor(err)
@@ -102,7 +104,7 @@ Enter the maximum number of servers that users may query at a time via the API.
 	}
 	var err error
 	for !valid {
-		fmt.Print(prompt)
+		fmt.Fprintf(color.Output, prompt)
 		val, err = input(reader)
 		if err != nil {
 			errorColor(err)
@@ -141,7 +143,7 @@ Enter the port number on which the API web server will listen.
 	}
 	var err error
 	for !valid {
-		fmt.Print(prompt)
+		fmt.Fprintf(color.Output, prompt)
 		val, err = input(reader)
 		if err != nil {
 			errorColor(err)
@@ -183,7 +185,7 @@ to the user.
 	}
 	var err error
 	for !valid {
-		fmt.Print(prompt)
+		fmt.Fprintf(color.Output, prompt)
 		val, err = input(reader)
 		if err != nil {
 			errorColor(err)
@@ -225,7 +227,7 @@ already handles compression for you.
 	}
 	var err error
 	for !valid {
-		fmt.Print(prompt)
+		fmt.Fprintf(color.Output, prompt)
 		val, err = input(reader)
 		if err != nil {
 			errorColor(err)

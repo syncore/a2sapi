@@ -1,12 +1,10 @@
 package steam
 
-// steammasterweb.go - valve web "master" server list
-// Note: this is now intended to be the method of retrieving all of the servers because
-// Valve apparently shut down their master servers on November 8, 2016. Previously, a call
-// was made via steammaster.go to the master server (i.e. hl2master.steampowered.com) - now we
-// use this undocumented web endpoint to retrieve the servers, since the master server method of
-//  retrieval is no longer available, and it is uncertain whether it will ever be available again
-// in the future.
+// steammasterweb.go - Valve web "master" server list
+// This default method of retrieval involves accessing an undocumented web API endpoint to directly receive
+// the list of servers. This is preferable to the old method of querying Valve's master server
+// (hl2master.steampowered.com) which was prone to reliability and downtime issues on Valve's end.
+// If neccessary, the old method can still be used; for more information see steammaster.go.
 
 import (
 	"encoding/json"

@@ -1,10 +1,12 @@
 package steam
 
 // steammaster.go - steam master server query
-// This method of retrieval was apparently silently deprecated by Valve on Nov 8, 2016. This file
-// is left in place in case the "master server" method of server list retrieval ever becomes
-// available again in the future. Now an undocumented web endpoint is used to retrieve servers, see
-// steammasterweb.go
+// This method of retrieval involves querying Valve's master server to get the server lists.
+// Note that this retrieval process is subject to random reliability and downtime issues on Valve's end.
+// For example, starting on Nov. 8, 2016 the Valve master server was offline for several days with no
+// explanation or expectation of its return. Because of this, the default method of retrieval now uses a
+// more reliable web endpoint to receive the servers directly from Valve. See steammasterweb.go for this
+// updated web retrieval method.
 
 import (
 	"bytes"
