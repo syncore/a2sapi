@@ -53,7 +53,7 @@ func getGameType(game filters.Game, server models.APIServer) (shortname,
 	}
 	// Reflex
 	if strings.EqualFold(game.Name, filters.GameReflex.Name) {
-		k := strings.Split(server.Info.ExtraData.Keywords, "|")
+		k := strings.Split(server.Info.ExtraData.Keywords, ",")
 		if _, ok := reflexGameTypes[strings.ToLower(k[0])]; !ok {
 			return
 		}
