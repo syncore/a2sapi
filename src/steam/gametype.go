@@ -53,7 +53,13 @@ func getGameType(game filters.Game, server models.APIServer) (shortname,
 	}
 	// Reflex
 	if strings.EqualFold(game.Name, filters.GameReflex.Name) {
-		k := strings.Split(server.Info.ExtraData.Keywords, ",")
+		sep := "," // version 0.49 and every version in the future use comma to separate keywords
+		sepidx := strings.Index(server.Info.ExtraData.Keywords, sep)
+		if sepidx == -1 {
+			// v < 0.49 uses pipe character to separate keywords; eventually this wont be needed
+			sep = "|"
+		}
+		k := strings.Split(server.Info.ExtraData.Keywords, sep)
 		if _, ok := reflexGameTypes[strings.ToLower(k[0])]; !ok {
 			return
 		}
