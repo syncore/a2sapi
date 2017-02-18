@@ -23,7 +23,7 @@ var (
 	// GameFileFullPath represents the OS-independent full path to the game file.
 	GameFileFullPath = path.Join(ConfigDirectory, GameFile)
 	// Version is the version number of the application.
-	Version = "0.1.7"
+	Version = "0.1.8"
 	// AppInfo contains the application information.
 	AppInfo = fmt.Sprintf("a2sapi v%s by syncore <syncore@syncore.org>", Version)
 )
