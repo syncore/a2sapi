@@ -36,7 +36,7 @@ var (
 
 	// --------------------- "Constant" filters ---------------------
 	// Dedicated servers
-	SfDedicated SrvFilter = []byte("\\type\\d")
+	SfDedicated SrvFilter = []byte("\\dedicated\\1")
 	// Servers using anti-cheat technology (VAC, but maybe others as well)
 	SfSecure SrvFilter = []byte("\\secure\\1")
 	// Servers running on a Linux platform
