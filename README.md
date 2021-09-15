@@ -1,3 +1,5 @@
+### ⚠️ 🚨 This project is deprecated and unmaintained. It will be archived and completely re-written _soon_.
+
 # a2sapi
 
 a2sapi is a RESTful API for receiving [**master server information**](https://developer.valvesoftware.com/wiki/Master_Server_Query_Protocol) and for querying [**A2S information**](https://developer.valvesoftware.com/wiki/Server_queries) from servers running on the Steam (Source) platform. It can be configured to query the master server at timed intervals and expose the data via an API endpoint.
